@@ -6,11 +6,7 @@
 
 The KochavaCore swift package provides core support for all modules within the Kochava SDK for the Apple platform— including iOS, macCatalyst, macOS, tvOS, and watchOS.
 
-The Kochava SDK is a lightweight and easy to integrate SDK written in Objective-C, providing first-class integration with Kochava’s industry leading mobile attribution and analytics platform.  
-
-## Example
-
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
+The Kochava SDK is a lightweight and easy to integrate SDK written in Objective-C and Swift, providing first-class integration with Kochava’s industry leading mobile attribution and analytics platform.  
 
 ## Platforms
 
@@ -22,7 +18,9 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 
 ## Installation
 
-KochavaCore is a Swift package.  To install it, simply add this package as a dependency.
+KochavaTracker is a Swift package.  To install it, simply add this package as a dependency.
+
+In Xcode, see File - Swift Packages - Add Package Dependency, and use the URL for this repository.
 
 ## Author
 

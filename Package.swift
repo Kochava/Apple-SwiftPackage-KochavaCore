@@ -5,54 +5,33 @@ import PackageDescription
 
 let package = Package(
     name: "KochavaCore",
-    products: [
+    products:
+    [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "KochavaCore",
-            targets: ["KochavaCore"]),
+            targets:
+            [
+                "KochavaCore"
+            ]
+        ),
     ],
-    dependencies: [
+    dependencies:
+    [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
     ],
-    targets: [
+    targets:
+    [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .binaryTarget(name: "KochavaCore", path: "KochavaCore.xcframework"),
         .testTarget(
             name: "KochavaCoreTests",
-            dependencies: ["KochavaCore"]),
+            dependencies:
+            [
+                "KochavaCore"
+            ]
+        ),
     ]
 )
-
-
-
-// THIS WORKED WITH THE LOCAL CLASSES
-
-//import PackageDescription
-//
-//let package = Package(
-//    name: "KochavaCore",
-//    products: [
-//        // Products define the executables and libraries a package produces, and make them visible to other packages.
-//        .library(
-//            name: "KochavaCore",
-//            targets: ["KochavaCore","KochavaCore2"]),
-//    ],
-//    dependencies: [
-//        // Dependencies declare other packages that this package depends on.
-//        // .package(url: /* package url */, from: "1.0.0"),
-//    ],
-//    targets: [
-//        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-//        // Targets can depend on other targets in this package, and on products in packages this package depends on.
-//        .binaryTarget(name: "KochavaCore2", path: "KochavaCore.xcframework"),
-//        .target(
-//            name: "KochavaCore",
-//            dependencies: []
-//        ),
-//        .testTarget(
-//            name: "KochavaCoreTests",
-//            dependencies: ["KochavaCore"]),
-//    ]
-//)
