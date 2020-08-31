@@ -1,15 +1,40 @@
+
 import XCTest
+
 @testable import KochavaCore
 
-final class KochavaCoreTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(KochavaCore().text, "Hello, World!")
+final class KochavaCoreTests: XCTestCase
+{
+
+    
+
+    func test_included_classes()
+    {
+        //        let someThing = SomeThing()
+        //        someThing.doIt()
+    }
+    
+    
+    
+    func test_register()
+    {
+        KVALog.shared.level = .trace
+        
+        KVACoreProduct.shared.register()
+        
+        print("KVACoreProduct.shared = \(KVACoreProduct.shared.kva_asForContextObject(withContext: .log)!)")
     }
 
-    static var allTests = [
-        ("testExample", testExample),
+    
+    
+    static var allTests =
+    [
+        ("test_register", test_register),
     ]
+    
+    
+    
 }
+
+
+
