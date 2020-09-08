@@ -10,7 +10,10 @@ The Kochava SDK is a lightweight and easy to integrate SDK written in Objective-
 
 ## Platforms
 
-* iOS 10.3, macOS 10.14, tvOS 10.2, watchOS 3.2
+* iOS 10.3
+* macOS 10.14
+* tvOS 10.2
+* watchOS 3.2
 
 ## Dependencies
 
