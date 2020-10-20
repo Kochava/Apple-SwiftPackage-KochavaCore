@@ -4,6 +4,10 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>Headers/KVAAppGroups.h</key>
+		<data>
+		IEYhnyWiV3z2AJc3oicCMeBvoN0=
+		</data>
 		<key>Headers/KVAAsForContextObjectProtocol.h</key>
 		<data>
 		//jGNDfaYAdn31QE9rskmNIno9Y=
@@ -62,15 +66,15 @@
 		</data>
 		<key>Headers/KVASystem.h</key>
 		<data>
-		VtzFDLlKFHDqVSIcoKhU9rTQ3m0=
+		H1QP4/qlbRAVofyNzrsWkGsRKWA=
 		</data>
 		<key>Headers/KochavaCore.h</key>
 		<data>
-		V+f+u/jeXGCox41nh84CJ/HV4kc=
+		zReVkot2gVOQyFjji5cliE3xxU0=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		TKBTEtdxresOU9cSwL0poOAF/k4=
+		UOwaxieYb8vNXgBcpHKsQnjatjY=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -79,6 +83,17 @@
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>Headers/KVAAppGroups.h</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			IEYhnyWiV3z2AJc3oicCMeBvoN0=
+			</data>
+			<key>hash2</key>
+			<data>
+			/DfRPApvpf0GHG3zBDTjT0uB8QU7HcjCuWtOHWjNn9Y=
+			</data>
+		</dict>
 		<key>Headers/KVAAsForContextObjectProtocol.h</key>
 		<dict>
 			<key>hash</key>
@@ -237,22 +252,22 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			VtzFDLlKFHDqVSIcoKhU9rTQ3m0=
+			H1QP4/qlbRAVofyNzrsWkGsRKWA=
 			</data>
 			<key>hash2</key>
 			<data>
-			G0VoWmqVUBJgUBklMhIERyU1kD1YLSMRxTNDE+znbrM=
+			G+ZnhshgybsqgpT9t6calKkuEJv4NxOzwq+pKQF39/4=
 			</data>
 		</dict>
 		<key>Headers/KochavaCore.h</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			V+f+u/jeXGCox41nh84CJ/HV4kc=
+			zReVkot2gVOQyFjji5cliE3xxU0=
 			</data>
 			<key>hash2</key>
 			<data>
-			E96MCJ9HM4/r+6zwVEFi4KTHkjvVNqDp8DnLDQghy3A=
+			9vAchUUP6/eK8PsShw6nTk9By4I/75LHNFu5//jk4Qg=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

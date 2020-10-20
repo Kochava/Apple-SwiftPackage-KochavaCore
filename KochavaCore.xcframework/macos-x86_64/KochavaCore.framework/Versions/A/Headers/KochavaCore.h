@@ -27,6 +27,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <KochavaCore/KVAAppGroups.h>
 #import <KochavaCore/KVAAsForContextObjectProtocol.h>
 #import <KochavaCore/KVAConfigureWithObjectProtocol.h>
 #import <KochavaCore/KVAConsent.h>
