@@ -18,7 +18,7 @@
 		</data>
 		<key>Headers/KVAConsent.h</key>
 		<data>
-		+roJrOaoBWlm8dKA8AJb8xSbRcg=
+		U1drTAexjQQHYyaJEZrgIG42lKo=
 		</data>
 		<key>Headers/KVAContext.h</key>
 		<data>
@@ -30,7 +30,7 @@
 		</data>
 		<key>Headers/KVAEvent.h</key>
 		<data>
-		71MRp2m9KQ37QzoKAS9FkWJNNFw=
+		HmNEULCANu/Vhui/yzHZyu9sIh0=
 		</data>
 		<key>Headers/KVAEventSender.h</key>
 		<data>
@@ -74,7 +74,7 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		yBsuMLzqP94CMkvhQS72F5UCEtg=
+		E9iexEJjGehpQffOyhM+JdUu040=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -120,11 +120,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			+roJrOaoBWlm8dKA8AJb8xSbRcg=
+			U1drTAexjQQHYyaJEZrgIG42lKo=
 			</data>
 			<key>hash2</key>
 			<data>
-			ThQK7CxVihPfuzb0LOHrI5GA0fSrHEol0mWnrl12+5A=
+			C2B8kB2jqY/8JTCvXJ28+q4lC0tVrAqW9LBHijGnNs8=
 			</data>
 		</dict>
 		<key>Headers/KVAContext.h</key>
@@ -153,11 +153,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			71MRp2m9KQ37QzoKAS9FkWJNNFw=
+			HmNEULCANu/Vhui/yzHZyu9sIh0=
 			</data>
 			<key>hash2</key>
 			<data>
-			iy/smLwL8Ot6QayGf1US7o47PgOPqQB6NQgx3YsRlR8=
+			Rm+EHdMhDOuhFdQXPL9vj6o1YrIHAvDFzF03YO+iLV0=
 			</data>
 		</dict>
 		<key>Headers/KVAEventSender.h</key>
