@@ -1,3 +1,3 @@
-struct KochavaCore {
-    var text = "Hello, World!"
+struct KochavaCore
+{
 }
