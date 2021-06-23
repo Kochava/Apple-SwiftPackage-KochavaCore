@@ -14,7 +14,7 @@
 		</data>
 		<key>Headers/KVAConfigureWithObjectProtocol.h</key>
 		<data>
-		0vR68aYPzGQbS6Y6+JthuqwuEwk=
+		1nIFi1PmyzV0p79I2VcvdQtiReE=
 		</data>
 		<key>Headers/KVAConsent.h</key>
 		<data>
@@ -22,7 +22,7 @@
 		</data>
 		<key>Headers/KVAContext.h</key>
 		<data>
-		EUOvwcDQRm/uKrlObkV16iwf13Q=
+		BI+6E6L3isHz874glaC+QZaVEOU=
 		</data>
 		<key>Headers/KVACoreProduct.h</key>
 		<data>
@@ -34,7 +34,7 @@
 		</data>
 		<key>Headers/KVAEventSender.h</key>
 		<data>
-		JOEy1jonZdB7E30vXwOA1wvSq+Y=
+		H28wdYNcGywhK2QoERPym2Muyfw=
 		</data>
 		<key>Headers/KVAEventType.h</key>
 		<data>
@@ -54,11 +54,11 @@
 		</data>
 		<key>Headers/KVAPartner.h</key>
 		<data>
-		IWjAVtN+9nIHcRqbnlNBsemrM6g=
+		2jkOle4puU4q4AjiQ/R+P7K4VdM=
 		</data>
 		<key>Headers/KVAProduct.h</key>
 		<data>
-		hxzXyhW/5uYmnxcGfYBxJHDU9/8=
+		0Me5/QoyoZGEvPUZLAEiEX1+/bs=
 		</data>
 		<key>Headers/KVASharedPropertyProvider.h</key>
 		<data>
@@ -66,7 +66,7 @@
 		</data>
 		<key>Headers/KVASystem.h</key>
 		<data>
-		ykCGfcA5IRq5FiV0fgkSe0pCyVw=
+		ukQqZIWOrUAwBSG/ceHvmB8phZI=
 		</data>
 		<key>Headers/KochavaCore.h</key>
 		<data>
@@ -74,7 +74,7 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		B4/9xgI7/BZfCeos+fueCEOGYEY=
+		Zi8a7WrFM1wUVTcbg4vUEuJD2jQ=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -109,11 +109,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			0vR68aYPzGQbS6Y6+JthuqwuEwk=
+			1nIFi1PmyzV0p79I2VcvdQtiReE=
 			</data>
 			<key>hash2</key>
 			<data>
-			9Cg8urh7NT7Jrl4EL13yKmc2IyIt4qxXONPcntpk8vI=
+			vV4lKFUsQXqYB8mX03H7wC4XTn96f7jBngoZJ4SEv2E=
 			</data>
 		</dict>
 		<key>Headers/KVAConsent.h</key>
@@ -131,11 +131,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			EUOvwcDQRm/uKrlObkV16iwf13Q=
+			BI+6E6L3isHz874glaC+QZaVEOU=
 			</data>
 			<key>hash2</key>
 			<data>
-			on+Ii+mJCzIoneOYblVR4d5BJdm0v/v1niUWgU4AB80=
+			qEMzL7q1AcEGd6t2NOJcYbFX1ob15+2He5F9NgbU5f4=
 			</data>
 		</dict>
 		<key>Headers/KVACoreProduct.h</key>
@@ -164,11 +164,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			JOEy1jonZdB7E30vXwOA1wvSq+Y=
+			H28wdYNcGywhK2QoERPym2Muyfw=
 			</data>
 			<key>hash2</key>
 			<data>
-			RmVBYBRfxcldyLrjjueaOxvBfFa8Evv5LL47aSaZzk4=
+			TJ5c/Uo3tLzy/NDBjAMboELDAfWNGOvwdnPssFFCw44=
 			</data>
 		</dict>
 		<key>Headers/KVAEventType.h</key>
@@ -219,22 +219,22 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			IWjAVtN+9nIHcRqbnlNBsemrM6g=
+			2jkOle4puU4q4AjiQ/R+P7K4VdM=
 			</data>
 			<key>hash2</key>
 			<data>
-			vyvqTuHmkG0PRk6xNnGAgeg7p+z8fkJWCzbKNDZ/1qA=
+			Oh58kK8MvUasOVAC4x7FhVJsTqKV+FM8T5ZUXEa0Tmw=
 			</data>
 		</dict>
 		<key>Headers/KVAProduct.h</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			hxzXyhW/5uYmnxcGfYBxJHDU9/8=
+			0Me5/QoyoZGEvPUZLAEiEX1+/bs=
 			</data>
 			<key>hash2</key>
 			<data>
-			N9ClvxUEmdQndbJQ+C7j2GOj/ODsjxOCmnEYQqg2Gok=
+			EvYNJjlbHHdCQ3dNayPrkFO/+X0SIYBEwLnaU6ZEBv8=
 			</data>
 		</dict>
 		<key>Headers/KVASharedPropertyProvider.h</key>
@@ -252,11 +252,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			ykCGfcA5IRq5FiV0fgkSe0pCyVw=
+			ukQqZIWOrUAwBSG/ceHvmB8phZI=
 			</data>
 			<key>hash2</key>
 			<data>
-			W7JYfOsxhrnbfTH0DSsos9l7ex7nRrOsiZxXixBoRXo=
+			F0YzVulmRR2dvLDixA687JeTOZqGUYestd1DMo/Vxnk=
 			</data>
 		</dict>
 		<key>Headers/KochavaCore.h</key>

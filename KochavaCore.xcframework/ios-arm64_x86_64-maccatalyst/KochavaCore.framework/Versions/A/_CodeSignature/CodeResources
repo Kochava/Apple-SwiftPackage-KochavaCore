@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/Info.plist</key>
 		<data>
-		EvGwmRGnoq5UK5GxOloT2/TMdiY=
+		sLeOVZ/rOexphYPMtoVkSGwdBCc=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -29,7 +29,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			9Cg8urh7NT7Jrl4EL13yKmc2IyIt4qxXONPcntpk8vI=
+			vV4lKFUsQXqYB8mX03H7wC4XTn96f7jBngoZJ4SEv2E=
 			</data>
 		</dict>
 		<key>Headers/KVAConsent.h</key>
@@ -43,7 +43,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			on+Ii+mJCzIoneOYblVR4d5BJdm0v/v1niUWgU4AB80=
+			qEMzL7q1AcEGd6t2NOJcYbFX1ob15+2He5F9NgbU5f4=
 			</data>
 		</dict>
 		<key>Headers/KVACoreProduct.h</key>
@@ -64,7 +64,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			RmVBYBRfxcldyLrjjueaOxvBfFa8Evv5LL47aSaZzk4=
+			TJ5c/Uo3tLzy/NDBjAMboELDAfWNGOvwdnPssFFCw44=
 			</data>
 		</dict>
 		<key>Headers/KVAEventType.h</key>
@@ -99,14 +99,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			vyvqTuHmkG0PRk6xNnGAgeg7p+z8fkJWCzbKNDZ/1qA=
+			Oh58kK8MvUasOVAC4x7FhVJsTqKV+FM8T5ZUXEa0Tmw=
 			</data>
 		</dict>
 		<key>Headers/KVAProduct.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			N9ClvxUEmdQndbJQ+C7j2GOj/ODsjxOCmnEYQqg2Gok=
+			EvYNJjlbHHdCQ3dNayPrkFO/+X0SIYBEwLnaU6ZEBv8=
 			</data>
 		</dict>
 		<key>Headers/KVASharedPropertyProvider.h</key>
@@ -120,7 +120,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			W7JYfOsxhrnbfTH0DSsos9l7ex7nRrOsiZxXixBoRXo=
+			F0YzVulmRR2dvLDixA687JeTOZqGUYestd1DMo/Vxnk=
 			</data>
 		</dict>
 		<key>Headers/KochavaCore.h</key>
@@ -141,7 +141,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+I0TOPxX2/+7UtoezQq7mpodUhU+8QuKnv42wy2rf4o=
+			ugunCy+X5R/dsdJ+5jK8xqIsBCpYadOK5qZmIM6eKCE=
 			</data>
 		</dict>
 	</dict>
