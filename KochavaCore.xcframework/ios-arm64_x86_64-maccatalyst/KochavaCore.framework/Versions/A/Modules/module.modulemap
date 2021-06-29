@@ -4,3 +4,8 @@ framework module KochavaCore {
   export *
   module * { export * }
 }
+
+module KochavaCore.Swift {
+    header "KochavaCore-Swift.h"
+    requires objc
+}
