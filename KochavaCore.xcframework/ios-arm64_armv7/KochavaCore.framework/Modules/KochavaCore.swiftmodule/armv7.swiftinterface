@@ -5,7 +5,7 @@ import Foundation
 @_exported import KochavaCore
 import Swift
 import os
-@_hasMissingDesignatedInitializers @objc public class KVALogLevel : ObjectiveC.NSObject, KochavaCore.KVAFromObjectProtocol {
+@_hasMissingDesignatedInitializers @objc(KVALogLevel) public class KVALogLevel : ObjectiveC.NSObject, KochavaCore.KVAFromObjectProtocol {
   @objc public static let never: KochavaCore.KVALogLevel
   @objc public static let error: KochavaCore.KVALogLevel
   @objc public static let warn: KochavaCore.KVALogLevel
@@ -14,7 +14,7 @@ import os
   @objc public static let trace: KochavaCore.KVALogLevel
   @objc public static let always: KochavaCore.KVALogLevel
   @objc public static let dictionary: [Swift.String : KochavaCore.KVALogLevel]
-  @objc public static func kva_fromObject(_ fromObject: Any?) -> Self?
+  @objc public static func kva_from(object: Any?) -> Self?
   @objc public static func logLevel(_ logLevel: KochavaCore.KVALogLevel?, visibleBoolWithVisibleMaximumLogLevel visibleMaximumLogLevel: KochavaCore.KVALogLevel?) -> Swift.Bool
   @objc override dynamic public func kva_asForContextObject(withContext context: KochavaCore.KVAContext?) -> ObjectiveC.NSObject?
   @objc public var nameString: Swift.String

@@ -219,7 +219,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 /// John Bushnell
 /// <h1>Copyright</h1>
 /// 2017 - 2021 Kochava, Inc.
-SWIFT_CLASS("_TtC11KochavaCore11KVALogLevel")
+SWIFT_CLASS_NAMED("KVALogLevel")
 @interface KVALogLevel : NSObject <KVAFromObjectProtocol>
 /// A LogLevel which never prints visibly to the log.
 /// When LogMessage(s) are not printed visibly to the log, they are still posted as notifications.  This enables all LogMessage(s) to be observed, regardless of their current visibility.
@@ -254,9 +254,14 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 /// A dictionary of all log levels keyed by their names.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSDictionary<NSString *, KVALogLevel *> * _Nonnull dictionary;)
 + (NSDictionary<NSString *, KVALogLevel *> * _Nonnull)dictionary SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_fromObject:(id _Nullable)fromObject SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_fromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)initWithNameString:(NSString * _Nonnull)nameString levelInt:(NSInteger)levelInt osLogType:(os_log_type_t)osLogType OBJC_DESIGNATED_INITIALIZER;
 + (BOOL)logLevel:(KVALogLevel * _Nullable)logLevel visibleBoolWithVisibleMaximumLogLevel:(KVALogLevel * _Nullable)visibleMaximumLogLevel SWIFT_WARN_UNUSED_RESULT;
 - (NSObject * _Nullable)kva_asForContextObjectWithContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+/// The level.
+/// Examples:  1, 2, 3, 4, 5, 6, 999.
+/// This is used to determine the relative value between log levels, such that everything below or everything above may be determined.
+@property (nonatomic) NSInteger levelInt;
 /// The name.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
 @property (nonatomic, copy) NSString * _Nonnull nameString;
@@ -492,7 +497,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 /// John Bushnell
 /// <h1>Copyright</h1>
 /// 2017 - 2021 Kochava, Inc.
-SWIFT_CLASS("_TtC11KochavaCore11KVALogLevel")
+SWIFT_CLASS_NAMED("KVALogLevel")
 @interface KVALogLevel : NSObject <KVAFromObjectProtocol>
 /// A LogLevel which never prints visibly to the log.
 /// When LogMessage(s) are not printed visibly to the log, they are still posted as notifications.  This enables all LogMessage(s) to be observed, regardless of their current visibility.
@@ -527,9 +532,14 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 /// A dictionary of all log levels keyed by their names.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSDictionary<NSString *, KVALogLevel *> * _Nonnull dictionary;)
 + (NSDictionary<NSString *, KVALogLevel *> * _Nonnull)dictionary SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_fromObject:(id _Nullable)fromObject SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_fromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)initWithNameString:(NSString * _Nonnull)nameString levelInt:(NSInteger)levelInt osLogType:(os_log_type_t)osLogType OBJC_DESIGNATED_INITIALIZER;
 + (BOOL)logLevel:(KVALogLevel * _Nullable)logLevel visibleBoolWithVisibleMaximumLogLevel:(KVALogLevel * _Nullable)visibleMaximumLogLevel SWIFT_WARN_UNUSED_RESULT;
 - (NSObject * _Nullable)kva_asForContextObjectWithContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+/// The level.
+/// Examples:  1, 2, 3, 4, 5, 6, 999.
+/// This is used to determine the relative value between log levels, such that everything below or everything above may be determined.
+@property (nonatomic) NSInteger levelInt;
 /// The name.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
 @property (nonatomic, copy) NSString * _Nonnull nameString;
