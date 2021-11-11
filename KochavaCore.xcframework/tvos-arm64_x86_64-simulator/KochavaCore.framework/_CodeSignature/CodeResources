@@ -18,7 +18,7 @@
 		</data>
 		<key>Headers/KVAConsent.h</key>
 		<data>
-		IEXJijAFP22JFWwK6GUdsfd4kMw=
+		hDZ9x+g2nZhyrq7lg4S6SFZ+xpo=
 		</data>
 		<key>Headers/KVAContext.h</key>
 		<data>
@@ -66,7 +66,7 @@
 		</data>
 		<key>Headers/KVASystem.h</key>
 		<data>
-		ukQqZIWOrUAwBSG/ceHvmB8phZI=
+		Rm8cPZ1POl+9ZDQM08F6VzTXEdw=
 		</data>
 		<key>Headers/KochavaCore-Swift.h</key>
 		<data>
@@ -78,7 +78,7 @@
 		</data>
 		<key>Headers/NSObject+KochavaCore.h</key>
 		<data>
-		ppPgxcRsk6XyKjibfRBfHEImIhE=
+		ic4uOE2OCDQFJGksP1M/0K+SMT4=
 		</data>
 		<key>Headers/NSString+KochavaCore.h</key>
 		<data>
@@ -86,7 +86,7 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		vkBVUSTmIQRiD3c6mnuREEpeevk=
+		l7l62CzsyXnCZfEoWs2djYQvRjE=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-tvos-simulator.swiftdoc</key>
 		<data>
@@ -98,7 +98,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-tvos-simulator.swiftmodule</key>
 		<data>
-		KogrDd0BmvebHQDeukKzrPB7u+w=
+		Fs0KdtLrEnd1/iMy3eKPcJp1aAQ=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64.swiftdoc</key>
 		<data>
@@ -110,7 +110,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64.swiftmodule</key>
 		<data>
-		KogrDd0BmvebHQDeukKzrPB7u+w=
+		Fs0KdtLrEnd1/iMy3eKPcJp1aAQ=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64-apple-tvos-simulator.swiftdoc</key>
 		<data>
@@ -122,7 +122,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64-apple-tvos-simulator.swiftmodule</key>
 		<data>
-		QoIlB0QtAB4dGY5VOUoNnPC/28E=
+		YUbo3eZNUG8qKmY+y83h4j3NxJI=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64.swiftdoc</key>
 		<data>
@@ -134,7 +134,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64.swiftmodule</key>
 		<data>
-		QoIlB0QtAB4dGY5VOUoNnPC/28E=
+		YUbo3eZNUG8qKmY+y83h4j3NxJI=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -180,11 +180,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			IEXJijAFP22JFWwK6GUdsfd4kMw=
+			hDZ9x+g2nZhyrq7lg4S6SFZ+xpo=
 			</data>
 			<key>hash2</key>
 			<data>
-			jLo0MbWE/Hm1uICZ7YGSgaq4WF9IHIIEh48aRi+h9dg=
+			lE36s+8rQmwICVSIxZwXxsX+CqIohrCaZIOAk0QJDlo=
 			</data>
 		</dict>
 		<key>Headers/KVAContext.h</key>
@@ -312,11 +312,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			ukQqZIWOrUAwBSG/ceHvmB8phZI=
+			Rm8cPZ1POl+9ZDQM08F6VzTXEdw=
 			</data>
 			<key>hash2</key>
 			<data>
-			F0YzVulmRR2dvLDixA687JeTOZqGUYestd1DMo/Vxnk=
+			XUq0u/wumCYFLKKzVRevcjeLbopqkvp/3wOzV1dqDrQ=
 			</data>
 		</dict>
 		<key>Headers/KochavaCore-Swift.h</key>
@@ -345,11 +345,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			ppPgxcRsk6XyKjibfRBfHEImIhE=
+			ic4uOE2OCDQFJGksP1M/0K+SMT4=
 			</data>
 			<key>hash2</key>
 			<data>
-			sL0fq4kMaDpk9TQndIV8AQ5FsUVyVSmRC3YF2azS7lQ=
+			qGr1tRdgVtAQLXgDQnNQjdWwMmhztwWruGugDorRS8o=
 			</data>
 		</dict>
 		<key>Headers/NSString+KochavaCore.h</key>
@@ -389,11 +389,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			KogrDd0BmvebHQDeukKzrPB7u+w=
+			Fs0KdtLrEnd1/iMy3eKPcJp1aAQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			qWMAfAB5tkhtYo6k59k9lrw6DxyBZKCzsYDymy5Wy5U=
+			qqOHw1shriRUy/M7foQfUj2UgXUinNC7jup+xxsVbzg=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/arm64.swiftdoc</key>
@@ -422,11 +422,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			KogrDd0BmvebHQDeukKzrPB7u+w=
+			Fs0KdtLrEnd1/iMy3eKPcJp1aAQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			qWMAfAB5tkhtYo6k59k9lrw6DxyBZKCzsYDymy5Wy5U=
+			qqOHw1shriRUy/M7foQfUj2UgXUinNC7jup+xxsVbzg=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/x86_64-apple-tvos-simulator.swiftdoc</key>
@@ -455,11 +455,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			QoIlB0QtAB4dGY5VOUoNnPC/28E=
+			YUbo3eZNUG8qKmY+y83h4j3NxJI=
 			</data>
 			<key>hash2</key>
 			<data>
-			g05iTckYuTwPelC7VRbuNv/wSF6ku2/hMeT52Fq1l30=
+			DJV+uZF7S3RFlciNNfB1gVPaO+9ysFnnm/LHKjH3Ado=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/x86_64.swiftdoc</key>
@@ -488,11 +488,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			QoIlB0QtAB4dGY5VOUoNnPC/28E=
+			YUbo3eZNUG8qKmY+y83h4j3NxJI=
 			</data>
 			<key>hash2</key>
 			<data>
-			g05iTckYuTwPelC7VRbuNv/wSF6ku2/hMeT52Fq1l30=
+			DJV+uZF7S3RFlciNNfB1gVPaO+9ysFnnm/LHKjH3Ado=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

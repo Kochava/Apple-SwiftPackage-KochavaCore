@@ -18,7 +18,7 @@
 		</data>
 		<key>Headers/KVAConsent.h</key>
 		<data>
-		IEXJijAFP22JFWwK6GUdsfd4kMw=
+		hDZ9x+g2nZhyrq7lg4S6SFZ+xpo=
 		</data>
 		<key>Headers/KVAContext.h</key>
 		<data>
@@ -66,7 +66,7 @@
 		</data>
 		<key>Headers/KVASystem.h</key>
 		<data>
-		ukQqZIWOrUAwBSG/ceHvmB8phZI=
+		Rm8cPZ1POl+9ZDQM08F6VzTXEdw=
 		</data>
 		<key>Headers/KochavaCore-Swift.h</key>
 		<data>
@@ -78,7 +78,7 @@
 		</data>
 		<key>Headers/NSObject+KochavaCore.h</key>
 		<data>
-		ppPgxcRsk6XyKjibfRBfHEImIhE=
+		ic4uOE2OCDQFJGksP1M/0K+SMT4=
 		</data>
 		<key>Headers/NSString+KochavaCore.h</key>
 		<data>
@@ -86,7 +86,7 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		tQzATrUIyUYLxY7SV+DKwEdeCaM=
+		1jzzBphIz0JOv3CbZSELScZdoA0=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-watchos-simulator.swiftdoc</key>
 		<data>
@@ -98,7 +98,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-watchos-simulator.swiftmodule</key>
 		<data>
-		u3WPRDddKzX/kLSDs22C405qw/A=
+		l9qONG9NE2RFn3I02yLb5dq6tzY=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64.swiftdoc</key>
 		<data>
@@ -110,7 +110,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64.swiftmodule</key>
 		<data>
-		u3WPRDddKzX/kLSDs22C405qw/A=
+		l9qONG9NE2RFn3I02yLb5dq6tzY=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/i386-apple-watchos-simulator.swiftdoc</key>
 		<data>
@@ -122,7 +122,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/i386-apple-watchos-simulator.swiftmodule</key>
 		<data>
-		MYdpodiUw3+VJTAIsEdSDSvEA2Q=
+		X5F0P5QvyNwGLUZXhxhPCUoZgnQ=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/i386.swiftdoc</key>
 		<data>
@@ -134,7 +134,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/i386.swiftmodule</key>
 		<data>
-		MYdpodiUw3+VJTAIsEdSDSvEA2Q=
+		X5F0P5QvyNwGLUZXhxhPCUoZgnQ=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64-apple-watchos-simulator.swiftdoc</key>
 		<data>
@@ -146,7 +146,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64-apple-watchos-simulator.swiftmodule</key>
 		<data>
-		5DMqb+uKECnZHq29vkfgvMPiWMg=
+		kQeQUW0mRkyyxsOAS7cMo+Y8Hzg=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64.swiftdoc</key>
 		<data>
@@ -158,7 +158,7 @@
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/x86_64.swiftmodule</key>
 		<data>
-		5DMqb+uKECnZHq29vkfgvMPiWMg=
+		kQeQUW0mRkyyxsOAS7cMo+Y8Hzg=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -204,11 +204,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			IEXJijAFP22JFWwK6GUdsfd4kMw=
+			hDZ9x+g2nZhyrq7lg4S6SFZ+xpo=
 			</data>
 			<key>hash2</key>
 			<data>
-			jLo0MbWE/Hm1uICZ7YGSgaq4WF9IHIIEh48aRi+h9dg=
+			lE36s+8rQmwICVSIxZwXxsX+CqIohrCaZIOAk0QJDlo=
 			</data>
 		</dict>
 		<key>Headers/KVAContext.h</key>
@@ -336,11 +336,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			ukQqZIWOrUAwBSG/ceHvmB8phZI=
+			Rm8cPZ1POl+9ZDQM08F6VzTXEdw=
 			</data>
 			<key>hash2</key>
 			<data>
-			F0YzVulmRR2dvLDixA687JeTOZqGUYestd1DMo/Vxnk=
+			XUq0u/wumCYFLKKzVRevcjeLbopqkvp/3wOzV1dqDrQ=
 			</data>
 		</dict>
 		<key>Headers/KochavaCore-Swift.h</key>
@@ -369,11 +369,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			ppPgxcRsk6XyKjibfRBfHEImIhE=
+			ic4uOE2OCDQFJGksP1M/0K+SMT4=
 			</data>
 			<key>hash2</key>
 			<data>
-			sL0fq4kMaDpk9TQndIV8AQ5FsUVyVSmRC3YF2azS7lQ=
+			qGr1tRdgVtAQLXgDQnNQjdWwMmhztwWruGugDorRS8o=
 			</data>
 		</dict>
 		<key>Headers/NSString+KochavaCore.h</key>
@@ -413,11 +413,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			u3WPRDddKzX/kLSDs22C405qw/A=
+			l9qONG9NE2RFn3I02yLb5dq6tzY=
 			</data>
 			<key>hash2</key>
 			<data>
-			RZymr/qAQo8Tdq4m359PaC663hGMsavDprQ5zi0hbAQ=
+			Ni8yHqURcc1wcffEFb/0UCz8ipdYWZP6DYMlvB53uXo=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/arm64.swiftdoc</key>
@@ -446,11 +446,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			u3WPRDddKzX/kLSDs22C405qw/A=
+			l9qONG9NE2RFn3I02yLb5dq6tzY=
 			</data>
 			<key>hash2</key>
 			<data>
-			RZymr/qAQo8Tdq4m359PaC663hGMsavDprQ5zi0hbAQ=
+			Ni8yHqURcc1wcffEFb/0UCz8ipdYWZP6DYMlvB53uXo=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/i386-apple-watchos-simulator.swiftdoc</key>
@@ -479,11 +479,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			MYdpodiUw3+VJTAIsEdSDSvEA2Q=
+			X5F0P5QvyNwGLUZXhxhPCUoZgnQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			3im7ytARvxibly5M/5PJDx1HGfYVEpLtSKL/fj2LPrw=
+			QillvmOJYdvV+l6yyjSOmu5Y/JWdmi+WwhFhyaBgs1c=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/i386.swiftdoc</key>
@@ -512,11 +512,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			MYdpodiUw3+VJTAIsEdSDSvEA2Q=
+			X5F0P5QvyNwGLUZXhxhPCUoZgnQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			3im7ytARvxibly5M/5PJDx1HGfYVEpLtSKL/fj2LPrw=
+			QillvmOJYdvV+l6yyjSOmu5Y/JWdmi+WwhFhyaBgs1c=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/x86_64-apple-watchos-simulator.swiftdoc</key>
@@ -545,11 +545,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			5DMqb+uKECnZHq29vkfgvMPiWMg=
+			kQeQUW0mRkyyxsOAS7cMo+Y8Hzg=
 			</data>
 			<key>hash2</key>
 			<data>
-			XF9myouo3AFlS6mnfMxUuxFRTs2mXrgG39w0ma8PXTg=
+			4yNZqvtVeIhccSJ3fwsDpSsk75YbukwdGgxiRJXgRcc=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/x86_64.swiftdoc</key>
@@ -578,11 +578,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			5DMqb+uKECnZHq29vkfgvMPiWMg=
+			kQeQUW0mRkyyxsOAS7cMo+Y8Hzg=
 			</data>
 			<key>hash2</key>
 			<data>
-			XF9myouo3AFlS6mnfMxUuxFRTs2mXrgG39w0ma8PXTg=
+			4yNZqvtVeIhccSJ3fwsDpSsk75YbukwdGgxiRJXgRcc=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
