@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>6.1.0</string>
+	<string>6.1.1</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>WatchOS</string>
@@ -41,7 +41,7 @@
 	<key>DTXcodeBuild</key>
 	<string>13E500a</string>
 	<key>KVABuildDateString</key>
-	<string>2022-09-28T14:37:35-0700</string>
+	<string>2022-10-31T11:34:43-0700</string>
 	<key>MinimumOSVersion</key>
 	<string>3.2</string>
 	<key>UIDeviceFamily</key>
