@@ -29,16 +29,7 @@
 #import <Foundation/Foundation.h>
 
 #pragma mark KochavaCore
-#import <KochavaCore/KVAAdapter.h>
-#import <KochavaCore/KVAAsForContextProtocol.h>
-#import <KochavaCore/KVACollection.h>
-#import <KochavaCore/KVAConfigureWithProtocol.h>
 #import <KochavaCore/KVAConsent.h>
-#import <KochavaCore/KVAFromProtocol.h>
-#import <KochavaCore/KVAInvalidatable.h>
-#import <KochavaCore/KVANetTransaction.h>
-#import <KochavaCore/KVAStartable.h>
-#import <KochavaCore/KVATask.h>
 
 
 

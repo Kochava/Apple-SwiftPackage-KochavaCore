@@ -197,13 +197,10 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #if __has_warning("-Watimport-in-framework-header")
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
-@import Dispatch;
 @import Foundation;
 @import ObjectiveC;
 @import UIKit;
 #endif
-
-#import <KochavaCore/KochavaCore.h>
 
 #pragma clang diagnostic ignored "-Wproperty-attribute-mismatch"
 #pragma clang diagnostic ignored "-Wduplicate-method-arg"
@@ -220,251 +217,23 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # pragma pop_macro("any")
 #endif
 
-@class KVAContext;
-
-SWIFT_PROTOCOL_NAMED("KVAKeyable")
-@protocol KVAKeyable
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-@end
 
 @class KVANetworking;
-@class NSString;
-@class NSNumber;
-@class KVAValue;
-@class KVATask;
-@class KVAProduct;
-@class KVAConsent;
 
-/// A class which wraps a value and provides a range of features including, but not limited to, adaptation.
-/// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
-/// <h2>Examples</h2>
-/// Example - Creating an adapter which collects a string representation of the current webpage at apple.com (with maximum length limited to 2048 for readability).
-/// \code
-/// let appleDotComStringAdapter = KVAStringAdapter(
-///     networking: KVANetworking.shared,
-///     identifierString: "YourClass.appleDotComStringAdapter",
-///     key: "apple_dot_com",
-///     denyDatapointCheckBool: true,
-///     maximumStalenessTimeIntervalNumber: 15.0,
-///     closure_collectAsynchronously:
-///     {
-///         adapter, completionHandler in
-///
-///         KVANetTransaction.start(
-///             netTransactionObject:
-///             [
-///                 "nameString": "AppleDotComGetNetTransaction",
-///                 "request":
-///                 [
-///                     "urlString": "https://www.apple.com"
-///                 ]
-///             ],
-///             networking: KVANetworking.shared
-///         ){
-///             netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///             completionHandler(adapter, (responseClassObject as? String)?.kva_withMaximumLength(2048))
-///         }
-///     }
-/// )
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Identification</em> (var <code>identifierString</code>) — A unique identifier is provided for use within a global system catalog.  This enables instances of class KVAAdapter to be referenced from JSON objects.  It is also a base component for the formation of a key which can be used to store the associated information in persistent storage.
-///   </li>
-///   <li>
-///     <em>Value</em> (var <code>value</code>) — An instance of class <code>KVAValue</code> stores a single value object along with its associated metadata, such as its startDate.
-///   </li>
-///   <li>
-///     <em>Default Value</em> (par defaultValueObject) — When the valueObject would otherwise be nil, a defaultValueObject can be specified to be wrapped into an instance of <code>KVAValue</code> and returned instead.
-///   </li>
-///   <li>
-///     <em>Value Watching</em> (par watchBool) — For the purposes of understanding when changes have taken place to value, relative to the server, the parameter watchBool may be set to true to indicate that a copy of the value should be made and maintained in order to identify changes.  The presence of a change can be identified by calling func <code>watchValueIndicatesChangeBool()</code>.  The associated var <code>watchValue</code> contains the value recognized to be the server’s value.  Once the new value has been sent to the server, the watchValue can then be set to the current value to watch for future changes.  When sending these values to the server using class <code>KVANetTransaction</code>, you can do this automatically by setting key “valueUpdateBool” to true on each instance of class <code>KVADictionaryEntryFormat</code> which contains a watched value.  When the network transaction is sent successfully, the watchedValue will be set to the specific value which was included in the payload.
-///   </li>
-///   <li>
-///     <em>Validation</em> — Value objects are sanity checked for compliance with the requirements of persistent storage.   They also may be validated to fall within a given range of valid values.
-///   </li>
-///   <li>
-///     <em>Persistent Storage</em> (par persistBool) — When set to true, the associated value will be written to a persistent storage location.  Most often this location is NSUserDefaults.  It will then be automatically retrieved beween sessions of the app.  When value watching the watchValue will also be persisted.
-///   </li>
-///   <li>
-///     <em>Synchronous Collection</em> (par closure_collectSynchronously) — When the value is nil, or else stale, you may automatically collect a new value by returning a raw object from a custom closure which will be called synchronously.  This closure may be used to collect information from the local system on the caller’s thread.  See typealias <code>Closure_CollectSynchronously</code>.
-///   </li>
-///   <li>
-///     <em>Asynchronous Collection</em> (par closure_collectAsynchronously) — When the value is nil, or else stale, you may automatically collect a new value by returning a raw object from a custom closure which will be called asynchronously.  This closure may be used to collect information from the local system, or from an external system.  Because of its asynchronous nature, it may be used to dispatch to a specific queue to perform the work, such as the main thread.  It may also collect a value using another asynchronous call.  The value is returned by calling a supplied completionHandler.  See typealias <code>Closure_CollectAsynchronously</code>.
-///   </li>
-///   <li>
-///     <em>Access Control</em> (par closure_adapter_mayOperateBoolForContext) — Prior to a value being collected, kept, persisted, or shared, this closure is called to first verify if the adapter may operate.  This closure may factor in any number of considerations, such as whether or not the system is configured and ready, if it complies with the requirements of a deny list, etc.  See typealias KVANetworking.Closure_Adapter_MayOperateBoolForContext.
-///   </li>
-///   <li>
-///     <em>Consent Compliance</em> (var <code>consent</code>) — The property consentRequiredBool may be used to broadly indicate if consent is required.  The effects of consent upon the adapter may be fine-tuned using var <code>consentRequiredToCollectBool</code>, var <code>consentRequiredToKeepBool</code>, var <code>consentRequiredToPersistBool</code>, and/or var <code>consentRequiredToShareBool</code>.  These four properties default to true, and may be individually overridden to false.  The adapter will then observe the rules of consent, and only collect, keep, persist, or share the associated value when permitted.  At times when consent may be revoked, or otherwise unknown, this includes removing an existing value from persistent storage, clearing kept memory, etc.  See class <code>KVAConsent</code>.
-///   </li>
-///   <li>
-///     <em>Staleness</em> (var <code>maximumStalenessTimeIntervalNumber</code>) - A value may be automatically discarded and re-collected if it has become stale, as indicated by a specified time interval having elapsed since the value was originally collected.  This notion of staleness detection can transparently cross over between successive launches when persistent storage is used.
-///   </li>
-///   <li>
-///     <em>Interface</em> (par interfaceInDictionary) — For values coming from external sources, an optional parameter can be used to define input values along with corresponding output values.  This enables you to say that when some particular value object is stored in the adapter that it should come out as another value object.
-///   </li>
-///   <li>
-///     <em>Adaptation</em> — The class KVAAdapter, and it’s subclasses, provide methods to adapt values from one type to another, where appropriate.  This is generally expressed through a type-specific subclass, as well as through the capabilities provided by the backing instances of class <code>KVAValue</code>.
-///   </li>
-/// </ul>
+SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
+@protocol KVANetworkingSetterProvider
+@property (nonatomic, strong) KVANetworking * _Nullable networking;
+@end
+
+@class NSString;
+
+/// A class which collects and/or adapts a value to a variety of contexts.
 SWIFT_CLASS_NAMED("KVAAdapter")
-@interface KVAAdapter : NSObject <KVAConfigureWithProtocol, KVAInvalidatable, KVAKeyable>
-/// The designated initialization method for an Adapter— using modern Objective-C syntax.
-+ (nonnull instancetype)adapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueObject:(id _Nullable)defaultValueObject valueObject:(id _Nullable)valueObject valueClass:(Class _Nullable)valueClass closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
+@interface KVAAdapter : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return the value for the adapter, supporting asynchronous collection.
-/// If asynchronous collection is not required, and if you do not need other details associated with the value such as the date of the value, you may instead use a method such as valueObject.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context waitBool:(BOOL)waitBool completionHandler:(void (^ _Nullable)(KVAAdapter * _Nonnull, KVAValue * _Nullable))completionHandler;
-/// Return the value for the adapter, supporting asynchronous collection.
-/// If asynchronous collection is not required, and if you do not need other details associated with the value such as the date of the value, you may instead use a method such as valueObject.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context touchlessBool:(BOOL)touchlessBool waitBool:(BOOL)waitBool completionHandler:(void (^ _Nullable)(KVAAdapter * _Nonnull, KVAValue * _Nullable))completionHandler;
-/// Return whether or not the value will be collected (or re-collected) the next time it is requested.
-- (BOOL)valueWillBeCollectedBoolForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if the adapter may share its value for a given context.
-- (BOOL)mayShareBoolForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (BOOL)persistentStorage_restore SWIFT_WARN_UNUSED_RESULT;
-- (void)persistentStorage_writeIfDidMutateBool_aggressively;
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-@property (nonatomic, copy) NSArray<KVATask *> * _Nullable asynchronousCollectionPrerequisiteTaskArray;
-@property (nonatomic, copy) NSArray<NSString *> * _Nullable asynchronousCollectionPrerequisiteTaskNameStringArray;
-/// A boolean indicating if consent is required to collect.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToCollectBool;
-/// A boolean indicating if consent is required to keep.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.  When this property is true, any value or watchValue will be purged when consent.mayKeepBool becomes false.  When this property is false, any value or watchValue will be left in memory when consent.mayKeepBool becomes no, but it will be effectively inaccessable under certain contexts.  If consent is later granted the value may then again be usable.  It may however still be lost should the tracker deallocate, as nothing will be left in persistent storage (depending on the configuration of consentRequiredToPersistBool).
-@property (nonatomic) BOOL consentRequiredToKeepBool;
-/// A boolean indicating if consent is required to persist.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToPersistBool;
-/// A boolean indicating if consent is required to share.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToShareBool;
-/// A deny datapoint identifier string.
-/// When denied the adapter will not be permitted to collect or share if it is found within a denied datapoint array.
-@property (nonatomic, readonly) BOOL denyDatapointCheckBool;
-/// A deny datapoint identifier string.
-/// When denied the adapter will not be permitted to collect or share if it is found within a denied datapoint array.
-@property (nonatomic, readonly, copy) NSObject * _Nullable key;
-/// A descriptionString for the adapter.
-/// This is a human friendly description which may be used in UI.
-@property (nonatomic, copy) NSString * _Nullable descriptionString;
-/// A closure which is called whenever the adapter is invalidated.
-/// This can be used to invalidate processes within an closure_collectAsynchronously, such as when the gathering of a value is in progress.
-@property (nonatomic, copy) void (^ _Nullable closure_didInvalidate)(KVAAdapter * _Nonnull);
-/// A closure which is called whenever the adapter did mutate.
-/// This includes certain mutations to value and, in particular, anything which may require persistent storage to be updated.  This may include other mutations.  This differs from closure_didSetValue in that it includes when the value itself experiences a mutation, such as is the case when value.rawObject mutates.
-@property (nonatomic, copy) void (^ _Nullable closure_didMutate)(KVAAdapter * _Nonnull);
-/// A closure which is called when the adapter did read from persistent storage.
-/// This can be used to update properties within the value and/or watchValue.
-@property (nonatomic, copy) void (^ _Nullable closure_didReadFromPersistentStorage)(KVAAdapter * _Nonnull);
-/// A closure which is called whenever the KVAValue has been set- called from the same thread.
-/// Because this is called from the same thread, when this is used, consideration must be given to what will happen within the closure with respect to synchronization.  The thread could be any thread.  While access to other adapters will be thread safe automatically, other properties may not be.
-@property (nonatomic, copy) void (^ _Nullable closure_didSetCachedValueOnSameThread)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// A closure which is called whenever the KVAValue has been set.
-@property (nonatomic, copy) void (^ _Nullable closure_didSetValue)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// An identifier for the adapter.
-/// This identifier is used when displaying log entries related to this adapter.  Assuming that the property name is reasonable, this should be set to the string value of that property’s name, but it can be something else that would make sense to the host app developer.
-@property (nonatomic, readonly, copy) NSString * _Nonnull identifierString;
-/// An initialized object which should be used when instantiating an intance of the value.object.
-@property (nonatomic) id _Nullable initializedObject;
-/// A time interval which defines the maximum staleness allowed for the value.
-/// If the value’s staleness exceeds the maximumStalenessTimeIntervalNumber it is essentially taken to not exist.  From there the value may be re-collected (when collection is supported).
-@property (nonatomic, strong) NSNumber * _Nullable maximumStalenessTimeIntervalNumber;
-/// A name for the adapter.
-/// This is a human friendly name which may be used in UI.
-@property (nonatomic, copy) NSString * _Nullable nameString;
+/// An instance of networking.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
-/// A boolean which indicates that the persistence of updates should take place immediately.
-/// This is used to ensure that a write will take place prior to a crash.
-@property (nonatomic) BOOL persistAgressiveBool;
-/// The type of user defaults to use.
-/// Default nil.  See KVAProduct.userDefaultsForTypeString.
-@property (nonatomic, copy) NSString * _Nullable persistUserDefaultsTypeString;
-/// A boolean indicating if a log message should be printed when writing to persistent storage.
-/// Defaults to false.  See var <code>persistentStorageWriteLogMessagePrintBool_optional</code>.
-@property (nonatomic) BOOL persistentStorageWriteLogMessagePrintBool;
-/// A time interval to wait before writing to persistent storage.
-/// Defaults to 0.0.  See var <code>persistentStorageWriteWaitTimeInterval_optional</code>.
-@property (nonatomic) NSTimeInterval persistentStorageWriteWaitTimeInterval;
-/// A KVAProduct.
-/// This is used in the defining of the key used for persistent storage.
-/// This property supports inheritance from networking.
-@property (nonatomic, strong) KVAProduct * _Nullable product;
-/// A closure which formats the value object for the server.
-/// Generally speaking we prefer to store values using their native values, which would not be affected by the formatting required by the server.  Normally a value object is sent to the server as is; however, it can be formatted for the server if the native value is not suitable.
-@property (nonatomic, copy) NSObject * _Nullable (^ _Nullable closure_serverObject)(KVAAdapter * _Nonnull, NSObject * _Nullable);
-/// A string used as an identifier to be used as a component in the persistent storage key to differentiate between different storage spaces.
-/// This property supports inheritance from networking.
-@property (nonatomic, copy) NSString * _Nullable storageIdString;
-/// The “native” class for the value.
-/// Optional.  This is used during ingestion to resolve to native objects.  It is still possible to resolve to a native object without this being configured, so long as the source object is decorated with the class.
-@property (nonatomic, readonly) Class _Nullable valueClass;
-/// The “native” class for any elements of the value.
-/// Optional.  The valueElementClass refers to cases where valueClass is a class with elements, such as arrays and sets.  This is used during ingestion to resolve to native objects.  It is still possible to resolve elements to a native objects without this being configured, so long as the source elements are decorated with the class.
-@property (nonatomic) Class _Nullable valueElementClass;
-/// The value object.
-/// This value is fully validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.  This method may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) id _Nullable valueObject;
-/// A closure which returns meta value(s) for a newly created KVAValue in the form of an array of KVAValue(s) indexed by their adapter’s name string.
-/// At the time when a KVAValue is created, there may be reason(s) why you’d want to store additional meta value(s) with it.  For example, you may need to store the current os version so that you can consider a KVAValue stale when the os version changes.  This closure will be called once when the KVAValue is created, and a dictionary should be returned which contains whatever meta value(s) you wish to be stored with the KVAValue in the form of an array of other KVAValue(s).
-@property (nonatomic, copy) NSDictionary<NSString *, KVAValue *> * _Nullable (^ _Nullable closure_valueMetaValueArrayDictionary)(KVAValue * _Nonnull);
-/// A closure which returns if a KVAValue is stale.
-/// Staleness is initially reckoned by looking at maximumStalenessTimeIntervalNumber;  however, sometimes additional factors must also be considered.  Those factors can be considered in a custom manner using this closure.  If the returned boolean is true, then the value value will be considered stale.  You can use custom meta value(s) stored within the KVAValue as conditions.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_valueStaleBool)(KVAValue * _Nonnull);
-/// The watchValue object.
-/// This value is fully validated and resolved, and may be different than the watchValueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, strong) id _Nullable watchValueObject;
-/// A closure which is called whenever the KVAValue will be set.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_willSetValue)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// A boolean which indicates if asynchronous collection is in progress.
-/// We don’t ever want to asynchronously collect the adapter value twice at the same time.  We use this boolean to recognize that an asynchronous collection is already in progress.  It is assumed that when that collection finishes that all of the callers who wanted the result will be notified through their Closure_GetValueCompletionHandler in the getValueCompletionHandlerArray.
-@property (nonatomic) BOOL asynchronousCollectionInProgressBool;
-@property (nonatomic, readonly, strong) KVATask * _Nonnull asynchronousCollectionTask;
-/// A instance of KVAConsent.
-/// Optional.  This property supports inheritance from networking.
-@property (nonatomic, strong) KVAConsent * _Nullable consent;
-/// The current touchlessValue for this adapter.
-/// Private.  This is equivalent to value, except that it will not allow for collections to be performed that would update the value, synchronous or asynchronous.
-@property (nonatomic, strong) KVAValue * _Nullable touchlessValue;
-/// The current touchlessValue for this adapter.
-/// Private.  This is equivalent to value, except that it will not allow for collections to be performed that would update the value, synchronous or asynchronous.
-@property (nonatomic, strong) id _Nullable touchlessValueObject;
-/// The value.
-/// Private.  This virtual property represents an interface to value which is backed by cachedValue, the persistent store, and the various collection closures.  Getting from this virtual property will first establish the cachedValue and then return it, but it only supports synchronous retrieval.  Setting to this virtual property will also update the cached value.  This virtual property is private because we want all internal or public access to the value to go through valueForContext:completionHandler: to force the consideration the asynchronous option.  This method may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) KVAValue * _Nullable value;
-/// The value raw object.
-/// This value is unvalidated and unaltered.  This method’s getter may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) id _Nullable valueRawObject;
-/// The watch value.
-/// When watched values are sent in the form of updates to a server, this value is taken to be the last value sent to the server.  It can be used later to judge whether a new update is required.
-@property (nonatomic, strong) KVAValue * _Nullable watchValue;
-/// Return a boolean indicating whether the watchValue differs from the current value, indicating that the value has changed.
-- (BOOL)watchValueIndicatesChangeBool SWIFT_WARN_UNUSED_RESULT;
-/// The watchValue raw object.
-/// This value is unvalidated and unaltered.
-@property (nonatomic, strong) id _Nullable watchValueRawObject;
-/// A constant closure which returns a Closure_ServerObject provides the default value for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_default)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_default SWIFT_WARN_UNUSED_RESULT;
-/// A constant closure which returns a Closure_ServerObject which is nil.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_nil)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_nil SWIFT_WARN_UNUSED_RESULT;
-/// A constant which means that the adapter’s value is never stale.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSNumber * _Nullable stalenessNeverTimeIntervalNumber;)
-+ (NSNumber * _Nullable)stalenessNeverTimeIntervalNumber SWIFT_WARN_UNUSED_RESULT;
-/// A constant which means that the adapter’s value is stale immediately.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSNumber * _Nonnull stalenessImmediateTimeIntervalNumber;)
-+ (NSNumber * _Nonnull)stalenessImmediateTimeIntervalNumber SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -482,23 +251,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAAppGroups
 + (KVAAppGroups * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
 /// A string which corresponds to an app group identifier to be used as a shared container for the Kochava SDK.
 @property (nonatomic, copy) NSString * _Nullable deviceAppGroupIdentifierString;
-/// A string to use as the name for a notification that the deviceAppGroupIdentifierString did mutate.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull deviceAppGroupIdentifierStringDidMutateNotificationName;)
-+ (NSNotificationName _Nonnull)deviceAppGroupIdentifierStringDidMutateNotificationName SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-/// A class which wraps an array value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts an array value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAArrayAdapter")
 @interface KVAArrayAdapter : KVAAdapter
-/// The designated constructor for an ArrayAdapter—using modern Objective-C syntax.
-+ (KVAArrayAdapter * _Nonnull)arrayAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueArray:(NSArray * _Nullable)defaultValueArray valueObject:(id _Nullable)valueObject valueElementClass:(Class _Nullable)valueElementClass closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueString for the KVAStringAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSArray * _Nullable valueArray;
 @end
 
 
@@ -506,82 +267,34 @@ SWIFT_CLASS_NAMED("KVAArrayAdapter")
 /// This class assists in keeping the host app alive, to give KVANetTransaction(s) and a chance to be sent, and other critical tasks the opportunity to finish, in the situation where the app is resigning active.
 SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 @interface KVABackgroundTaskController : NSObject
-/// The singleton shared instance.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVABackgroundTaskController * _Nonnull shared;)
-+ (KVABackgroundTaskController * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// A method which is to be called whenever a KVANetTransaction start comes to be running.
-/// This will begin a core background task if one is not currently already in effect.  It is crucial that a balanced call to func didEndBackgroundSustainingTaskWithIdentifierString(<em>:) be made for every call made to func didBeginBackgroundSustainingTaskWithIdentifierString(</em>:).
-/// \param identifierString A string which identifies the background sustaining task.  This value is used for informational purposes only.
-///
-- (void)didBeginBackgroundSustainingTaskWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// A method which is to be called whenever a KVANetTransaction start comes to stop running.
-/// This will end any existing background task when an internal count reaches zero.  An important feature of this is that It does not do this right away, but always waits for minimumTimeInterval following the last end.  This enables un-anticipated side effects to potentially begin their own background sustaining tasks before the core background task is ended, and this will cause the core background task to continue to be gracefully sustained irrespective of these kinds of short interruptions.
-/// \param identifierString A string which identifies the background sustaining task.  This value is used for informational purposes only.
-///
-- (void)didEndBackgroundSustainingTaskWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// The minimum amount of time that we will keep the app alive while we wait for KVANetTransaction(s) to be created just prior to suspension.
-/// This time interval needs to be long enough to allow any random process which needs to generate a KVANetTransaction to do so, after which we will rely on the presence (or absence) of those transactions to know whether or not we are ready for suspension.
-/// note:
-/// This had been 0.5f for some time.  It was switched to 0.25f as of v5.1.0.  A longer value decreases the liklihood that an end will actually take place before a subsequent begin, resulting in reduced chatter in the log.  A shorter value makes the ends more timely, and closer to the event which triggered them.  A shorter value, however, should not improve performance.  Nothing in the timing of normal tests should be tied to this, and the lifecycle of this class is expected to cross over from test to test.
-@property (nonatomic, readonly) NSTimeInterval minimumTimeInterval;
-/// The maximum length of time that we will keep the app alive while we wait for our internal work to complete.  This includes waiting for KVANetTransaction(s) to be created and complete, location services to settle monitoring activities, among other things.  If these activities are known to have completed sooner than this value (which is normally the case) then we will end our background task and thereby allow the app to suspend sooner.
-/// A side effect of this value is that it provides a certain amount of time for the basic start sequence of the SDK to complete if the app is launched and then exited immediately.  It is therefore good that the amount of time provided here be sufficient to allow this sequence to complete under normal conditions, avoiding complications in the form of network timeouts upon didBecomeActive.  At the time of this writing that length of time is about 8 seconds.  Another factor is the length of time that we allow a new location retrieval to hold up the sending net transaction(s).  Right now that defaults to 15.0 seconds.  If this value is not set above that value then we may not send out the session end in time.  For this reason the current value is set to at least 18.0, giving 3.0 seconds to complete the task of sending and receiving prior to the timeout occurring here.  Another factor is the sample duration for location services.  The duration we may sample locations is the sample duration times 2, as a significant change sample period may be followed up with a precision sample period if what was determined through the significant change service was insufficient.  At the time of this writing the default sample duration is 8.0 seconds, making that a total of 16.0 seconds.  The current value is 33.0.  This is three second more than 30.0 seconds, which we are allowing for location services.  With this value we can assume that the dwell functionality may sustain the background task for up to 30.0 seconds.
-@property (nonatomic, readonly) NSTimeInterval timeoutTimeInterval;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-/// A class which wraps a number value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a number value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVANumberAdapter")
 @interface KVANumberAdapter : KVAAdapter
-/// The designated constructor for a KVANumberAdapter— using modern Objective-C syntax.
-+ (KVANumberAdapter * _Nonnull)numberAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumNumber:(NSNumber * _Nullable)minimumNumber maximumNumber:(NSNumber * _Nullable)maximumNumber defaultValueNumber:(NSNumber * _Nullable)defaultValueNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// The valueNumber for the NumberAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, strong) NSNumber * _Nullable valueNumber;
-/// A constant closure which formats an NSNumber as a four decimal digit number for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_fourDecimal)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_fourDecimal SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-/// A class which wraps an integer value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts an integer value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAIntAdapter")
 @interface KVAIntAdapter : KVANumberAdapter
-/// The designated constructor for an IntAdapter— using modern Objective-C syntax.
-+ (KVAIntAdapter * _Nonnull)intAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumIntegerNumber:(NSNumber * _Nullable)minimumIntegerNumber maximumIntegerNumber:(NSNumber * _Nullable)maximumIntegerNumber defaultValueIntegerNumber:(NSNumber * _Nullable)defaultValueIntegerNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// A convenience property that returns valueNumber in the form of an Int (NSInteger).
-/// It is understood that in order to do this in Objective-C it will resolve a nil value to 0.  Therefore whenever this method is intended to be used, a default value should previously be provided which will further ensure that the value returned is contextually relevant.  You can also assign to this value to provide direct assignment for this same type.
-@property (nonatomic) NSInteger valueInt;
 @end
 
 
-/// A class which wraps a bool value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a boolean value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVABoolAdapter")
 @interface KVABoolAdapter : KVAIntAdapter
-/// The designated constructor for a BoolAdapter— using modern Objective-C syntax.
-+ (KVABoolAdapter * _Nonnull)boolAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueBoolNumber:(NSNumber * _Nullable)defaultValueBoolNumber valueObject:(id _Nullable)valueObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// A convenience property that returns valueNumber in the form of a BOOL.
-/// It is understand that in order to do this in Objective-C it will resolve a nil value to 0.0.  Therefore whenever this method is intended to be used, a default value should previously be provided which will further ensure that the value returned is contextually relevant.  You can also assign to this value to provide direct assignment for this same type.
-@property (nonatomic) BOOL valueBool;
-/// A constant closure which returns a Closure_ServerObject provides a boolean as a number for the server.
-/// The default is to provide booleans as true or false.  This block is used when you want a 0 or 1.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_boolNumberServerObject)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_boolNumberServerObject SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class KVAInstruction;
-@class KVANetTransaction;
-@class KVALogLevel;
 
 /// A class which defines an keyed collection of objects.
 /// <h2>Features</h2>
@@ -595,107 +308,22 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nu
 /// </ul>
 SWIFT_CLASS_NAMED("KVACollection")
 @interface KVACollection : NSObject
-/// Conveniently construct a new KVACollection with a single object— using modern Objective-C syntax.
-/// \param object A value source.  It can be any object from which a value can be derived or constructed.
-///
-/// \param identifierString The identifierString for the object within the collection.
-///
-+ (KVACollection * _Nonnull)collectionWithObject:(id _Nullable)object identifierString:(NSString * _Nonnull)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Append another collection to this collection.
-- (void)appendCollection:(KVACollection * _Nullable)collection;
-/// Register an adapter.
-/// The adapter’s identifierString will be used as the identifierString within the collection.  It will also be indexed under the adapter’s key when available as a string [a].
-/// \param adapter The adapter.
-///
-- (void)registerAdapter:(KVAAdapter * _Nullable)adapter;
-/// Register an instruction.
-/// The instruction’s identifierString will be used as the identifierString within the collection.
-/// \param instruction The instruction.
-///
-- (void)registerInstruction:(KVAInstruction * _Nullable)instruction;
-/// Register a network transaction.
-/// The netTransaction’s nameString will be used as the identifierString within the collection.
-/// \param netTransaction The network transaction.
-///
-- (void)registerNetTransaction:(KVANetTransaction * _Nullable)netTransaction;
-/// Register an object with an identifier.
-/// identifierString: An identifier string to associate with the object.
-/// \param object An object.
-///
-- (void)registerObject:(id _Nullable)object identifierString:(NSString * _Nullable)identifierString;
-/// Register a task.
-/// The task’s nameString will be used as the identifierString within the collection.
-/// \param task The task.
-///
-- (void)registerTask:(KVATask * _Nullable)task;
-/// Register a value.
-/// \param value The value.
-///
-/// \param identifierString An identifier string to associate with the value.
-///
-- (void)registerValue:(KVAValue * _Nullable)value identifierString:(NSString * _Nonnull)identifierString;
-/// Register a valueSource.
-/// \param valueSource An object which is a value source.
-///
-/// \param identifierString An identifier string to associate with the valueSource.
-///
-- (void)registerValueSource:(id _Nullable)valueSource identifierString:(NSString * _Nonnull)identifierString;
-/// Unregister an object with the specified identifierString.
-- (void)unregisterObjectWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// Return the adapter for a specified identifierString.
-- (KVAAdapter * _Nullable)adapterWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Apply (execute) a given closure object to the entries of the collection.
-- (void)enumerateUsingClosure:(void (^ _Nullable)(NSString * _Nullable, id _Nullable, BOOL * _Nullable))closure;
-/// Return the KVAInstruction for a specified nameString.
-- (KVAInstruction * _Nullable)instructionWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return the KVANetTransaction for a specified nameString.
-- (KVANetTransaction * _Nullable)netTransactionWithNameString:(NSString * _Nullable)nameString SWIFT_WARN_UNUSED_RESULT;
-/// Return the object for a specified identifierString.
-- (id _Nullable)objectWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return an array of objects for the specified identifierString(s) in an identifierStringArray.
-- (NSArray * _Nullable)objectArrayWithIdentifierStringArray:(NSArray<NSString *> * _Nullable)identifierStringArray SWIFT_WARN_UNUSED_RESULT;
-/// Return the task for a specified identifierString.
-- (KVATask * _Nullable)taskWithNameString:(NSString * _Nullable)nameString SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)valueSourceWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return the current count of registered object(s).
-- (NSInteger)count SWIFT_WARN_UNUSED_RESULT;
-/// Gets the KVAValue(s) for an array of valueSourceCollection(s).
-/// \param valueSourceCollectionArray An array of valueSourceCollection(s).  Each valueSourceCollection can contain any number of KVAAdapter(s), keyed by their name(s).
-///
-/// \param optionalAppendToValueArrayMutableDictionary An optional valueArrayMutableDictionary to append the new KVAValue(s) to.  When passed, the provided dictionary will be mutated on the globalSerial dispatch queue.  For thread safety reasons, this parameter should not be used unless the all other mutations of the passed parameter are also made on the globalSerial dispatch queue.  The benefit of using this parameter is it can improve performance by avoiding needing to use a method such as NSMutableDictionary’s addEntriesFromDictionary later to combine the results with another dictionary, when needed.  If that kind of combination is not needed then this parameter should not be used.  If not passed, a new dictionary will be created.  When using this parameter, it is advisable that you still assign the value provided in the completion handler back to your original property.  This will avoid losing the results if the parameter you passed was unexpectedly nil.
-///
-/// \param context The context for which the values may be gathered.
-///
-/// \param completionHandler A completion handler.
-///
-+ (void)valueArrayDictionaryFromValueSourceCollectionArray:(NSArray<KVACollection *> * _Nullable)valueSourceCollectionArray optionalAppendToValueArrayMutableDictionary:(NSDictionary<NSString *, KVAValue *> * _Nullable)optionalAppendToValueArrayMutableDictionary context:(KVAContext * _Nullable)context completionHandler:(void (^ _Nullable)(NSArray<KVACollection *> * _Nullable, NSDictionary * _Nullable))completionHandler;
-/// Print a directory of elements.
-- (void)printDirectoryWithLogLevel:(KVALogLevel * _Nullable)logLevel;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@protocol KVAMutable;
-
-SWIFT_PROTOCOL_NAMED("KVAMutableDelegator")
-@protocol KVAMutableDelegator
-@property (nonatomic, readonly, weak) id <KVAMutable> _Nullable mutableDelegate;
-@end
-
+@class KVAContext;
+@class NSNumber;
 @class NSDate;
 @class KVAPartner;
 
 /// A feature which serves as an authority related to consent for the sharing of personal data.
 /// Data sharing privacy laws such as GDPR require consent to be obtained before certain kinds of personal data may be collected or calculated, kept in memory, persisted or retained in persistent storage, and/or shared with partners.  During the natural lifecycle, there are times where partners may be added and cause the consent status to fall back to an unknown state.  Later the user may again be prompted and the consent status may (or may not) again come to be known.  All of this is predicated upon whether or not consent is required, which is governed by a variety of factors such as location.
 SWIFT_CLASS_NAMED("KVAConsent")
-@interface KVAConsent : NSObject <NSCopying, KVAConfigureWithProtocol, KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAKeyable, KVAMutableDelegator>
+@interface KVAConsent : NSObject <NSCopying>
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
+- (id _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// A method which is to be called when there has been a prompt for consent.
 /// \param didGrantBoolNumber The response from the user, as a boolean wrapped in an NSNumber.  A value of true means consent was granted.  A value of false means consent was denied.  A value of nil means the user did not provide a response, and this includes if the user may have dismissed the dialog without indicating one way or another. 
 ///
@@ -732,10 +360,6 @@ SWIFT_CLASS_NAMED("KVAConsent")
 /// Return a boolean indicating if the app may keep (or retain in memory) data which may be subject to consent.
 /// Return true if consent is not required or else the user did not otherwise previously deny consent.  This will return true while consent is not known, as long as the previous response did not deny consent.  This includes when the definition for consent has changed and the user previously granted consent.  Compare with mayCollectBool, mayPersistBool, and mayShareBool.
 - (BOOL)mayKeepBool SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
 /// A string containing a high level description concerning consent.
 /// Optional.  This may be presented to the user when prompting for consent.
 /// Sample Value: “We share information with various partners… we’d like your consent…”
@@ -803,60 +427,59 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAContext *
 /// This is of particular relevance with KVANetTransaction(s) where allowed and/or denied identifiers may not (or not yet) be known, such as config retrievals.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAContext * _Nonnull serverUnrestricted;)
 + (KVAContext * _Nonnull)serverUnrestricted SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-@property (nonatomic, readonly) BOOL isHostBool;
-@property (nonatomic, readonly) BOOL isLogBool;
-@property (nonatomic, readonly) BOOL isPersistentStorageBool;
-@property (nonatomic, readonly) BOOL isSDKBool;
-@property (nonatomic, readonly) BOOL isServerBool;
-/// The name.
-/// Examples:  “host”, “log”, “persistentStorage”, “sdk”, “server”, “serverUnrestricted”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-SWIFT_PROTOCOL_NAMED("KVASharedPropertyProvider")
-@protocol KVASharedPropertyProvider
-/// The shared instance, an ambiguated form of the var shared which conforms to protocol KVASharedPropertyProvider.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-@end
-
-@class NSURL;
-@class NSUserDefaults;
-
 /// A class which defines a product.
 /// A product in this context generally refers to the result of a build.  A product can be used to represent a framework, application, or application extension.
 SWIFT_CLASS_NAMED("KVAProduct")
-@interface KVAProduct : NSObject <KVAFromProtocol>
-/// Create an instance of class <code>KVAProduct</code>— using modern Objective-C syntax.
-+ (KVAProduct * _Nonnull)productWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray compilerFlagPredicateSubstitutionVariablesDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)compilerFlagPredicateSubstitutionVariablesDictionary moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVAProduct : NSObject
+/// Create an instance of class <code>KVAProduct</code>.
+/// <h2>Example</h2>
+/// \code
+/// let product = KVAProduct(
+///     apiVersionString: "1",
+///     buildDateString: nil,
+///     bundleIdentifierString: Bundle(for: type(of: self)).bundleIdentifier,
+///     bundleTypeString: "xcframework",
+///     compilerFlagNameStringArray: nil,
+///     moduleNameString: "MyModule",
+///     nameString: "MyOrganization MyModule",
+///     organizationNameString: "My Organization",
+///     reverseDomainNameString: "com.myCompany.MyProduct",
+///     valueSourceCollection: nil,
+///     versionString: "1.0.0"
+/// )
+///
+/// \endcode\param apiVersionString An optional API version string.  This property is used to establish API compatibility between products.  API compatibility is assumed to be assured when the value compares to be equal for all products with the same organizationNameString.
+///
+/// \param buildDateString An optional string containing the date when the product was built.  It is recommended that you source this a compile time.  The format is optional, but it is recommended that you provide the date in an ISO 8601 date string.
+///
+/// \param bundleIdentifierString A string containing the bundle identifier associated with this product.  This property may be used to cross-reference this product from a Class.  Logging uses this to take the class for a LogMessage and lookup the associated Product.
+///
+/// \param bundleTypeString The bundle type.  Examples:  “app”, “xcframework”, “static library”.
+///
+/// \param compilerFlagNameStringArray An array containing strings which are the names of compiler flags.
+///
+/// \param moduleNameString The name of the module.  Example:  “KochavaCore”.
+///
+/// \param nameString A name string.  Example: “Apple.Core”.
+///
+/// \param organizationNameString A string containing the name of the organization representing the product.  Example:  “Kochava”.
+///
+/// \param reverseDomainNameString A string containing a reverse domain name style representation of the name of the product.  This is used in the definition of keys for persistent storage, dispatch queues, etc.  Example:  “com.kochava.KochavaCore”.
+///
+/// \param valueSourceCollection A collection containing value sources for variable substitution with an NSPredicate, used for predicate evaluation and token substitution.
+///
+/// \param versionString A version string.
+///
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Registers the product.
-/// Generally Kochava products automatically register themselves, but there are a few exceptions.  If you’re using a product which is optional and weakly linked, this method should be called once, early, to register the product for use.  One such example was the product KochavaLocation.  As a weakly-linked optional product, it would be optimized away by the linker if a call to register it was not explicitly made and if there were no other explicit interactions early with its API.  For products which automtically register themselves calling this method is redundant and will have no effect.
-- (void)register;
-/// A string containing the name and the version.
-/// The two are delimited by a space.
-@property (nonatomic, readonly, copy) NSString * _Nonnull standardVersionInfoString;
-/// A string containing the name and the version.
-/// The two are delimited by a space.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameWithVersionString;
-/// Resets any classes.
-/// \param includeExternalBool A boolean indicating if external data should be reset as well.  When this it set it includes additional classes which are external to the product but are bearing on the functionality of the product.  This refers to third party classes.  Even with includeExternalBool set to false it may reset variables which are stored within external classes but which are known to belong to the product.
-///
-- (NSDictionary * _Nullable)resetClassesWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool SWIFT_WARN_UNUSED_RESULT;
-/// Resets any variables.
-/// \param includeExternalBool A boolean indicating if external data should be reset as well.  When this is set it includes additional variables which are external to the product but are bearing on the functionality of the product.  This refers to third party variables.
-///
-- (NSDictionary * _Nullable)resetVariablesWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool SWIFT_WARN_UNUSED_RESULT;
 /// Resets the product.
 /// This involves resetting variables to their original states.  This may include releasing shared instances.  When parameter deleteLocalDataBool is passed true it also includes erasing any keys from persistent storage which are associated with the product.  This method will complete asynchronously.  Before working with this product again you should wait until the reset has completed.  See method reset(deleteLocalDataBool:closure_didComplete:).
 /// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
@@ -894,51 +517,6 @@ SWIFT_CLASS_NAMED("KVAProduct")
 /// \param closure_didComplete A closure which is called upon completion.
 ///
 - (void)shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
-/// An API version string.
-/// This property is used to establish API compatibility between products.  API compatibility is assumed to be assured when the value compares to be equal for all products with the same organizationNameString.
-@property (nonatomic, readonly, copy) NSString * _Nullable apiVersionString;
-/// A string containing the date when the product was built.
-@property (nonatomic, readonly, copy) NSString * _Nullable buildDateString;
-/// A string containing the bundle identifier associated with this product.  This property may be used to cross-reference this product from a Class.  Logging uses this to take the class for a LogMessage and lookup the associated Product.
-@property (nonatomic, readonly, copy) NSString * _Nullable bundleIdentifierString;
-/// The bundle type.
-/// Examples:  “app”, “xcframework”, “static library”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull bundleTypeString;
-/// An array containing strings which are the names of compiler flags.
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable compilerFlagNameStringArray;
-/// A dictionary containing substitution variables for use with an NSPredicate containing compiler flags.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSNumber *> * _Nullable compilerFlagPredicateSubstitutionVariablesDictionary;
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable dependentProductClassNameStringArray;
-/// A string containing the name of the organization representing the product.
-@property (nonatomic, readonly, copy) NSString * _Nonnull organizationNameString;
-/// The name of the module.
-/// Example: “KochavaCore”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull moduleNameString;
-/// A name string.
-/// Example: “Apple.Core”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
-/// A string containing a reverse domain name style representation of the name of the product.
-/// This is used in the definition of keys for persistent storage, dispatch queues, etc.
-/// Example:  “com.kochava.KochavaCore”
-/// Note:  This excludes a trailing period.
-@property (nonatomic, readonly, copy) NSString * _Nullable reverseDomainNameString;
-/// A version string.
-@property (nonatomic, readonly, copy) NSString * _Nullable versionString;
-/// Return a URL to the application support directory for the product.
-- (NSURL * _Nullable)applicationSupportDirectoryURL SWIFT_WARN_UNUSED_RESULT;
-/// Ensures that the application support directory for the product is created.
-- (void)applicationSupportDirectoryURL_ensureCreated;
-/// The log level for the product.
-/// Default nil.  When set this overrides the log default for log messages generated within the product.
-@property (nonatomic, strong) KVALogLevel * _Nullable logLevel;
-/// The instance of NSUserDefaults which this product uses for persistent storage.
-@property (nonatomic, readonly, strong) NSUserDefaults * _Nullable userDefaults;
-/// Return the user defaults to use for the product for the specified type string.
-/// \param typeString The typeString for the user defaults.  Use nil or “default” for the default user defaults.  Use “deviceAppGroup” for the deviceAppGroup user defaults.
-///
-- (NSUserDefaults * _Nullable)userDefaultsForTypeString:(NSString * _Nullable)typeString SWIFT_WARN_UNUSED_RESULT;
-/// An optional product which wraps this product.
-@property (nonatomic, strong) KVAProduct * _Nullable wrapperProduct;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -947,12 +525,11 @@ SWIFT_CLASS_NAMED("KVAProduct")
 /// A class which defines the core product.
 /// A product in this context generally refers to the result of a build.
 SWIFT_CLASS_NAMED("KVACoreProduct")
-@interface KVACoreProduct : KVAProduct <KVASharedPropertyProvider>
+@interface KVACoreProduct : KVAProduct
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProduct * _Nonnull shared;)
 + (KVAProduct * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -962,112 +539,51 @@ SWIFT_CLASS("_TtC11KochavaCore20KVACoreProductParams")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
-@class NSData;
 
-/// A class which wraps a data value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a data value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADataAdapter")
 @interface KVADataAdapter : KVAAdapter
-/// The designated constructor for a DataAdapter— using modern Objective-C syntax.
-+ (KVADataAdapter * _Nonnull)dataAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueData:(NSData * _Nullable)defaultValueData valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueData for the KVADataAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSData * _Nullable valueData;
-/// A Closure_ServerObject which formats an NSData value as a device token for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_deviceToken)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_deviceToken SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-/// A class which wraps a date value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a date value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADateAdapter")
 @interface KVADateAdapter : KVAAdapter
-/// The designated constructor for a KVADateAdapter—using modern Objective-C syntax.
-+ (KVADateAdapter * _Nonnull)dateAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSDate *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumDate:(NSDate * _Nullable)minimumDate maximumDate:(NSDate * _Nullable)maximumDate defaultValueDate:(NSDate * _Nullable)defaultValueDate valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// The valueDate for the KVATimeIntervalAdapter.
-@property (nonatomic, copy) NSDate * _Nullable valueDate;
-/// A constant closure which formats an NSDate value as unix time but expressed in milliseconds.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull unixTimeMillisecondsServerObjectClosure)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))unixTimeMillisecondsServerObjectClosure SWIFT_WARN_UNUSED_RESULT;
-/// A constant closure which formats an NSDate value as unix time expressed in seconds.
-/// The call to NSNumber.kva_from(<em>:) will return a unixTime.  The use of the NSNumber kva_from(</em>:) method is for convenience, as that is what you get when you convert an NSDate to an NSNumber.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull unixTimeServerObjectClosure)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))unixTimeServerObjectClosure SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class for providing diagnostic messages in a format which has been standardized across all Kochava SDK platforms.
 SWIFT_CLASS_NAMED("KVADiagnostic")
 @interface KVADiagnostic : NSObject
-/// Print a diagnostic log message for a host API call.
-+ (void)printHostAPICallWithHeadlineString:(NSString * _Nonnull)headlineString;
-/// Print a diagnostic log message.
-/// \param logLevel The log level at which the diagnostic message will be printed.
-///
-/// \param headlineString The headline of the diagnostic message.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel headlineString:(NSString * _Nullable)headlineString;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-/// A class which wraps a dictionary value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a dictionary value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADictionaryAdapter")
 @interface KVADictionaryAdapter : KVAAdapter
-/// The designated constructor for a DictionaryAdapter— using modern Objective-C syntax.
-+ (KVADictionaryAdapter * _Nonnull)dictionaryAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueDictionary:(NSDictionary * _Nullable)defaultValueDictionary valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueDictionary for the DictionaryAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSDictionary * _Nullable valueDictionary;
 @end
 
 
 /// A class which defines an entry in a dictionary.
 /// This class provides the means of defining how an element in a dictionary should be formatted.
 SWIFT_CLASS_NAMED("KVADictionaryEntryFormat")
-@interface KVADictionaryEntryFormat : NSObject <KVAFromProtocol>
+@interface KVADictionaryEntryFormat : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// The name of the key that the value object is stored with.
-@property (nonatomic, readonly, copy) NSString * _Nullable keyString;
-/// An array of sub-dictionary names, defining the location of the value object.
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable subChunkNameStringArray;
-/// The “native” class for the value.
-/// Optional.  This is used during ingestion to resolve to native objects.  It is still possible to resolve to a native object without this being configured, so long as the source (fromObject) is decorated with the class.  This value will be NSNull if the class name specified was not known to the system.  See valueClassNameString.
-@property (nonatomic, readonly) Class _Nullable valueClass;
-/// The “native” class for any elements of the value.
-/// Optional.  The valueElementClass refers to cases where valueClass is a class with elements, such as arrays and sets.  This is used during ingestion to resolve to native objects.  It is still possible to resolve elements to a native objects without this being configured, so long as the source elements are decorated with the class.  This value will be NSNull if the element class name specified was not known to the system.  See valueElementClassNameString.
-@property (nonatomic, readonly) Class _Nullable valueElementClass;
-/// A static valueObject.
-/// Optional.
-@property (nonatomic, readonly) id _Nullable valueObject;
-/// The nameString of a KVAAdapter used to source the value.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourceNameString;
-/// The nameString of the property within the KVAValue to source the value.
-/// Optional.  Supported values: nil (default) and “startDate.unixTimeDecimalNumber”.  Proposed future supported values: “valueObject”, “valueDate”, “adapterWatchValueObject”.  Default value “valueServerObject”.  Note for future implementation:  The urlString for net transactions uses the notation “.percentEncodedWithURLPathAllowedCharacterSetString” to express a sub-property quality.  At this time I perceive that it’s better not to modify this class to take in a single “valuePropertyNameString” that is automatically split out into a “valueSourceNameString” and a “adapterSubPropertyNameString”, but that is an option.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourcePropertyNameString;
-/// Return a boolean indicating if the value should be updated.
-/// Default false.
-- (BOOL)valueUpdateBool_resolved SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines the structure of a dictionary.
 /// This class provides the means of defining how a dictionary should be formatted.
 SWIFT_CLASS_NAMED("KVADictionaryFormat")
-@interface KVADictionaryFormat : NSObject <KVAFromProtocol>
+@interface KVADictionaryFormat : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// An array of KVADictionaryEntryFormat objects, reflecting the structure of the dictionary.
-@property (nonatomic, readonly, copy) NSArray<KVADictionaryEntryFormat *> * _Nullable dictionaryEntryFormatArray;
 @end
 
 
@@ -1086,7 +602,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// The main dispatch queue.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQueue * _Nonnull main;)
 + (KVADispatchQueue * _Nonnull)main SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)initWithNameString:(NSString * _Nonnull)nameString osDispatchQueue:(dispatch_queue_t _Nonnull)osDispatchQueue OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Asynchronously dispatch and execute the provided closure providing standardized handling for the requirements of a public entry point.
@@ -1152,8 +667,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// \param closure The closure to execute (conditionally).
 ///
 + (void)executeWithDispatchQueue:(KVADispatchQueue * _Nullable)dispatchQueue sourceIdString:(NSString * _Nullable)sourceIdString hostAPICallDiagnosticHeadlineString:(NSString * _Nullable)hostAPICallDiagnosticHeadlineString sourceClass:(Class _Nullable)sourceClass asyncBool:(BOOL)asyncBool printLogMessageBool:(BOOL)printLogMessageBool closure:(void (^ _Nullable)(void))closure;
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
-@property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull osDispatchQueue;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVAFile")
+@interface KVAFile : NSObject
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -1162,16 +684,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// A class which defines instruction which can be executed.
 SWIFT_CLASS_NAMED("KVAInstruction")
 @interface KVAInstruction : NSObject
-- (nonnull instancetype)initWithIdentifierString:(NSString * _Nonnull)identifierString closure:(void (^ _Nonnull)(id _Nullable))closure OBJC_DESIGNATED_INITIALIZER;
-- (void)executeWithValueObject:(id _Nullable)valueObject;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
+@class KVALogLevel;
+@class KVALogMessage;
 
-
-/// A class which is a controller for working with the log.
+/// A class which constitutes a log, which is a collection of log messages.
 SWIFT_CLASS_NAMED("KVALog")
 @interface KVALog : NSObject
 /// The singleton shared instance.
@@ -1192,12 +713,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALog * _No
 /// A prefix string to be added to the beginning of each item printed to the log.
 /// Default nil.  This can be set to a value such as “KVA: “ to make filtering log messages easier.  When this is used in conjunction with var <code>printLinesIndividuallyBool</code> this prefix will be printed at the beginning of each line.
 @property (nonatomic, copy) NSString * _Nullable printPrefixString;
+/// Return a copy of the logMessageArray.
+/// The copy is made safely with synchronization.
+- (NSArray<KVALogMessage *> * _Nullable)logMessageArray_copy SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines a log level, with enumerated values.
 SWIFT_CLASS_NAMED("KVALogLevel")
-@interface KVALogLevel : NSObject <KVAFromProtocol>
+@interface KVALogLevel : NSObject
 /// A log level which never prints visibly to the log.
 /// When LogMessage(s) are not printed visibly to the log, they are still posted as notifications.  This enables all LogMessage(s) to be observed, regardless of their current visibility.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull never;)
@@ -1229,11 +753,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull always;)
 + (KVALogLevel * _Nonnull)always SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return a visibleBool indicating if the specified logLevel is visible under under the specified visibleMaximumLogLevel.
-+ (BOOL)logLevel:(KVALogLevel * _Nullable)logLevel visibleBoolWithVisibleMaximumLogLevel:(KVALogLevel * _Nullable)visibleMaximumLogLevel SWIFT_WARN_UNUSED_RESULT;
 /// The name.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
 @property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
@@ -1242,461 +763,21 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 @end
 
 
-SWIFT_PROTOCOL_NAMED("KVAPrintable")
-@protocol KVAPrintable
-- (void)print;
-@end
-
-@class NSException;
-
 /// A class which defines a log message.
 SWIFT_CLASS_NAMED("KVALogMessage")
-@interface KVALogMessage : NSObject <KVAFromProtocol, KVAPrintable>
-/// Create and print a log message.
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-+ (void)print:(NSString * _Nullable)headlineString;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param rollupLogMessageArray An array of LogMessage(s) to roll up into this LogMessage.  Optional.
-///
-/// \param log An log.  Optional.  When omitted, will use KVALog.shared.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary rollupLogMessageArray:(NSArray<KVALogMessage *> * _Nullable)rollupLogMessageArray log:(KVALog * _Nullable)log;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an error.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printErrorWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an internal inconsistency.
-/// This prints at log level .debug
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printInternalInconsistencyWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an internal error.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param error An error.  Required.
-///
-+ (void)internalErrorWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary error:(NSError * _Nonnull)error;
-/// Create and print an internal exception.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param exception An exception.  Required.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary exception:(NSException * _Nonnull)exception;
-/// Create and print a warning.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print a warning.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass;
-/// The designated initializer for a LogMessage— using modern Objective-C syntax.
-/// If you attempt to use this method from Swift as an initializer, but do not use the result, it will generate a warning.  For this reason if you do not want the result, and do want to print, you should use an alternate method.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param rollupLogMessageArray An array of LogMessage(s) to roll up into this LogMessage.  Optional.
-///
-/// \param printBool A boolean indicating the LogMessage should be printed immediately upon creation.
-///
-/// \param log Optional.  The log.  Default KVALog.shared.
-///
-+ (KVALogMessage * _Nullable)logMessageWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary rollupLogMessageArray:(NSArray<KVALogMessage *> * _Nullable)rollupLogMessageArray printBool:(BOOL)printBool log:(KVALog * _Nullable)log SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Print the LogMessage to the log.
-/// This method is called automatically when printBool is passed as a parameter to a convenience constructor.  This includes convenience print methods.  This method is used when a LogMessage is created without being told to print, and it can be used to configure additional properties within the LogMessage before printing that are not commonly needed.
-- (void)print;
-/// The product associated with this LogMessage.
-/// When not set, this value is attempted to be inferred from the sourceClass.
-@property (nonatomic, readonly, strong) KVAProduct * _Nonnull product;
-/// A class which identifies the source of the LogMessage.
-/// This field is used when possible to determine the associated Product, which it can sometimes infer from the associated bundle’s bundleIdentifier.  Setting this value can then lead to the product information being displayed in the printed LogMessage.
-@property (nonatomic) Class _Nullable sourceClass;
-/// A LogLevel which is the maximum for which this LogMessage should be visible.
-/// To determine whether or not a LogMessage should be visible, this value is compared against logLevel.
-@property (nonatomic, readonly, strong) KVALogLevel * _Nullable visibleMaximumLogLevel;
-/// A dictionary representation of the body of the LogMessage.
-/// This property is lazily configured from either the dictionary, or else in the case that there is a rollupLogMessageArray from the LogMessage’s asPrintDictionaryWithParentLogMessage.
-@property (nonatomic, readonly, copy) NSDictionary * _Nullable bodyDictionary;
-/// The date when the LogMessage was printed.
-/// This value will be nil if the LogMessage has not been printed.
-@property (nonatomic, readonly, copy) NSDate * _Nullable printDidDate;
-/// A string which is formatted to be sent to the print command.
-/// This property is lazily configured upon first reference.  It may be configured to be passed to either NSLog or Swift’s print command, depending on which is being used.  While this property is used internally during the actual print method, it can also be read externally for other purposes if desired.
-@property (nonatomic, readonly, copy) NSString * _Nonnull printString;
-/// A notification name which can be used to observe when a log message did print.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didPrintNotificationName;)
-+ (NSNotificationName _Nonnull)didPrintNotificationName SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@interface KVALogMessage : NSObject
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-
-SWIFT_PROTOCOL_NAMED("KVAMutable")
-@protocol KVAMutable
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate;
-/// A method to call when the object did mutate— synchronization free.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate_sf;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will dispatch to the globalSerial dispatch queue before posting the notification.
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_sf_withInfoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will do this on the caller’s thread.
-/// \param childObject The child object which originated the mutation (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-/// \param performSideEffectsIntendedBeforeDispatchBool A boolean indicating of this method perform the side effects intended for before dispatch.  Generally speaking you wouldn’t expect that this should be the case, but you do want to perform those side effects which were intended to be done before the dispatch if you’re already inside of the dispatch, otherwise they’d never be performed.  You should regard the default you should pass for this to be true, and only set it to false if you performed this call for the current scope yourself.
-///
-- (void)kva_didMutate_sf_df_withChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary performSideEffectsIntendedBeforeDispatchBool:(BOOL)performSideEffectsIntendedBeforeDispatchBool;
-/// A method which is called when an object has mutated to perform side effects.
-/// Generally speaking this method will only be called from the globalSerial queue.  The exception would be if func kva_didMutate_sf_df(…) were to be manually called directly while not on the globalSerial queue.  This is something that should not generally be done, but if it is, any code which overrides this method should understand that and be prepared to dispatch to globalSerial if necessary.  One such place that does this today is the KochavaHost’s log.  All other implementations can assume that this method will be called on the globalSerial queue.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method which is called when an object has mutated to perform side effects— a variant called before the coalescing dispatch.
-/// This method will be called without dispatch and will be its caller’s thread.  This means it does not benefit from any dispatch coalescence which func kva_didMutate_performSideEffects(…) has, and the queue cannot be assumed to be the globalSerial queue in the same way;  however, it benefits from being more timely.  If the side effects you need to perform cannot occur after a dispatch, overriding this methid is the way to do it.  You just need to be more careful about how additionally often it may be called, and importantly, which queue it may be called on.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// Return whether the object is capable of mutating.
-/// Return true for any class except for those known to be immutable, such as NSString, NSDate, etc.  Excluded are classes such as NSArray and NSDictionary which may contain elements which may themselves mutate.  This method can theoretically be overridden to designate the objects of class as immutable.
-- (BOOL)kva_mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@class NSDecimalNumber;
 
 /// A class which defines a network transaction.
-/// This class provides the basic means of sending a network request and then receiving a corresponding network response.  The parameters of a network transaction originate in JSON, encouraging portability.  The same JSON format is then also used for persistence.
-/// <h2>Examples</h2>
-/// Example - Starting a basic network transaction:
-/// \code
-/// KVANetTransaction.start(
-///     netTransactionObject:
-///     [
-///         "nameString": "GoogleGetNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://www.google.com"
-///         ]
-///     ],
-///     networking: KVANetworking.shared
-/// ){
-///     netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///     // ...
-/// }
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Name</em> — A unique standardized name enables activity to be looked up in the log and to be correlated back to its root class.
-///   </li>
-///   <li>
-///     <em>Unique Identification</em> — A unique identifier which is used to correlate duplicate requests.  This is sometimes referred to as the nt_id.
-///   </li>
-///   <li>
-///     <em>Inheritance From Base</em> — The parameters of a network transaction may be inherited from another network transaction which serves as a base.  These overrides can be expressed through remote re-configuration.
-///   </li>
-///   <li>
-///     <em>Overrides</em> — The parameters of a network transaction may be overridden.  These overrides can be expressed through remote re-configuration.
-///   </li>
-///   <li>
-///     <em>Prerequisite Tasks</em> — A sendTask is used to coordinate sending, which is an instance of class <code>KVATask</code>.  Consequently, all network transactions may wait to be attempted until any number of prerequisite tasks have completed.  See class <code>KVATask</code>.  These tasks may also include networking-specialized tasks to regulate how many transactions may be sent concurrently, error retry waterfalls, etc.
-///   </li>
-///   <li>
-///     <em>Consent</em> — If tracking consent is required, and tracking is not allowed, then that network transaction will automatically be blocked from execution.  A copy of consent is internally stamped on a network transaction at the time it is first started, and then it may be graduated to a newer copy if the global consent changes in certain ways.
-///   </li>
-///   <li>
-///     <em>Context</em> — A context is used to contextualize the format of the information being provided to the remote service.  The default is KVAContext.server.  See class <code>KVAContext</code>.
-///   </li>
-///   <li>
-///     <em>Enabled Start Date</em> — A network transaction may be configured so as to not be enabled until a specified date.  In the context of variations, this enabled start date serves to indicate when a variation is enabled.  With these variations you can specify time-based alterations to certain parameters, such as the url.
-///   </li>
-///   <li>
-///     <em>HTTP Method</em> — You can specify which method you want to use.  Examples:  GET, POST, PUT, DELETE, etc.  When not specified the default is GET.
-///   </li>
-///   <li>
-///     <em>Network Service Type</em> — A network service can be specified to provide a hint to the operating system about the nature and use of the underlying traffic.  This hint enhances the system’s ability to prioritize traffic, determine how quickly it needs to wake up the cellular or Wi-Fi radio, and so on.  By providing accurate information, you improve the ability of the system to optimally balance battery life, performance, and other considerations.  The default is “default”, which corresponds to NSURLRequest.NetworkServiceType.default.  You can alternatively specify “background” for lower priority requests, or “responsiveData” for higher priority requests.
-///   </li>
-///   <li>
-///     <em>Persistence</em> — The persistBool parameter can be set to indicate that the network transaction should be persisted.  When persisted, and following a relaunch, it will be automatically restarted and reattempted until the transaction has completed.
-///   </li>
-///   <li>
-///     <em>Long-Term Failure Detection</em> — If excessive errors take place and/or excessive time elapses then the transaction will be completed unsuccessfully.
-///   </li>
-///   <li>
-///     <em>Request Body Dictionary Formatting</em> — The request body may be adorned with (or otherwise constructed from) values collected from value sources specified within a <code>requestBodyDictionaryFormat</code>, which is an instance of class <code>KVADictionaryFormat</code>.  These value sources may be instances of class <code>KVAAdapter</code>, or else anything which conforms to protocol <code>KVAAsForContextProtocol</code>.  Through class extensions this includes primitives such as String and Int.  These values will be collected synchronously or asynchronously, and utlize rules to understand when those values should be retained (or else updated) during subsequent attempts.  This is used colloquially to collect datapoints and then to append them as metadata within requests.
-///   </li>
-///   <li>
-///     <em>Request Body Object</em> — The specified requestBodyObject will be passed in the request body.
-///   </li>
-///   <li>
-///     <em>Request Header Dictionary Formatting</em> — The request header may be adorned with values collected from value sources specified within a requestHeaderDictionaryFormat, which is an instance of class <code>KVADictionaryFormat</code>.  See Request Body Dictionary Formatting for more details about how this similarly works.
-///   </li>
-///   <li>
-///     <em>Request Body Overriding</em> — The request body may be overridden.  That is to say that it may be replaced in whole from what would have ordinarily be used.
-///   </li>
-///   <li>
-///     <em>Request Body Override Appending</em> — The request body may be overridden by appending an object to the natural object.  This is a deep append between dictionaries (or other object types).
-///   </li>
-///   <li>
-///     <em>Response Class</em> — The response body object can be composed into a native class object.  This is commonly used to decode a JSON dictonary into a concrete class type.  For types which can have elements, such as arrays, this can also include the specifying of an element class.
-///   </li>
-///   <li>
-///     <em>Local Responses</em> — A network transaction can be serviced locally.  If serviced locally, a local response is used in place of live network activity.  This is frequently used in testing, but can be used in other circumstances such as when the SDK is disabled.  There feature includes a responseHTTPStatusCodeLocalInt, which can be configured to a value such as 200.
-///   </li>
-///   <li>
-///     <em>Retrying</em> — If an attempt is not accomplished successfully it can retried automatically.  The time to wait between each attempt, as well as the number of attempts which may be made, can be specified through a retryTimeIntervalSeries.  When not specified the default is KVANetworking.retryDefaultTimeIntervalSeries.  See <code>KVANetTransactionQueue</code>.
-///   </li>
-///   <li>
-///     <em>Standardized Logging</em> — A sendTask is used to coordinate sending, which is an instance of class <code>KVATask</code>.  Consequently, all network transactions are capable of printing log messages which provide a consistent output in the log— and this consistency crosses over between classes <code>KVANetTransaction</code> and <code>KVATask</code>.  By default log messages associated with the sendTask will not be printed.  To enable see var sendTaskLogMessagesPrintBool.
-///   </li>
-///   <li>
-///     <em>Sleeping</em> (var sleepObservantBool) — A network transaction’s execution may be deferred, causing it to wait and not proceed while the associated networking instance is asleep.  See class <code>KVANetworking</code> var <code>KVANetworking/sleepBool</code>.
-///   </li>
-///   <li>
-///     <em>URL Overriding</em> — In addition to the default overriding capability offerred throughout KVANetTransaction, additional id-based overrides are also available.  These ids can correspond to externally recognized values such as “init” or “event”.  They can also include sub-ids for secondary identifiers such as the names within events.
-///   </li>
-///   <li>
-///     <em>Type</em> — A type can connect the behavior of one network transaction to subsequent networtk transactions.  These types can correspond to externally recognized values such as “init” or “event”, and can be used to facilitate features such as URL rotation.  See class <code>KVANetTransactionType</code>.
-///   </li>
-///   <li>
-///     <em>Updating Watched Values</em> — When a network transaction completes, adapters which were used as value sources to adorn metadata such as datapoints may be instructed to automatically update their watched values.  This enables a knowledge of what exists at the server to be maintained for each of these datapoints.  See var updateWatchValuesBool.
-///   </li>
-///   <li>
-///     <em>URL String Dictionary Formatting</em> — The request url string may be adorned with values collected from value sources specified within a urlDictionaryFormat, which is an instance of class <code>KVADictionaryFormat</code>.  See Request Body Dictionary Formatting for more details about how this similarly works.
-///   </li>
-///   <li>
-///     <em>Variations</em> — Variantions are instances of class KVANetTransaction which can be specified on a first KVANetTransaction to override certain parameters based on conditions, such as time.  As one example this can be used to specify time-based overrides for URL rotation.  If a variation’s enabling condition(s) are met, then any parameters defined within the enabled variation will override the default parameters.  Note:  Only certain parameters are supported within variations, which is based on the scope of what has been needed for Kochava’s SDK implementation.  The support for additional parameters can be added as needed.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVANetTransaction")
-@interface KVANetTransaction : NSObject <KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAStartable>
-/// Create and start a KVANetTransaction.
-/// \param baseNetTransactionNameString The name string of the base KVANetTransaction.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.  If not passed, this value will be defaulted from the current networking environment.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param networking A networking instance.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (void)startWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create and start a KVANetTransaction.
-/// \param netTransactionObject An object from which to drive a network transaction (presumed to be a JSON representation).
-///
-/// \param networking A networking instance.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.  If not passed, this value will be defaulted from the current networking environment.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (void)startWithNetTransactionObject:(id _Nonnull)netTransactionObject networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create a KVANetTransaction.
-/// \param object A JSON object.  Note that this JSON object may contain the “baseNetTransaction” which is the baseNetTransactionNameString of a KVANetTransaction pre-registered in networking.
-///
-/// \param networking A networking instance.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param startBool A boolean indicating if the KVANetTransaction should be automatically started following the finishing of its construction.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (nullable instancetype)netTransactionFromObject:(id _Nonnull)object networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete SWIFT_WARN_UNUSED_RESULT;
-/// Create a KVANetTransaction— using modern Objective-C syntax.
-+ (KVANetTransaction * _Nonnull)netTransactionWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete SWIFT_WARN_UNUSED_RESULT;
-/// Create a network transaction to be used as a base.
-- (nonnull instancetype)initWithJSONDictionary:(NSDictionary * _Nullable)dictionary closure_enabledBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_enabledBool closure_transformedURLString:(NSString * _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, NSString * _Nullable))closure_transformedURLString closure_willStartRequest:(void (^ _Nullable)(KVANetTransaction * _Nonnull))closure_willStartRequest closure_succededBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable))closure_succededBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create a KVANetTransaction.
-/// \param baseNetTransactionNameString The name string of the base KVANetTransaction.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param networking A networking instance.
-///
-/// \param startBool A boolean indicating if the KVANetTransaction should be automatically started following the finishing of its construction.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-- (nonnull instancetype)initWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Start the instance.
-/// Prior to making the request it will evaluate whether or not it may make the attempt.
-- (void)start;
-/// Start the instance.
-/// Prior to making the request it will evaluate whether or not it may make the attempt.
-/// \param asyncBool A boolean indicating if the work should be asynchronously dispatched.
-///
-/// \param printLogMessageBool A boolean indicating if the function log message should be printed.
-///
-- (void)startWithAsyncBool:(BOOL)asyncBool printLogMessageBool:(BOOL)printLogMessageBool;
+@interface KVANetTransaction : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-/// A networking instance.
+/// An instance of networking.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
-/// A dictionary containing KVAAdapter objects, keyed by their nameString.
-/// This is called “local” because it is taken that these were created locally to the creation of the net transaction.
-@property (nonatomic, strong) KVACollection * _Nullable localValueSourceCollection;
-/// The KVANetTransaction which defines a base for this net transaction.
-@property (nonatomic, strong) KVANetTransaction * _Nullable baseNetTransaction;
-/// Return the first base KVANetTransaction matching the given nameString.
-/// This will include the current instance if the name matches.  When using this keep in mind that the name will be inherited from a baseNetTransaction when not specified.
-- (KVANetTransaction * _Nullable)baseNetTransactionWithNameString:(NSString * _Nonnull)nameString SWIFT_WARN_UNUSED_RESULT;
-/// A closure to execute which returns a boolean indicating if the KVANetTransaction is enabled.
-/// Default true.  This closure may return false to disable the KVANetTransaction.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_enabledBool)(KVANetTransaction * _Nonnull);
-/// A closure to execute which returns a boolean indicating if the KVANetTransaction is successful.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_succededBool)(KVANetTransaction * _Nonnull, id _Nullable);
-- (BOOL)isSuccessfulBoolWithResponseObject:(id _Nullable)responseObject SWIFT_WARN_UNUSED_RESULT;
-/// A closure to execute which returns a string which is a transformed URL.
-@property (nonatomic, copy) NSString * _Nullable (^ _Nullable closure_transformedURLString)(KVANetTransaction * _Nonnull, NSString * _Nullable);
-/// A closure which will be called when the net transaction will start a request.
-/// The request body will not have been built yet when this closure is called.  Modifications may be made to the passed netTransaction, such as adding values to valueArrayDictionary.
-@property (nonatomic, copy) void (^ _Nullable closure_willStartRequest)(KVANetTransaction * _Nonnull);
-/// A nameString for the net transaction.
-/// This is a resolved property which factors in the baseNetTransaction.
-@property (nonatomic, readonly, copy) NSString * _Nullable nameString;
-@property (nonatomic, readonly) BOOL persistBool;
-/// The dictionary format for the request body.
-/// This is a resolved property which factors in the baseNetTransaction, as well as an append property.
-@property (nonatomic, readonly, strong) KVADictionaryFormat * _Nullable requestBodyDictionaryFormat;
-/// The urlString used in the request.
-/// This property is configured to a calculated value at a specific moment.  Calculating the value is somewhat involved, and this ensures that the effort isn’t made repeatedly, and is made when it is ready to be made.
-@property (nonatomic, readonly, copy) NSString * _Nullable urlString;
-/// Return the resolved array of url identifier strings.
-- (NSArray<NSString *> * _Nullable)urlIdStringArray SWIFT_WARN_UNUSED_RESULT;
-/// A boolean which indicates if the net transaction is complete.
-/// A KVANetTransaction is complete when its request has been completed and its response has been received.  It does not need to be successful from the standpoint of the server’s determination of success to be complete.  It will also be completed when all available attempts have been made, or when certain conditions have been met which call for no further attempts to be made.  One such example is if too much time has elapsed (days in queue).
-@property (nonatomic, readonly) BOOL completeBool;
-/// A count of the times that the net transaction did error.
-/// This includes error conditions which may be expressed in the response and would prompt a retry.
-@property (nonatomic, readonly) NSInteger didErrorCount;
-/// A boolean which indicates if the network transaction has experienced any kind of delay.
-/// This is used to help determine if the transaction should be queued or if the re-gathering of datapoints is necessary.
-@property (nonatomic, readonly) BOOL didExperienceDelayBool;
-/// A date indicating when the net transaction first did start.
-/// This is important in knowning whether or not a net transaction may be automatically started.  It can not be automatically started if it start was never called to begin with.  This also prevents net transactions from being added to queues, such as the send queue, until such time as they qualify.
-@property (nonatomic, readonly, copy) NSDate * _Nullable didStartFirstDate;
-/// The amount of time that elapsed during the execution of the KVANetTransaction.
-/// This is an indicator of the network speed combined with the server response time.  This variable is not established nor valid until the KVANetTransaction has been both started and completed.
-@property (nonatomic, readonly) NSTimeInterval elapsedTimeInterval;
-/// An NSDecimalNumber wrapping the elapsedTimeInterval suitable for printing.
-- (NSDecimalNumber * _Nonnull)elapsedTimeIntervalDecimalNumber SWIFT_WARN_UNUSED_RESULT;
-/// The error associated with the completion of the transaction.
-/// Intermediate errors are not represented here.  This will be nil if the transaction ultimately succeeds through retries.  This represents the final error.
-@property (nonatomic, readonly) NSError * _Nullable error;
-/// Append a KVALogMessage to the requestRollupLogMessageArray.
-- (void)requestRollupLogMessageArray_append:(KVALogMessage * _Nullable)logMessage;
-/// A task which sends the NetTransaction’s request and concludes with the retrieval of its response.
-@property (nonatomic, readonly, strong) KVATask * _Nonnull sendTask;
-/// A mutable dictionary which contains KVAValue objects.  These objects are keyed using their KVAAdapter nameString.
-/// Private.  A dictionary was used rather than an array for fast indexing by KVAAdapter nameString.
-@property (nonatomic, copy) NSDictionary<NSString *, KVAValue *> * _Nullable valueArrayDictionary;
-/// Configures the valueArrayDictionary.
-/// The completion handler is called when all asynchronous processes have completed.
-/// \param startingBool A boolean indicating if this is happening when the transaction is starting.
-///
-/// \param startingFirstTimeBool A boolean indicating if this is taking place for the first time (as an addendum to startingBool true).
-///
-- (void)valueArrayDictionary_configureWithStartingBool:(BOOL)startingBool startingFirstTimeBool:(BOOL)startingFirstTimeBool completionHandler:(void (^ _Nonnull)(void))completionHandler;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull attemptDidFinishButNotCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)attemptDidFinishButNotCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)didCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A constant to use for the key for the request body when passing an object as a vaue in a value source dictionary.
-/// The corresponding value should be any object which conforms to protocol KVAAsForContextProtocol, and provides suitable support for the specified context as well as persistentStorage.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull requestBodyKey;)
-+ (NSString * _Nonnull)requestBodyKey SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -1705,252 +786,22 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// A queue of KVANetTransaction(s).
 /// This class is a queue of KVANetTransaction(s) which exists for the purpose of holding transactions.  This queue is emptied as those transactions are completed.
 SWIFT_CLASS_NAMED("KVANetTransactionQueue")
-@interface KVANetTransactionQueue : NSObject <KVAFromProtocol>
+@interface KVANetTransactionQueue : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)start;
-- (void)invalidate;
-/// Return the count in the queue.
-- (NSInteger)count SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A network transaction type.
 /// This generally corresponds to Kochava’s “action” key.
 SWIFT_CLASS_NAMED("KVANetTransactionType")
-@interface KVANetTransactionType : NSObject <KVAFromProtocol, KVAMutableDelegator>
-/// Create a new instance of KVANetTransationType.
-- (nonnull instancetype)initWithIdString:(NSString * _Nonnull)idString delegate:(id <KVAMutable> _Nullable)delegate OBJC_DESIGNATED_INITIALIZER;
+@interface KVANetTransactionType : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the urlString to use for the specified netTransaction.
-/// When nil this instance is offering no urlString to use, and the actualy urlString will fall back to the default.
-- (NSString * _Nullable)netTransaction_urlString:(KVANetTransaction * _Nullable)netTransaction SWIFT_WARN_UNUSED_RESULT;
-/// A string which is the current url for the currentVariation.
-@property (nonatomic, readonly, copy) NSString * _Nullable currentVariationURLString;
-/// A string which is a unique identifier for the type.
-@property (nonatomic, readonly, copy) NSString * _Nullable idString;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
-/// A date which is the startDate of the currentVariation.urlStringArray.
-/// This used used to watch for changes, which bust the currentVariationURLIndexNumber and currentVariationURLIndexRotatedBool.
-@property (nonatomic, readonly, copy) NSDate * _Nullable currentVariationStartDate;
-/// An NSUInteger which is the last successful index into the currentVariation.urlStringArray.
-/// Default 0.
-@property (nonatomic, readonly, strong) NSNumber * _Nullable currentVariationSuccessfulURLIndexNumber;
-/// A string which is the last successful url for the currentVariation.
-@property (nonatomic, readonly, copy) NSString * _Nullable currentVariationSuccessfulURLString;
-/// An NSUInteger which is the current index into the currentVariation.urlStringArray.
-/// Default 0.
-@property (nonatomic, readonly, strong) NSNumber * _Nullable currentVariationURLIndexNumber;
 @end
 
-@class KVATimeIntervalSeries;
 
 /// The class KVANetworking provides basic networking support.
-/// The class KVANetworking is the main interface for module KochavaCore.  A networking instance manages the exchange of data between the client and various server(s), along with the associated tasks, network transactions, adapters, and instructions.  If you have not already integrated the KochavaCore module into your project, refer to our integration support documentation.
-/// You rarely create instances of class KVANetworking.  Instead, you start the provided shared instance using one of the start instance methods.  See static var <code>shared</code>.  Additionally an instance of networking is already provide within other SDK modules, such as module KochavaTracker.  Take note that such instances are not using var <code>shared</code>, which is reserved for the main host’s optional use.  If you are the application developer, this means you!  All other parties, including third-party SDKs, should create their own instance providing a unique product.
-/// Upon start the networking instance will perform its various tasks.  This is typically done during the earliest phases of the host’s lifecycle, so that networking activity can be quickly begin and data may begin to egress.
-/// You may alternately create an instance.  If you do, it is your responsibility to maintain a strong reference.  And if you create multiple instances, it is your responsibility to configure each with a unique storageIdentifierString.
-/// <h2>Examples</h2>
-/// Example - Configuring the shared networking instance
-/// \code
-/// KVANetworking.shared.configure(product: self.myProduct)
-///
-/// \endcodeExample - A sample network transaction which posts a payload to a test url.  The payload contains a “data” object, which contains a key “apple_dot_com” with a value which is the string representation of the current webpage at apple.com.  It collects that string value using the example adapter <em>appleDotComStringAdapter</em> as described in class <code>KVAAdapter</code>.
-/// \code
-/// let sampleNetTransaction = KVANetTransaction(
-///     jsonDictionary: [
-///         "nameString": "SampleNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://httpstat.us/200",
-///             "httpMethodString": "POST",
-///             "bodyDictionaryFormat":
-///             [
-///                 "dictionaryEntryFormatArray":
-///                 [
-///                     [
-///                         "subChunkNameStringArray": ["data"],
-///                         "keyString": "apple_dot_com",
-///                         "valueSourceNameString": "YourClass.appleDotComStringAdapter"
-///                     ]
-///                 ]
-///             ]
-///         ]
-///     ]
-/// )
-///
-/// \endcodeExample - Registering the sample components
-/// \code
-/// let networking = KVANetworking.shared
-/// networking.valueSourceCollection.register(adapter: self.appleDotComStringAdapter)
-/// networking.baseNetTransactionCollection.register(netTransaction: self.sampleNetTransaction)
-///
-/// \endcodeExample - Starting the networking instance
-/// \code
-/// KVANetworking.shared.start()
-///
-/// \endcodeExample - Sending the sample network transaction
-/// \code
-/// KVANetTransaction.start(
-///     baseNetTransactionNameString: "SampleNetTransaction",
-///     networking: KVANetworking.shared
-/// )
-///
-/// \endcodeExample - Starting a basic ad-hoc network transaction which gets a string representation of the current webpage at google.com (with maximum length limited to 2048 for readability).
-/// \code
-/// KVANetTransaction.start(
-///     netTransactionObject:
-///     [
-///         "nameString": "GoogleDotComGetNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://www.google.com"
-///         ]
-///     ],
-///     networking: KVANetworking.shared
-/// ){
-///     netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///     print("... do something with the response. responseObject=\((responseObject as? String)?.kva_withMaximumLength(2048) ?? "(nil)")\n")
-/// }
-///
-/// \endcode<h2>Features - Core</h2>
-/// <ul>
-///   <li>
-///     <em>Instance Identification</em> (var <code>instanceIdString</code>) — To differentiate between different instances of class KVANetworking running concurrently, a unique instance identifier is automatically assigned and then used in a variety of ways.  Log messages will sometimes reflect this identifier, and a portion of it is used in all network transaction identifiers (nt_id).  See also internal var instanceIdStringAdapter, id “Networking.instanceIdStringAdapter”.
-///   </li>
-///   <li>
-///     <em>Consent</em> (var <code>consent</code>) — If tracking consent is required, and tracking is not allowed, then sensitive objects such as instances of classes <code>KVATask</code>, <code>KVAAdapter</code>, and <code>KVANetTransaction</code> will automatically be blocked from execution.  In the case of network transactions, a copy of consent is internally stamped on the transaction at the time it is first started, and then it may be graduated to a newer copy if the global consent changes in certain ways.
-///   </li>
-///   <li>
-///     <em>Conditional Operation</em> (var closure_adapter_mayOperateBoolForContext) — Through a custom closure, adapters may be configured to conditionally collect, keep, persist, or share their value.   See also typealias Closure_Adapter_MayOperateBoolForContext.
-///   </li>
-///   <li>
-///     <em>Sleep</em> (var <code>sleepBool</code>) — Supported objects, such as instances of classes <code>KVATask</code>, <code>KVAAdapter</code>, and <code>KVANetTransaction</code>, will defer execution while a sleep state is in effect.  When the sleep state is lifted, the state change will be observed and execution will resume immediately with the continuation of any code which was previously deferred.  See also var <code>sleepBoolAdapter</code>.  You may toggle sleep on and off frequently with no measurable impact to performance beyond that which the sleep option is intended to produce when turned on.
-///   </li>
-/// </ul>
-/// <h2>Features - Collections</h2>
-/// <ul>
-///   <li>
-///     <em>Value Source Collection</em> (var <code>valueSourceCollection</code>) — A collection of registered objects from which a value may be sourced.  These may be instances of class <code>KVAAdapter</code>, or else anything which conforms to protocol <code>KVAAsForContextProtocol</code>.  Through class extensions this includes primitives such as String and Int.  Register conforming object(s) using any of the methods available in class <code>KVACollection</code>.
-///   </li>
-///   <li>
-///     <em>Base Network Transaction Collection</em> (var <code>baseNetTransactionCollection</code>) — A collection of registered network transactions which may be used as bases from which network transactions may inherit default parameters.  Register instance(s) of class <code>KVANetTransaction</code> using class <code>KVACollection</code> func <code>KVACollection/register(netTransaction:)</code>.
-///   </li>
-///   <li>
-///     <em>Task Collection</em> (var <code>taskCollection</code>) — A collection of registered tasks which may be used as prerequisites for other tasks.  Register instance(s) of class <code>KVATask</code> using class <code>KVACollection</code> func <code>KVACollection/register(task:)</code>.
-///   </li>
-///   <li>
-///     <em>Instruction Collection</em> (var <code>instructionCollection</code>) — A collection of registered instructions which may be executed using their corresponding identifierString along with an optional valueObject which serves as a parameter.  Register instance(s) of class <code>KVAInstruction</code> using class <code>KVACollection</code> func <code>KVACollection/register(instruction:)</code>.  See func <code>executeAdvancedInstruction(identifierString:valueObject:)</code>.
-///   </li>
-/// </ul>
-/// <h2>Features - Network Transactions</h2>
-/// <ul>
-///   <li>
-///     <em>Queueing</em> (var netTransactionQueue) — Network transactions, when started, are appended into the network transaction queue.  The queue may communicate with these instances, such as to notify them if/when networking may be invalidated.  It is also used for persistence, and to restore and restart transactions following a new launch.  See class <code>KVANetTransactionQueue</code>.
-///   </li>
-///   <li>
-///     <em>Queueing Overrides</em> — The parameters of the netTransactionQueue can be overridden.  One example, of note, is the queue maximum count.  Implemented in internal var queueMaximumCount.  Configurable through func <code>configure(with:context:)</code> with key “queue_maximum_count”.
-///   </li>
-///   <li>
-///     <em>Overriding</em> (var overrideNetTransactionArrayDictionary) — The parameter(s) of network transaction(s) can be individually overridden.  Configure instance(s) of class <code>KVANetTransaction</code> containing corresponding names and then put them in the dictionary.  While present, any parameters which are set will be used as overrides.  Configurable through func <code>configure(with:context:)</code> with key “override_nettransactions”, or alternately key “transactions” (the latter of which expects the alternate format supported by transactionsInstruction).  Also settable through func <code>executeAdvancedInstruction(identifierString:valueObject:)</code> with identifier “networking_transactions”, implemented in private var transactionsInstruction.
-///   </li>
-///   <li>
-///     <em>URL Overriding</em> (var urlsDictionary) — With a dictionary containing externally recognizable type identifiers such as “init” or “event”, paired with URL strings, the URLs defined in network transactions can be overridden.  This is In addition to the default overriding capability offerred throughout class <code>KVANetTransaction</code>.  Using conformance to protocol KVANetTransaction/KVANetTransactionSubURLIdStringMethodProvider, a dictionary can also be used in place of a URL string to express sub-type identifiers.  One such example may include the names found within events.  Configurable through func <code>configure(with:context:)</code> with key “urls”.  Also settable through func <code>executeAdvancedInstruction(identifierString:valueObject:)</code> with identifier “urls”, implemented in private var urlsInstruction.
-///   </li>
-///   <li>
-///     <em>Payload Transformation</em> (var closure_payloadTransformedObject) — Using a custom closure, the contents of a payload can be transformed.  See associated typealias <code>KVANetTransaction/Closure_PayloadTransformedObject</code>.
-///   </li>
-///   <li>
-///     <em>Retry Time Interval Series</em> (var retryTimeIntervalSeries) — When an attempt is not successful, rather than retrying a new attempt immediately, a network transaction will wait for a specified time interval within a series.  By default each subsequent time interval backs off in a waterfall pattern, increasing the time between each unsuccessful attempt.  Configurable through func <code>configure(with:context:)</code> with key “retry_waterfall”.  See class <code>KVATimeIntervalSeries</code>.  See also private static var retryDefaultTimeIntervalSeries.
-///   </li>
-///   <li>
-///     <em>Error Retry Group Waiting</em> — When an error occurs, rather than letting other network transactions of the same group (i.e. url) make attempts to the same service, a group of network transactions may wait for a specified time interval within a series.  By default each subsequent time interval backs off in a waterfall pattern, increasing the time between each unsuccessful attempt.  When the error retry group wait task is assigned to a network transaction, this wait occurs concurrently (and in addition to) the <em>Retry Time Interval Series</em>, with the main difference being that it applies across multiple transactions of the same group.  Because this is group-based, network transactions which use a different group (i.e. a different url) are not affected by one another.  Assign this behavior to a network transaction by adding prerequisite task “Networking.errorRetryGroupWaitTask [groupId]”.
-///   </li>
-///   <li>
-///     <em>Rate Limiting</em> (var rateLimitingWindowTimeInterval) — The speed at which network transaction requests are initiated can be limited.   Implemented in internal var rateLimitingWindowRequestCountRegulationTask, id “Networking.rateLimitingWindowRequestCountRegulationTask”.  See also private var rateLimitingWindowRequestMaximumCount.
-///   </li>
-///   <li>
-///     <em>Concurrent Maximum Count</em> (var concurrentMaximumCount) — Network transactions may or may not initiate requests concurrently with other transactions, depending on configuration and communication status.  Configure through func <code>configure(with:context:)</code> with key “concurrent_maximum_count”.  The default is 5.  Limit the concurrency of a network transaction while other network transaction requests are in-flight by adding prerequisite task attemptInProgressConcurrentMaximumRegulationTask, id “Networking.attemptInProgressConcurrentMaximumRegulationTask”.  When present, the initiation of a request will be restricted while var concurrentMaximumCount is met or exceeded.  While errors are occurring for any network transaction, or the broader status of communication is not known, the effective concurrentMaximumCount is automatically reduced to 1 to avoid excess pressure during degraded server conditions.  See also supporting property private var attemptInProgressCount.
-///   </li>
-///   <li>
-///     <em>Tracking Wait</em> (var trackingWaitTimeInterval) — To allow some time for the server to process earlier transaction(s), a tracking wait is initiated upon the initiation of a network transaction which has “tracking” implications.  Configure the time interval to wait through func <code>configure(with:context:)</code> with key “tracking_wait”.  The default is 10.0 (seconds).  Cause a network transaction to wait by adding prerequisite task trackingWaitTask, id “Networking.trackingWaitTask”.  When present, the initiation of a request will be restricted until var trackingWaitTask completes a time-based countdown following the conclusion of the invoking transaction.
-///   </li>
-///   <li>
-///     <em>Local Responses</em> (var <code>responseLocalBool</code>) — For testing, or for when networking is disabled, network transactions can serve their responses locally.  For conditional control, see also var closure_serviceLocallyBool.  See feature <em>Local Responses</em> in class <code>KVANetTransaction</code> for more details.
-///   </li>
-/// </ul>
-/// <h2>Features - Instructions</h2>
-/// <ul>
-///   <li>
-///     <em>Executing Instructions</em> — Registered with var <code>instructionCollection</code>, instruction(s) can be executed using their associated identifierString (or id).  This includes any instructions which may be registered from outside of class KVANetworking and not otherwise listed within the documentation of this class.  See func <code>executeAdvancedInstruction(identifierString:valueObject:)</code>.  An array of instructions can also be decoded from JSON and executed by calling func <code>configure(with:context:)</code> with key “instructions”.  The parameter valueObject can be decoded from JSON as long as the associated class conforms to protocol KVAProtocol and the class is named within the JSON object using key “$class”.  Some instructions will support a default class.
-///   </li>
-///   <li>
-///     <em>Printing Anything Printable</em> (var printInstruction, id <em>“print”</em>) — By conforming to protocol <code>KVAPrintable</code>, anything can be printed.  These objects may also conform to protocol <code>KVANetworkingSetterProvider</code> so that a networking parameter may be set if/when the instruction’s valueObject is decoded from JSON.  Supported objects, of note, include instances of class <code>KVALogMessage</code>.  When decoding from JSON, if key “<em>$class</em>” is not specified, the default is <code>KVALogMessage</code>.
-///   </li>
-///   <li>
-///     <em>Starting Anything Startable</em> (var startInstruction, id <em>“start”</em>) — By conforming to protocol <code>KVAStartable</code>, anything can be started.  These objects may also conform to protocol <code>KVANetworkingSetterProvider</code> so that a networking parameter may be set if/when the instruction’s valueObject is decoded from JSON.  Supported objects, of note, include instances of class <code>KVANetTransaction</code>.  When decoding from JSON, you must include key “<em>$class</em>”, as no default class is supported.
-///   </li>
-///   <li>
-///     <em>Setting State Active</em> (var stateActiveInstruction, id <em>“state_active”</em>) — Within the SDK, the system’s active state is automatically tracked.  There are cases where you may want to set this state.  Most often this is used when testing the SDK.  Alternatively you may use this to indicate the state within environments where the state cannot currently be tracked, such as iMessage apps.  For the valueObject pass a boolean value of true or false.  See also class <code>KVASystem</code> func <code>KVASystem/stateActiveDidBecome()</code> and func <code>KVASystem/stateActiveWillResign()</code>.
-///   </li>
-///   <li>
-///     <em>Setting App Clip</em> (var instantAppInstruction, <em>“instant_app”</em>)  — Within the SDK, the boolean indicating whether the host is an App Clip (referred to generically as an “Instant App”) is determined automatically by looking for suffix “.clip” on the main bundle’s info.plist’s CFBundleIdentifier.  While to set this suffix is the typical pattern, you can also set this boolean manually if it is not by using this instruction.  For the valueObject pass a boolean of true or false.  See also class <code>KVASystem</code> var <code>KVASystem/appClipBool</code>.
-///   </li>
-///   <li>
-///     <em>URL Overrides</em> (var urlsInstruction, id <em>“urls”</em>) — For network transactions which are typed, their associated URLs can be overridden.  For the valueObject pass a dictionary where each key contains a network tranaction type identifier, and the value is the url string, or else a dictionary containing urls by sub-id.  This is typically used for testing.
-///   </li>
-///   <li>
-///     <em>Setting Watched Values</em> (var watchedValuesInstruction, id <em>“watched_values”</em>)  — Within instances of class <code>KVAAdapter</code>, the current value may be watched for the presence of changes relative to the server.  These changes are indicated by a watchValue not being the same as the value.  Use this instruction to set the watchValue(s) for a set of adapters.  For the valueObject pass a dictionary where each key is the <code>KVAAdapter/identifierString</code> or <code>KVAAdapter/key</code> of an instance of class <code>KVAAdapter</code> which have been registered in var <code>valueSourceCollection</code>, and the value is the new watchValueRawObject.
-///   </li>
-///   <li>
-///     <em>Setting Product Wrapper Information</em> (var wrapperInstruction, id <em>“wrapper”</em>)  — The Apple Kochava SDK can be wrapped within the Kochava SDK for another platform.  In such cases a product can be set to provide name and version information for the wrapper.  For the valueObject pass an object decodable to an instance of class <code>KVAProduct</code>.  Please enquire with your Kochava client success manager if you are interested in this feature.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVANetworking")
-@interface KVANetworking : NSObject <KVAConfigureWithProtocol, KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAKeyable, KVAMutableDelegator, KVASharedPropertyProvider, KVAStartable>
-/// A shared instance.
-/// This shared instance is reserved for the exclusive use of the host.  It is separate from the instance(s) used by other modules in the Kochava SDK.  You may register entitles with the valueSourceCollection, baseNetTransactionCollection, taskCollection, and/or the instructionCollection.  In reference to the valueSourceCollection, registered value sources can be referenced in network transactions to decorate payloads with metadata (i.e. data points).  In reference to the baseNetTransactionCollection, registered base network transactions can be referenced in network transactions to supply defaults, offering a range of performance benefits.  In reference to the taskCollection, registered tasks can be referenced in network tranactions to serve as prerequisites.  In reference to the instructionCollection, registered instructions can be executed from variety of places.  Once your instance has been configured, you may start the instance using func start().  It is at this point that any persisted instances of class <code>KVANetTransaction</code> in the queue will begin to be processed again.  It is also at this point that this networking instance will be ready to receive new activity from new instances of class KVANetTransaction, i.e. creating and starting network transactions.
-/// <h2>Example</h2>
-/// \code
-/// let networking = KVANetworking.shared
-/// networking.configure(product: self.myProduct)
-/// ...
-/// networking.valueSourceCollection.register(adapter: self.appleDotComStringAdapter)
-/// networking.baseNetTransactionCollection.register(netTransaction: self.sampleNetTransaction)
-/// ...
-/// networking.start()
-///
-/// \endcode
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVANetworking * _Nonnull shared;)
-+ (KVANetworking * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// Create an instance of class KVANetworking which has been restored from JSON, or else create a new instance.
-/// This method of creating an instance should be regarded as internal at the present time.  See init(product:storageIdString:).
-- (nonnull instancetype)initWithFromObject:(id _Nullable)object product:(KVAProduct * _Nonnull)product storageIdString:(NSString * _Nullable)storageIdString delegate:(id <KVAMutable> _Nullable)delegate closure_adapter_mayOperateBoolForContext:(BOOL (^ _Nullable)(KVAAdapter * _Nonnull, KVAContext * _Nullable))closure_adapter_mayOperateBoolForContext closure_serviceLocallyBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_serviceLocallyBool closure_payloadTransformedObject:(id _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable, BOOL))closure_payloadTransformedObject;
-/// Create a basic instance.
-/// \param storageIdString An optional storage identifier.
-///
-- (nonnull instancetype)initWithStorageIdString:(NSString * _Nullable)storageIdString OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Configure the instance for use.
-/// \param product The associated product.
-///
-/// \param closure_serviceLocallyBool A closure which returns a boolean indicating if a network transaction should be serviced locally.
-///
-/// \param closure_payloadTransformedObject A closure which transforms the request body or header of a network request.
-///
-/// \param delegate A delegate conforming to KVAMutable.
-///
-- (void)configureWithProduct:(KVAProduct * _Nonnull)product delegate:(id <KVAMutable> _Nullable)delegate closure_serviceLocallyBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_serviceLocallyBool closure_payloadTransformedObject:(id _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable, BOOL))closure_payloadTransformedObject closure_adapter_mayOperateBoolForContext:(BOOL (^ _Nullable)(KVAAdapter * _Nonnull, KVAContext * _Nullable))closure_adapter_mayOperateBoolForContext;
+@interface KVANetworking : NSObject
 /// Configure (update) the instance from another object.
 /// This method is used to configure the instance.  It can be called from the host to override (or else default) various parameters.  The structure of the object you provide has the same capability as that which the server may return.  Additionally you can wrap the parameters you provide in objects $override$, $override.append$, $default$, or $default.append$, to indicate how these options are treated relative to the server’s options.
 /// $override$:  Elements within this object will override any options of the same name specified by the server.
@@ -1962,82 +813,26 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull 
 /// \param context The context from which the object was provided.  In rare cases this may have some bearing on the proper interpretation of what was provided.
 ///
 - (void)configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
-/// Configure (update) the instance from another object.
-/// See func <code>configure(with:context:)</code>.
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
-/// Start the instance.
-- (void)start;
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Execute an advanced instruction.
 /// \param identifierString An identifier for the advanced instruction.
 ///
 /// \param valueObject A value object for the advanced instruction.
 ///
 - (void)executeAdvancedInstructionWithIdentifierString:(NSString * _Nonnull)identifierString valueObject:(id _Nullable)valueObject;
-/// Invalidate the instance.
-- (void)invalidate;
-/// A collection of base network transactions which have been registered with the networking instance.
-/// Base network transactions are instances of class <code>KVANetTransaction</code>.  Instances are indexed by their nameString and serve as shared resources which may be referenced in network transactions as base network transactions from which to supply default parameters.  Any <code>KVANetTransaction</code> which is registered will be retained, and so only network transactions which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered network transaction.  This means base network transactions within the baseNetTransactionCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull baseNetTransactionCollection;
-/// A collection of instructions which have been registered with the networking instance.
-/// Instructions are instances of class <code>KVAInstruction</code>.  Instances are indexed by their identifierString and serve as instructions which may be executed.  Any instruction which is registered will be retained, and so only instructions which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered instruction.  This means instructions within the instructionCollection can be somewhat transient so long as it is understood that the last one registered under a given identifier will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull instructionCollection;
-/// A collection of tasks which have been registered with the networking instance.
-/// Tasks are instances of class <code>KVATask</code>.  Instances are indexed by their nameString and serve as shared resources which may be referenced in network transactions as prerequisite tasks.  Any task which is registered will be retained, and so only tasks which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered task.  This means tasks within the taskCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.  This approach is applicable to things like the trackingWaitTask, which is periodically re-generated and re-registered.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull taskCollection;
-/// A method which returns a default prerequisiteTaskArray for a given network transaction name string.
-/// \param netTransactionNameString The name of the network transaction.
-///
-- (NSArray<KVATask *> * _Nullable)taskCollection_defaultPrerequisiteTaskArrayForNetTransactionNameString:(NSString * _Nullable)netTransactionNameString SWIFT_WARN_UNUSED_RESULT;
-/// A collection of value sources which have been registered with the networking instance.
-/// Value sources can be instances of class <code>KVAAdapter</code>, <code>KVAValue</code>, or any object from which a instance of class <code>KVAValue</code> can be sourced or else constructed.  This includes JSON value primitive types such as instances of class NSString, NSNumber, NSDictionary, and NSArray.  Instances are indexed by an indentifierString and serve as shared resources which may be referenced in network transactions as the source of values within the request body, header, or url.  Any value souce which is registered will be retained, and so only value sources which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered value source.  This means value sources within he valueSourceCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull valueSourceCollection;
-/// An adapter which the sleepBool.
-/// This is technically the actual storage for the sleepBool.  This adapter can be used to observe changes to the sleepBool.
-@property (nonatomic, readonly, strong) KVABoolAdapter * _Nonnull sleepBoolAdapter;
-/// A closure which is called to determine if the adapter may operate.
-/// This may be used to evaluate allowed and denied conditions, and it applies to all governed major operations- i.e. collect, persist, and keep.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_adapter_mayOperateBoolForContext)(KVAAdapter * _Nonnull, KVAContext * _Nullable);
-/// A consent object.
-@property (nonatomic, strong) KVAConsent * _Nullable consent;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
-/// A boolean indicating that requests should be serviced locally- with modern Objective-C syntax.
-@property (nonatomic, strong) NSNumber * _Nullable responseLocalBoolNumber;
-/// A KVATimeIntervalSeries which defines how networking retries should take place.
-/// This returns a copy which is safe for use in exactly one location.
-- (KVATimeIntervalSeries * _Nonnull)retryTimeIntervalSeries_resolvedCopy SWIFT_WARN_UNUSED_RESULT;
-/// A boolean which when true causes the instance to sleep.
-/// The default is false.  When set to true, this causes tasks to effectively be suspended until this condition is lifted.  While this is set to true, tasks are not lost per-say;  however, if a task may have otherwise occurred multiple times, it may be represented only once once the condition is lifted.
-@property (nonatomic) BOOL sleepBool;
-/// A unique id for the instance.
-@property (nonatomic, readonly, copy) NSString * _Nonnull instanceIdString;
-/// A standard Closure_MetaValueArrayDictionary which includes the instanceId.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, KVAValue *> * _Nullable (^ _Nonnull closure_instanceIdValueMetaValueArrayDictionary)(KVAValue * _Nonnull);
-/// A standard Closure_StaleBool which returns that the specified KVAValue is stale when the instanceIdString changes.
-/// The use of this requires that the instanceIdString be stored in the meta value(s) of the KVAValue.  See closure_instanceIdValueMetaValueArrayDictionary.
-@property (nonatomic, readonly, copy) BOOL (^ _Nonnull closure_staleBool_instanceId)(KVAValue * _Nonnull);
-/// <ul>
-///   <li>
-///     Establishes a trackingWaitTask with a given optional prerequisiteTask.
-///   </li>
-/// </ul>
-- (KVATask * _Nonnull)trackingWaitTask_establishWithPrerequisiteTask:(KVATask * _Nullable)prerequisiteTask SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull willDeallocNotificationName;)
-+ (NSNotificationName _Nonnull)willDeallocNotificationName SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
 
+
 /// The class KVAPartner defines a partner in the context of managing user consent in relationship to GDPR.
 /// When prompting for consent, the user should be presented with a list of the partners with which data would be shared.  That list can grow or contract independent of software version because data sharing can take place server-to-server.  With these partners being defined within your Kochava dashboard, changes can be made automatically, promptly, and across a range of software versions.
 SWIFT_CLASS_NAMED("KVAPartner")
-@interface KVAPartner : NSObject <KVAConfigureWithProtocol, KVAFromProtocol>
+@interface KVAPartner : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
 /// Return a boolean indicating if this partner raises a need to prompt for consent.
 /// Compare with shouldBeIncludedInPromptBool.
 - (BOOL)shouldPromptBool SWIFT_WARN_UNUSED_RESULT;
@@ -2071,44 +866,67 @@ SWIFT_CLASS_NAMED("KVAPartner")
 
 
 
-
 /// A controller for working with products.
 SWIFT_CLASS_NAMED("KVAProductController")
 @interface KVAProductController : NSObject
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProductController * _Nonnull shared;)
 + (KVAProductController * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// Register a Product with the ProductController.
-- (void)registerProduct:(KVAProduct * _Nullable)product;
-/// Return a product for a given Class.
-/// If a matching product cannot be located, this returns nil.  However, there is a special rule when the SDK is identified as not having a bundle of its own to map all classes which begin with the product organization to KVACoreProduct.shared.  This makes it possible to yield an acceptable result even when bundleForClass would otherwise return the main bundle.
-- (KVAProduct * _Nullable)productForClass:(Class _Nullable)aClass SWIFT_WARN_UNUSED_RESULT;
-/// Return a product with a matching module name.
-- (KVAProduct * _Nullable)productWithModuleNameString:(NSString * _Nullable)moduleNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return whether or not a condition was successful.
-/// A nil conditionString will always be regarded as successful.
-/// \param conditionString A conditionString to evaluate.
+/// Resets product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
 ///
-- (BOOL)allProducts_evaluationResultBoolForConditionString:(NSString * _Nullable)conditionString SWIFT_WARN_UNUSED_RESULT;
-/// The array of registered products.
-@property (nonatomic, readonly, copy) NSArray<KVAProduct *> * _Nonnull productArray;
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_resetWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Resets product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param includeExternalBool A boolean indicating whether or not external variables should be deleted.  This is intended for testing purposes.  See func <code>reset(deleteLocalDataBool:)</code> which always supplies this parameter as false.
+///
+/// \param includeDeviceAppGroupBool A boolean indicating whether or not the deviceAppGroup user defaults should be deleted.  This is where App Clip data is stored.
+///
+/// \param printLogMessageBool A boolean indicating whether or not a log message should be printed consistent with a public entry point.
+///
+/// \param includeHostBool A boolean indicating if you want to include the host.  The host requires an explicit authorization through this boolean.
+///
+/// \param includeUIBool A boolean indicating if you want to include module KochavaUI.  Module KochavaUI requires an explicit authorization through this boolean.
+///
+/// \param includeCoreBool A boolean indicating if you want to include module KochavaCore.  Module KochavaCore requires an explicit authorization through this boolean.
+///
+/// \param moduleNameStringArray An array of modules to include.  Optional.  If this array is not set then all modules are allowed.  If this is set then only those products whose module names are in this array will be included.  If you set an ‘include’ parameter and also set any value in this array, the name of that ‘include’ parameter must still also be in this array to be included.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_resetWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool includeDeviceAppGroupBool:(BOOL)includeDeviceAppGroupBool printLogMessageBool:(BOOL)printLogMessageBool includeHostBool:(BOOL)includeHostBool includeUIBool:(BOOL)includeUIBool includeCoreBool:(BOOL)includeCoreBool moduleNameStringArray:(NSArray<NSString *> * _Nullable)moduleNameStringArray closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Shuts down product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Shuts down product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param includeHostBool A boolean indicating if you want to include the host.  The host requires an explicit authorization through this boolean.
+///
+/// \param includeUIBool A boolean indicating if you want to include module KochavaUI.  Module KochavaUI requires an explicit authorization through this boolean.
+///
+/// \param includeCoreBool A boolean indicating if you want to include module KochavaCore.  Module KochavaCore requires an explicit authorization through this boolean.
+///
+/// \param moduleNameStringArray An array of modules to include.  Optional.  If this array is not set then all modules are allowed.  If this is set then only those products whose module names are in this array will be included.  If you set an ‘include’ parameter and also set any value in this array, the name of that ‘include’ parameter must still also be in this array to be included.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeHostBool:(BOOL)includeHostBool includeUIBool:(BOOL)includeUIBool includeCoreBool:(BOOL)includeCoreBool moduleNameStringArray:(NSArray<NSString *> * _Nullable)moduleNameStringArray closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-
-/// A class which wraps a string value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a string value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAStringAdapter")
 @interface KVAStringAdapter : KVAAdapter
-/// The designated constructor for a StringAdapter— using modern Objective-C syntax.
-+ (KVAStringAdapter * _Nonnull)stringAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSString *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary<NSString *, NSString *> * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueString:(NSString * _Nullable)defaultValueString valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueString for the KVAStringAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSString * _Nullable valueString;
 @end
 
 
@@ -2122,14 +940,9 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// See var <code>shared</code>.  This variable will be nil prior to the shared instance being defaulted.  This may be used to optionally invalidate any existing shared instance without causing it to first be defaulted in the process.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * _Nullable shared_optional;)
 + (KVASystem * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
-/// A method which may be called when a primary system starts and executes on the main thread.
-/// This method must be called on the main thread.  This is used to expedite defaulting of the system’s state, which must be obtained on the main thread.  The system object will do this on its own once it has dispatched to the main queue for the first time, but this method can be called to ensure that this is done timely prior to the execution of later code.  Because of the lack of a class initializer in Swift equivalent to Objective-C’s + (void)initialize, this will technically be the moment after which it can be guaranteed that the stateActiveBool will be accurate.  Prior to that it may return its default value of false.  I say “may” because if KVASystem is accessed it will move forward to gather the state on its own, and so that can cause it to be collected earlier.
-- (void)primarySystemStartDidExecuteOnMainThread;
 /// A boolean indicating if the current host is an app clip.
 /// This property will return a default value based on whether or not it can be detected that the host is an app clip.  It uses the bundle identifier and looks for the default suffix of “.Clip” (case insensitive).  If it finds that suffix then this value will default to true, otherwise false.  If this assumption is not accurate for the host, this value can be set explicitly.
 @property (nonatomic) BOOL appClipBool;
-/// A boolean indicating if the current host is an app extension.
-@property (nonatomic, readonly) BOOL appExtensionBool;
 /// A method which can be called to report that the active state should become true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
 - (void)stateActiveDidBecome;
@@ -2146,29 +959,12 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
 - (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString;
-- (NSString * _Nonnull)nameString SWIFT_WARN_UNUSED_RESULT;
-/// A boolean indicating if the system’s state is active.
-/// This considers the application active state and/or the extension active state (when applicable).  It unifies the notion of an system active state.
-/// A boolean indicating if the state is active.
-@property (nonatomic, readonly) BOOL stateActiveBool;
 /// A constant to use as the source when reporting that a MessagesAppViewController did become active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString;)
 + (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString;)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
-/// A Notification.Name to use for observing when the system’s state active did become true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull stateActiveDidBecomeNotificationName;)
-+ (NSNotificationName _Nonnull)stateActiveDidBecomeNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A string to use as the name for a notification to observe when the system’s state active did become true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull stateActiveDidBecomeNotificationNameString;)
-+ (NSString * _Nonnull)stateActiveDidBecomeNotificationNameString SWIFT_WARN_UNUSED_RESULT;
-/// A Notification.Name to use for observing when the system’s state active will resign true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull stateActiveWillResignNotificationName;)
-+ (NSNotificationName _Nonnull)stateActiveWillResignNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A string to use as the name for a notification to observe when the system’s state active will resign true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull stateActiveWillResignNotificationNameString;)
-+ (NSString * _Nonnull)stateActiveWillResignNotificationNameString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -2177,362 +973,58 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// This class is a higher-level wrapper for system (sys/) functions, such as sys/utsname.h
 SWIFT_CLASS_NAMED("KVASystemLow")
 @interface KVASystemLow : NSObject
-/// Return the cpu type and sub-type information (i.e. architecture)
-/// The string returned from here is period separated, and expected to be unique for the platform.  It is not human readable, and a lookup table may employed to convert this information to a human-readable string.
-/// note:
-/// Thread Safety:  Thread safe <em>probably</em> (sysctlbyname).  sysctlbyname thread safety is undocumented by Apple at the time of this writing, but their broader documentation on thread safety says, “Immutable objects are generally thread-safe. Once you create them, you can safely pass these objects to and from threads.”  Because none of the properties which are being accessed are taken to be mutable, generally speaking, what we are doing is taken to be thread safe.
-+ (NSString * _Nullable)architectureString SWIFT_WARN_UNUSED_RESULT;
-/// Return the system’s boot date.
-/// The precision is in microseconds (1 / 1,000,000).
-/// note:
-/// Thread Safety:  Thread safe <em>probably</em> (sysctl).  sysctl thread safety is undocumented by Apple at the time of this writing, but their broader documentation on thread safety says, “Immutable objects are generally thread-safe. Once you create them, you can safely pass these objects to and from threads.”  Because none of the properties which are being accessed are taken to be mutable, generally speaking, what we are doing is taken to be thread safe.
-+ (NSDate * _Nullable)bootDate SWIFT_WARN_UNUSED_RESULT;
-/// Return the hardware machine [id] (model id) string.
-/// The term “machine” is said to be an older term, and it is still reflected in the system-level functions required to retrieve the value.  “Model” is how this value is currently represented to the public by Apple.  A typical return from this method would be something like “iPhone9,1” and “iPhone9,3” (two variants of iPhone 7).  For a list of Apple Touch OS model ids (phones, pads, ipods, apple tv, apple watch) see here: https://www.theiphonewiki.com/wiki/Models  For a list of MacBook Pro model ids see here: https://support.apple.com/en-us/HT201300
-+ (NSString * _Nonnull)hardwareMachineModelIdString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
 /// A class which defines a high-level task.
-/// <h2>Examples</h2>
-/// Example - Creating a basic task with some prerequisite tasks:
-/// \code
-/// lazy var someTask = KVATask(
-///     networking: KVATracker.shared.networking,
-///     nameString: "CurrentClass.someTask",
-///     identifierString: nil,
-///     logMessagesPrintBool: true,
-///     prerequisiteTaskNameStringArray:
-///     [
-///         "TrackerConfig.retrieveTask",
-///         "Install.sendTask"
-///     ],
-///     sleepObservantBool: true,
-///     closure_startAttempt:
-///     {
-///         task in
-///
-///         print("... do something")
-///
-///         task.complete()
-///     }
-/// )
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Name</em> (var <code>nameString</code>) — A task is named using a unique standardized name, enabling its activity to be looked up in the log and to be correlated back to its root class.
-///   </li>
-///   <li>
-///     <em>Prerequisite Tasks</em> (var prerequisiteTaskArray) — Before a task may execute, it will wait until any number of prerequisite tasks have completed.  Once a task has been started, and when all prerequisite tasks have completed, the task will automatically start an attempt with no additional input.  Any tasks which are dependent upon that task will themselves make an attempt when they see that task has completed, along with all other tasks which it may have as prerequisites.
-///   </li>
-///   <li>
-///     <em>Timeout</em> (var attemptTimeoutTimeInterval) — A task’s attempt can be recognized as timing out, ensuring that subsequent retry attempts can move forward.
-///   </li>
-///   <li>
-///     <em>Retrying</em> (var <code>retryTimeIntervalSeries</code>) — If a task’s attempt does not accomplish the work it set out to do, it can be retried automatically.  The time to wait between each retry, as well as how many retries may be attempted, can be defined with a series of time intervals.  See class <code>KVATimeIntervalSeries</code>.
-///   </li>
-///   <li>
-///     <em>Consent</em> (var consent) — If a task requires tracking consent, and tracking is not allowed, then that task will automatically be blocked from execution.  See class <code>KVAConsent</code>.
-///   </li>
-///   <li>
-///     <em>Sleeping</em> (var sleepObservantBool) — A task’s execution may be deferred, causing it to wait and not proceed while the associated networking instance is asleep.  See class <code>KVANetworking</code> var <code>KVANetworking/sleepBool</code>.
-///   </li>
-///   <li>
-///     <em>Reset</em> (func <code>reset()</code>) — Following completion, a task may be reset so that it can be executed again.  A task may also reset other tasks when it resets, enabling dependent tasks to be automatically reexecuted (or at minimum reconsidered for execution).
-///   </li>
-///   <li>
-///     <em>Passive Reset</em> (var <code>resetPassiveTimeInterval</code>) — Following completion, a task may be passively reset so it can be executed again.  When the task is evaluated to determine if it should be regarded as completed, it may further evaluate that it should move back from a state of completed to not-completed, so that it may proceed to execute again.  This provides for the task to be executed again when certain conditions exist, but not when there is no on-going activity which would be prompting the need for the task to execute.  An example is resetting a config task to re-collect a fresh configuration after a certain amount of time has elapsed, but only when new activity occurs which would require the use of that configuration.
-///   </li>
-///   <li>
-///     <em>Logging</em> (var <code>logMessagesPrintBool</code>) — The activity and lifecycle of a task may be printed to the log through the task itself, providing log messages which are consistent and referenceable.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVATask")
-@interface KVATask : NSObject <KVAInvalidatable, KVAStartable>
-/// The main constructor for a task.
-/// \param networking An instance of networking.  From this can be derived prerequisite tasks from their associated names, sleep support, consent, etc.
-///
-/// \param nameString The name of the task.  This is a human readable name which is displayed in places such as the log.
-///
-/// \param identifierString An identifier for the task.  This is used to further qualify the name of the task when the same task name may be used multiple times.
-///
-/// \param logMessagesPrintBool A boolean indicating if log messages should be printed.
-///
-/// \param prerequisiteTaskArray An array of Task objects which are regarded to be prerequisites which must be fulfilled before this task may start.
-///
-/// \param attemptTimeoutTimeInterval The time interval after which an attempt is automatically regarded to have timed out (a failure).
-///
-/// \param retryTimeIntervalSeries A TimeIntervalSeries which describes the default pattern whereby retries should subsequently take place following a failure.  This value is a default and it may be overridden later in context depending upon the specifics of a failure.
-///
-/// \param consentRequiredBool A boolean indicating that consent is required.
-///
-/// \param consent A consent instance.
-///
-/// \param closure_shouldAttemptBool A closure which returns whether or not an attempt should be made for this task.  This closure provides input from the caller which can vary based on conditions within the caller.
-///
-/// \param closure_didExperienceDelay A closure which is executed if the task experiences a delay.
-///
-/// \param closure_startAttempt A closure which starts an attempt.  This closure performs the core logic for the task.
-///
-/// \param closure_didComplete A closure that is called when the task becomes completed.  This closure can be used to clean up properties used during the execution of the task.
-///
-/// \param closure_didReset A closure that is called when the task becomes reset.
-///
-/// \param sleepObservantBool A boolean indicating that sleep should be observed.
-///
-/// \param resetFollowedTaskArray An array of tasks which when reset should trigger this task to follow with its own reset.
-///
-/// \param resetPassiveTimeInterval A time interval after which the task should passively reset the next time its completion status is checked.
-///
-- (nonnull instancetype)initWithNetworking:(KVANetworking * _Nullable)networking nameString:(NSString * _Nullable)nameString identifierString:(NSString * _Nullable)identifierString logMessagesPrintBool:(BOOL)logMessagesPrintBool prerequisiteTaskNameStringArray:(NSArray<NSString *> * _Nullable)prerequisiteTaskNameStringArray prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray attemptTimeoutTimeInterval:(NSTimeInterval)attemptTimeoutTimeInterval retryTimeIntervalSeries:(KVATimeIntervalSeries * _Nullable)retryTimeIntervalSeries consentRequiredBool:(BOOL)consentRequiredBool consent:(KVAConsent * _Nullable)consent sleepObservantBool:(BOOL)sleepObservantBool resetFollowedTaskNameStringArray:(NSArray<NSString *> * _Nullable)resetFollowedTaskNameStringArray resetFollowedTaskArray:(NSArray<KVATask *> * _Nullable)resetFollowedTaskArray resetPassiveTimeInterval:(NSTimeInterval)resetPassiveTimeInterval closure_shouldAttemptBool:(BOOL (^ _Nullable)(KVATask * _Nonnull))closure_shouldAttemptBool closure_didExperienceDelay:(void (^ _Nullable)(KVATask * _Nonnull))closure_didExperienceDelay closure_didInvalidate:(void (^ _Nullable)(KVATask * _Nonnull))closure_didInvalidate closure_didComplete:(void (^ _Nullable)(KVATask * _Nonnull))closure_didComplete closure_didReset:(void (^ _Nullable)(KVATask * _Nonnull))closure_didReset closure_startAttempt:(void (^ _Nullable)(KVATask * _Nonnull))closure_startAttempt OBJC_DESIGNATED_INITIALIZER;
-- (void)start;
-/// Evaluate the task.
-/// If the task should start an attempt then an attempt will be started.  If nothing should be done then nothing will be done.
-- (void)evaluate;
-/// End an attempt.
-/// This method may be called when no attempt is in progress.  That gesture serves to shut down the task from further activity.  The evaluate method, for example, does this automatically if it is called and the task is not in progress but also should not be attempted.
-/// \param accomplishedBool A boolean which indicates whether or not the attempt reached the point where it was done.  This is equivalent to being accomplished successfully.
-///
-/// \param allowRetryBool A boolean indicating whether retries should be allowed.  If the task is now done (accomplished successfully) this boolean has no effect.  If the task is not done, it will lead to the retry logic being used.
-///
-/// \param retryInsertTimeIntervalNumber An NSTimeInterval wrapped in an NSNumber which can optionally be supplied to be inserted into the retryTimeIntervalSeries for any retry logic flowing out of the ending attempt.
-///
-- (void)endAttemptWithAccomplishedBool:(BOOL)accomplishedBool allowRetryBool:(BOOL)allowRetryBool retryInsertTimeIntervalNumber:(NSNumber * _Nullable)retryInsertTimeIntervalNumber;
-/// Complete the task.
-/// If the task is already in a completed state then nothing will be done.  It is safe to call this method regardless of state.
-- (void)complete;
-/// Complete the task.
-/// If the task is already in a completed state then nothing will be done.  It is safe to call this method regardless of state.
-/// \param logMessagesPrintBool A boolean indicating if log messages should print.  A value of true will still not print log messages if the task itself has been configured to not print log messages.
-///
-- (void)completeWithLogMessagesPrintBool:(BOOL)logMessagesPrintBool;
-/// Reset the task.
-/// Typically a task’s lifecycle runs its course when it reaches its completed state, and it takes no further actions.  In some cases you may wish for a task to execute again without redefining a new task.  Use this method to reset the task back to an original state whereby it may be run through its standard attempt lifecycle again.  If a task has been invalidated, this method will also restore it back to a valid state.
-- (void)reset;
-/// Resets the attempt series.
-/// This resets any retry waterfall and will reevaluate the task.
-- (void)resetAttemptSeries;
-/// Executes any defined custom method with the specified nameString.
-/// \param nameString The name of the custom method.
-///
-/// \param parametersDictionary An optional parameters dictionary.  Any keys and values are custom to the custom method.
-///
-- (void)executeCustomMethodWithNameString:(NSString * _Nonnull)nameString parametersDictionary:(NSDictionary * _Nullable)parametersDictionary;
-- (void)invalidate;
-/// Defines a closure which is intended to hold custom methods which can be used to extend individual instances of an object.
-@property (nonatomic, copy) void (^ _Nullable closure_executeCustomMethod)(NSObject * _Nonnull, NSString * _Nonnull, NSDictionary * _Nullable);
-/// A boolean indicating if log messages should be printed.
-/// This only applies to normal log messages, not exceptions and other errors.  This boolean exists so that task instances can be used for lower-level functionality without creating confusion in the log.  It is exposed publicly so that it may be overridden to false at times when something should terminate silently.
-@property (nonatomic) BOOL logMessagesPrintBool;
-/// The name of the task.
-/// This is a human readable name which is displayed in places such as the log.
-@property (nonatomic, readonly, copy) NSString * _Nullable nameString;
-@property (nonatomic, strong) KVANetworking * _Nullable networking;
-/// A time interval after which the task should passively reset the next time its completion status is checked.
-@property (nonatomic) NSTimeInterval resetPassiveTimeInterval;
-/// A TimeIntervalSeries which describes the default pattern whereby retries should subsequently take place following a failure.
-/// This value is a default and it may be overridden later in context depending upon the specifics of a failure.
-@property (nonatomic, strong) KVATimeIntervalSeries * _Nullable retryTimeIntervalSeries;
-/// A boolean indicating if this task is done.
-/// The state of being done means that the task did execute an attempt and did finish successfully.  This is as opposed to being complete, which is when the task will no longer make subsequent attempts irrespective of considerations such as whether an attempt to execute the task was ever made or whether an attempt finished successfully.
-@property (nonatomic, readonly) BOOL accomplishedBool;
-/// A boolean indicating if this task is in progress.
-/// A task becomes in progress when an attempt is started, and it becomes no longer in progress when it is not going to retry, and completedBool is true.  At this point accomplishedBool may or may not be true.  See also attemptInProgressBool.
-@property (nonatomic, readonly) BOOL attemptSeriesInProgressBool;
-/// The NSTimeInterval that the task was/has been in progress.
-- (NSTimeInterval)attemptSeriesInProgressTimeInterval SWIFT_WARN_UNUSED_RESULT;
-/// A boolean indicating if this task is completed.
-/// The state of being completed means that the task will no longer make subsequent attempts.  This does not indicate whether or not the task was able to attempt to execute or that an attempt did finish successfully (see accomplishedBool).
-@property (nonatomic, readonly) BOOL completedBool;
+@interface KVATask : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// A boolean indicating if the task experienced any delay from the moment it was started.
-/// Delays would include things like prerequisites not being met, an attempt ending without accomplishing, etc.
-@property (nonatomic, readonly) BOOL didExperienceDelayBool;
-/// A constant to be used as a notification name string for when a task becomes completed.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)didCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A constant to be used as a notification name string for when a task becomes reset.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didResetNotificationName;)
-+ (NSNotificationName _Nonnull)didResetNotificationName SWIFT_WARN_UNUSED_RESULT;
+/// An instance of networking.
+@property (nonatomic, strong) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-/// A class which wraps a time interval value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a time interval value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVATimeIntervalAdapter")
 @interface KVATimeIntervalAdapter : KVANumberAdapter
-/// The designated constructor for a KVATimeIntervalAdapter— using modern Objective-C syntax.
-+ (KVATimeIntervalAdapter * _Nonnull)timeIntervalAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumTimeIntervalNumber:(NSNumber * _Nullable)minimumTimeIntervalNumber maximumTimeIntervalNumber:(NSNumber * _Nullable)maximumTimeIntervalNumber defaultValueTimeIntervalNumber:(NSNumber * _Nullable)defaultValueTimeIntervalNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueTimeInterval for the KVATimeIntervalAdapter.
-@property (nonatomic) NSTimeInterval valueTimeInterval;
-/// A constant closure which formats an NSNumber value as a time interval number for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_timeInterval)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_timeInterval SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines a series of time intervals, which express a waterfall pattern.
-/// This class defines a series of time intervals (often resembling a resonation from smaller to larger intervals of time) along with methods to walk through the series and describe its current state.
 SWIFT_CLASS_NAMED("KVATimeIntervalSeries")
-@interface KVATimeIntervalSeries : NSObject <KVAConfigureWithProtocol, KVAFromProtocol>
-/// The main constructor for a TimeIntervalSeries— using modern Objective-C syntax.
-/// \param timeIntervalArray An array of TimeInterval wrapped in NSNumber.  This array is sequenced in the order that these time intervals should be used.
-///
-/// \param repeatFinalTimeIntervalBool A boolean which indicates whether the last time interval in the timeIntervalArray should repeat indefinitely.  If this value is false then there are no subsequent time intervals returned following the last time interval, effectively bringing a TimeIntervalSeries to a close.
-///
-+ (KVATimeIntervalSeries * _Nonnull)timeIntervalSeriesWithTimeIntervalArray:(NSArray<NSNumber *> * _Nullable)timeIntervalArray repeatFinalTimeIntervalBool:(BOOL)repeatFinalTimeIntervalBool SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVATimeIntervalSeries : NSObject <NSCopying>
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
 - (BOOL)isEqual:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Advance to the next time interval.
-- (void)advance;
-/// Return a description for the current state.
-- (NSString * _Nonnull)previousIterationString SWIFT_WARN_UNUSED_RESULT;
-/// Reset the TimeIntervalSeries so that the next time interval will be the first in the array.
-- (void)reset;
-/// A time interval wrapped in an NSNumber which is to be used in place of the next time interval.
-/// When this property is set it will effectively block the next advance of the currentIndex, and it will be consumed such that during the next period the currentTimeInterval will return this value instead of the one normally specified.
-@property (nonatomic, strong) NSNumber * _Nullable insertTimeIntervalNumber;
-/// An array of NSTimeInterval wrapped in NSNumber.  This array is sequenced in the order that these time intervals should be used.
-@property (nonatomic, readonly, copy) NSArray<NSNumber *> * _Nullable timeIntervalArray;
-/// An integer which represents the current attempt, starting at zero.
-/// This integer represents the human-readable attempt that we are currently at, intended to be called following a call to currentTimeIntervalWithAdvanceBool.  It is similar to currentIndex in that it generally starts off as currentIndex, but it is different from currentIndex in that it increments indefinitely even when currentIndex may have reached the end and be continuing using repeatFinalTimeIntervalBool.
-@property (nonatomic, readonly) NSInteger currentIteration;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
 /// A class which wraps a timer with an advanced and high-level interface.
-/// Traditional timers, once fired or invalidated, cannot be restarted.  This requires them to be reconstructed from scratch each time they are to be started again.  They also have naunced thread-safety requirements which requires careful consideration.  This class provides a wrapping mechanism which allows you to use a single instance which can be started, stopped, or reset.  Thread considerations are abstracted internally.  Additionally the timer can be configured to decide for itself if it should be started based on a supplied custom closure, enabling a single call to manage changes to the timer.
 SWIFT_CLASS_NAMED("KVATimer")
-@interface KVATimer : NSObject <KVAInvalidatable, KVAStartable>
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)start;
-- (void)stop;
-- (void)reset;
-- (void)invalidate;
-/// A boolean indicating if the timer is started.
-@property (nonatomic, readonly) BOOL startedBool;
-/// A boolean indicating if the timer is considered active.
-/// The timer may not actually exist at this point, as a dispatch may be in progress, but for all intents and purposes we can consider it as effectively existing.
-@property (nonatomic, readonly) BOOL timerActiveBool;
+@interface KVATimer : NSObject
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
 /// A high-level wrapper for a value, along with its associated meta value(s).
-/// <h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Decoding</em> — New instances can be decoded from JSON.
-///   </li>
-///   <li>
-///     <em>Encoding</em> — Existing instances can be encoded as a dictionary which can be serialized into JSON.
-///   </li>
-///   <li>
-///     <em>Identification</em> — The property idString provides a universally unique identifier for the value.
-///   </li>
-///   <li>
-///     <em>Adapter Subordination</em> — The property adapter, along with its related property valueSourceNameString, associate the value with an instance of class <code>KVAAdapter</code>. This extends it to recognize, and in some cases abide by, the features provided by the adapter.
-///   </li>
-///   <li>
-///     <em>Adaptation</em> — A variety of methods are provided to gracefully adapt the value object to a variety of other types.
-///   </li>
-///   <li>
-///     <em>Start Date</em> (var <code>startDate</code>) — The property startDate defines when the value effectively started.  It can then be used to recognize freshness (or staleness).
-///   </li>
-///   <li>
-///     <em>Staleness</em> (func <code>staleBool()</code>) — The value can determine and report if it is stale.
-///   </li>
-///   <li>
-///     <em>Meta Values</em> —  The property metaValueArrayDictionary provides for the storage of custom meta value(s).
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVAValue")
-@interface KVAValue : NSObject <KVAFromProtocol>
-/// Create an instance from parameters— using modern Objective-C syntax.
-+ (KVAValue * _Nonnull)valueWithIdString:(NSString * _Nullable)idString rawObject:(id _Nullable)rawObject object:(id _Nullable)object serverObject:(id _Nullable)serverObject valueSourceNameString:(NSString * _Nullable)valueSourceNameString adapter:(KVAAdapter * _Nullable)adapter metaValueArrayDictionary:(NSDictionary<NSString *, KVAValue *> * _Nullable)metaValueArrayDictionary startDate:(NSDate * _Nullable)startDate placeholderForAsynchronousCollectionBool:(BOOL)placeholderForAsynchronousCollectionBool SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVAValue : NSObject
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return an NSArray cast of object if it is an NSArray.  Returns nil if not.  A convenience method.
-- (NSArray * _Nullable)array SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean representation of object if it is an NSNumber.  Returns false if not.  A convenience method.
-- (BOOL)boolean SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSData cast of object if it is an NSData.  Returns nil if not.  A convenience method.
-/// Important Note:  If this is not data, such as a string that is not a base64 encoded version of a string, this will return nil.  This does not convert a simple string to become base64 encoded data.
-- (NSData * _Nullable)data SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDate cast of object if it is an Date.  Returns nil if not.  A convenience method.
-- (NSDate * _Nullable)date SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDictionary cast of object if it is an NSDictionary.  Returns nil if not.  A convenience method.
-- (NSDictionary * _Nullable)dictionary SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSInteger cast of object if it is an NSInteger.  Returns zero if not.  A convenience method.
-- (NSInteger)integer SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSNumber cast of object if it is an NSNumber.  Returns nil if not.  A convenience method.
-- (NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSString cast of object if it is an NSString.  Returns nil if not.  A convenience method.
-- (NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSTimeInterval cast of object if it is an NSNumber.  Returns nil if not.  A convenience method.
-- (NSTimeInterval)timeInterval SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if the object should be considered stale.
-- (BOOL)staleBool SWIFT_WARN_UNUSED_RESULT;
-/// Return a value for the specified object and for the specified context.
-/// This method is a little odd here in class KVAValue because values are themselves values, but this method signature is used by other classes as well.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create a dictionary containing an array of KVAValue(s), keyed by their adapter name strings, from an array of objects.
-/// \param objectArray An array of objects from which to create the dictionary.
-///
-/// \param globalValueSourceCollection A global array of KVAAdapter(s) wrapped in an NSDictionary.
-///
-+ (NSDictionary<NSString *, KVAValue *> * _Nullable)valueArrayDictionaryFromObjectArray:(NSArray * _Nullable)objectArray globalValueSourceCollection:(KVACollection * _Nullable)globalValueSourceCollection SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if this KVAValue may mutate.
-/// This is referring specfically to the conditions where didMutate may be called, producing the associated observable notification.
-- (BOOL)mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-/// The associated adapter.
-/// The reason why this is weak is because if it is not it sets up a reference cycle with the adapter when the adapter has it set as its cachedValue.  We’ve designed this class to function gracefully without this property set, there being other fields which stand in when the adapter is missing.  That was done for other reasons, but it also assists with the weak quality of this property.
-@property (nonatomic, weak) KVAAdapter * _Nullable adapter;
-/// A dictionary containing a global array of adapters keyed by their names.
-@property (nonatomic, weak) KVACollection * _Nullable globalValueSourceCollection;
-/// A universally unique identifier (UUID).
-@property (nonatomic, readonly, copy) NSString * _Nullable idString;
-/// An optional dictionary containing custom meta value(s) in the form of an array of KVAValue(s) indexed by the adapter’s name string.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, KVAValue *> * _Nullable metaValueArrayDictionary;
-/// The value object.
-/// This value has been validated.
-@property (nonatomic, readonly, strong) id _Nullable object;
-/// A boolean indicating that this value is a placeholder for an asynchronous collection.
-/// When getting the KVAValue for a KVAAdapter, it is necessary at times to create a new KVAValue if none is present.  This is to ensure that a value exists to express concepts such as defaults and staleness.  But in the case of asynchronous collections, if another caller requests a value while a collection is ongoing, it would be unacceptable to return this value in place of adding the caller’s completion handler to the array to be processed later.  This boolean serves to note that this condition exists.  When set, this boolean has the effect of conferring automatic staleness.
-@property (nonatomic, readonly) BOOL placeholderForAsynchronousCollectionBool;
-/// The raw value object.
-/// This value has not been validated or reformatted for the server.  It is used as the base for producing some form of output.
-@property (nonatomic, readonly, strong) id _Nullable rawObject;
-/// Return a resolved serverObject.
-/// This factors in the current adapter, if one is known, and ensures at this level that the value provided back should be JSON serializable.  The phrase “should be” is used because this is using the NSJSONSerialization isValidJSONObject method to verify that NSDictionary(s) and NSArray(s) are serializable, and at the time of this writing there are some known limitations.  It is expected to still potentially miss NaN and numeric overflow conditions.
-- (id _Nullable)serverObject SWIFT_WARN_UNUSED_RESULT;
-/// Return a server formated value object which has been resolved and returned as a string.
-/// If the underlying value is not a string, it will attempt to automatically convert it.
-- (NSString * _Nullable)serverObject_string SWIFT_WARN_UNUSED_RESULT;
-/// The date that the value started its freshness cycle.
-@property (nonatomic, readonly, copy) NSDate * _Nonnull startDate;
-/// Return a resolved valueSourceNameString.
-/// This factors in the current adapter, if one is known.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourceNameString;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-@interface NSArray<ObjectType> (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+@interface NSArray<ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 /// Create an instance from another object, allowing for the elementClass to be explictly specified.
 /// \param object An object from which to create the instance.  This is expected to be an NSArray.  The elements inside may be native class objects or may be other representations which can be resolved to native class objects.
@@ -2540,261 +1032,45 @@ SWIFT_CLASS_NAMED("KVAValue")
 /// \param elementClass The class of the element(s).
 ///
 + (nullable instancetype)kva_from:(id _Nullable)object elementClass:(Class _Nullable)elementClass initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSData (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-/// Create an instance from a hex string
-/// If the provided hexString is not valid it will attempt to return nil;  however, that outcome cannot be guaranteed.
-- (nullable instancetype)kva_initWithHexString:(NSString * _Nullable)hexString SWIFT_METHOD_FAMILY(init);
+@interface NSData (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the data expressed as a hex string.
-- (NSString * _Nullable)kva_hexString SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 @interface NSDate (SWIFT_EXTENSION(KochavaCore))
-/// Return a sendDateString
-/// \param requestBodyDictionary A network request body dictionary.
-///
-- (NSString * _Nonnull)kva_sendDateStringFromRequestBodyDictionary:(NSDictionary * _Nullable)requestBodyDictionary SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSDate (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-/// Create an NSDate from an String.
-/// The following formats are currently supported, in this order:  1) UTC ISO 8601.  In the future this list could be expanded.
-+ (nullable instancetype)kva_dateFromString:(NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime.
-/// This is effectively the date as a timeIntervalSince1970, converted from a double to a long long (the integer portion only).
-/// One could argue that this would be better returned as a double rather than a long long, but unix time is traditionally an integer.
-- (uint64_t)kva_unixTime SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime wrapped in an NSDecimalNumber.
-/// At the present time the unixTime is a long long, identical to what is returned by kva_unixTime.
-- (NSDecimalNumber * _Nonnull)kva_unixTimeDecimalNumber SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime in milliseconds.
-- (uint64_t)kva_unixTimeMilliseconds SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTimeString.
-/// This is effectively the date as a timeIntervalSince1970, converted from a double to a long long (the integer portion only), and then stored in a string.
-- (NSString * _Nonnull)kva_unixTimeString SWIFT_WARN_UNUSED_RESULT;
-/// Return the date in the form of an ISO 8601 date string.  Example:  “2017-09-28T19:10:32.138+00:00”.
-- (NSString * _Nonnull)kva_iso8601DateString SWIFT_WARN_UNUSED_RESULT;
-/// Return the date in the form of an ISO 8601 short date string.  Example:  “2017-09-28T19:10:32.138Z”.
-- (NSString * _Nonnull)kva_iso8601ShortDateString SWIFT_WARN_UNUSED_RESULT;
-/// <ul>
-///   <li>
-///     A convenience method to convert the date into a particular string format.
-///   </li>
-/// </ul>
-- (NSString * _Nullable)kva_stringWithDateStyle:(NSDateFormatterStyle)dateDateFormatterStyle timeStyle:(NSDateFormatterStyle)timeDateFormatterStyle SWIFT_WARN_UNUSED_RESULT;
-/// Get the current time interval “ago” for the given date.
-/// Given the assumption that the date is in the past (and not nil) this method returns an NSTimeInterval for the number of seconds since that date and up until the current date.  If the date is in the future this time interval will be negative.
-- (NSTimeInterval)kva_agoTimeInterval SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class NSDecimalNumberHandler;
 
-@interface NSDecimalNumber (SWIFT_EXTENSION(KochavaCore))
-/// Create an NSDecimalNumber from a double with a banker’s scale four rounding mode.
-+ (NSDecimalNumber * _Nonnull)kva_bankersScaleFourRoundingModeDecimalNumberFromDouble:(double)aDouble SWIFT_WARN_UNUSED_RESULT;
-/// Create an NSDecimalNumber from an NSNumber with a banker’s scale four rounding mode.
-+ (NSDecimalNumber * _Nullable)kva_bankersScaleFourRoundingModeDecimalNumberFromNumber:(NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Create an NSDecimalNumber from a any object with a banker’s scale four rounding mode.
-/// Return nil if a conversion pathway for the object is not known.
-+ (NSDecimalNumber * _Nullable)kva_bankersScaleFourRoundingModeDecimalNumberFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-+ (NSDecimalNumber * _Nullable)kva_timeIntervalRoundingModeDecimalNumberFromNumber:(NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-/// Return nil if a conversion pathway for the object is not known.
-+ (NSDecimalNumber * _Nullable)kva_timeIntervalRoundingModeDecimalNumberFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-+ (NSDecimalNumber * _Nonnull)kva_timeIntervalRoundingModeDecimalNumberFromTimeInterval:(NSTimeInterval)timeInterval SWIFT_WARN_UNUSED_RESULT;
-/// An NSDecimalNumberHandler which provides standard formatting for an NSDecimalNumber that has four decimal digits.
-/// The number of decimal digits (scale) rounds to 2.  Rounding is .bankers.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSDecimalNumberHandler * _Nonnull kva_bankersScaleFourRoundingModeDecimalNumberHandler;)
-+ (NSDecimalNumberHandler * _Nonnull)kva_bankersScaleFourRoundingModeDecimalNumberHandler SWIFT_WARN_UNUSED_RESULT;
-@end
 
-@class NSMutableDictionary;
-
-@interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+@interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create an array containing asForContextObject(s) for the given dictionary containing an array of KVAAsForContextProtocol objects.
-/// The keys of the dictionary are assumed to be some relevant value for indexing, but are otherwise irrelevant to this method.  They are not represented in the returned array;  however, they are likely to be a property contained within the returned objects.
-/// \param context A context.
-///
-- (NSArray<NSObject *> * _Nullable)kva_asForContextArrayWithContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Lowercase any keys which are strings at the top level of the dictionary.
-- (NSMutableDictionary * _Nonnull)kva_stringKeysLowercasedDictionary SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSError (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+
+
+@interface NSNumber (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSException (SWIFT_EXTENSION(KochavaCore))
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSMutableArray<ObjectType> (SWIFT_EXTENSION(KochavaCore))
-/// Add an object which may safely be nil.
-- (void)kva_addNullableObject:(NSObject * _Nullable)object;
-/// Add objects from an array which may safely be nil.
-- (void)kva_addObjectsFromNullableArray:(NSArray * _Nullable)otherArray;
-@end
-
-
-@interface NSMutableDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
-/// Add entries from a dictionary which may safely be nil.
-- (void)kva_addEntriesFromNullableDictionary:(NSDictionary * _Nullable)dictionary;
-@end
-
-
-@interface NSNumber (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-+ (nullable instancetype)kva_numberFromString:(NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Compare two numbers for equality, providing for the possibility that either string may be nil.
-/// Although you can test two numbers for equality by using the isEqualToNumber: method directly, that comparison will fail if both numbers are nil.  In contrast, this method will safely return true if both numbers are nil.  It will also recognize when one number is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_number:(NSNumber * _Nullable)number isEqualToNumber:(NSNumber * _Nullable)anotherNumber SWIFT_WARN_UNUSED_RESULT;
-/// Returns a boolean indicating if this NSNumber is recognized as being a boolean.
-/// This method should probably not be regarded as a perfect indictor, as the means by which it makes its determination is by checking for a specific backing CFTypeID, and theoretically the OS could change this in the future.  Nevertheless, at present it can be observed to work in the context(s) we’re using it, and so it is taken to be safe to use as a hint to help improve the visual formatting of booleans.
-- (BOOL)kva_isBoolBool SWIFT_WARN_UNUSED_RESULT;
-@end
-
-@class NSNotification;
-@protocol NSObject;
-
-@interface NSObject (SWIFT_EXTENSION(KochavaCore)) <KVAAsForContextProtocol, KVAMutable>
-/// Return a native object for a class from another object.
-/// If an object cannot be converted then kva_from will be returned as-is, making this method safe to be used on any object to see if it can be brought into a native class object.
-/// \param object An object which may or may not be a native class object, with the hope that it may not be but may be convertable to one.  Non-native objects are typically instances of NSDictionary or NSArray which were created from a call to a kva_as(forContext:) method.  They may also have originated from external sources, such as servers, and often are valid JSON.
-///
-/// \param aClass The target class.  This parameter is optional.  When omitted the class to use will be inferred from kva_from, if possible.  This typically becomes possible when kva_from is a dictionary which contains a key “$class” which specifies the class, or else when kva_from is an array of objects which can be similarly resolved.  When this parameter is passed, it takes precedence over these specifications, and will enforce the class by attempting to create an object from the specified class.  If kva_from is not truly an object which can be converted to the class, the results may be less than desireable, as you should generally expect to end up with an object of the specified class which is relatively unconfigured (or nil altogether).
-///
-/// \param elementClass A target class for any elements.  This parameter is optional.  This parameter generally applies to cases of class where the class would have elements, such as arrays and sets.  The rules for how this is used is identical to class, except applied to any elements within the class.
-///
-+ (id _Nullable)kva_from:(id _Nullable)object class:(Class _Nullable)aClass elementClass:(Class _Nullable)elementClass initializedObject:(id _Nullable)initializedObject networking:(KVANetworking * _Nullable)networking SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Compare two objects for equality, providing for the possibility that either object may be nil.
-/// Although you can test two objects for equality by using the isEqual: method directly, that comparison will fail if both strings are nil.  In contrast, this method will safely return true if both objects are nil.  It will also recognize when one object is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_object:(NSObject * _Nullable)object isEqualToObject:(NSObject * _Nullable)anotherObject SWIFT_WARN_UNUSED_RESULT;
-/// Append a second object to a first.
-/// Supports the appending of two objects with deep support for specific types such as NSDictionary and NSArray.  This supports working with JSON objects.
-+ (id _Nullable)kva_objectAppendingObject1:(id _Nullable)object1 object2:(id _Nullable)object2 SWIFT_WARN_UNUSED_RESULT;
-/// Return a redacted copy.
-/// This method only redacts.  As such, any containers within the returned object will be the same as those provided.  That is to say that if those containers were mutable they will remain mutable.  Also this does not effect a deep copy, optimizing for performance.
-/// \param keyStringRedactedBoolDictionary A dictionary containing redactedBoolNumber(s) keyed by keyString(s).
-///
-/// \param redactedKeyArray An array of keys which were redacted, which is modified.
-///
-- (id _Nullable)kva_redactedCopyFromKeyStringRedactedBoolDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)keyStringRedactedBoolDictionary key:(NSObject * _Nullable)key redactionKeySuffixString:(NSString * _Nullable)redactionKeySuffixString redactedKeyArray:(NSMutableArray * _Nullable)redactedKeyArray SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)kva_redactedCopyFromKeyStringRedactedBoolDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)keyStringRedactedBoolDictionary key:(NSObject * _Nullable)key parentKey:(id _Nullable)parentKey level:(NSInteger)level redactionKeySuffixString:(NSString * _Nullable)redactionKeySuffixString redactedKeyArray:(NSMutableArray * _Nullable)redactedKeyArray SWIFT_WARN_UNUSED_RESULT;
-/// @method + kva_nonnullObjectFromObject:
-///
-/// returns:
-/// A santized object purposed for use as a dictionary value.  The returned value is guaranteed to not be nil so that it can be safely sent straight into a dictionary constructor that would crash with if passed a nil value.
-+ (id _Nonnull)kva_nonnullObjectFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return a sanitized name for a class.
-/// Occasionally when we receive an object back from the operating system, it has an unexpected class.  It’s usually some low-level or undocumented class that is supposed to behave equivalently to the class we expect, but the problem is that these names are not safe to be persisted.  A future operating system could come along with a new underlying class name and have no support for the previous one.  This method santizes for the things we know about.
-+ (NSString * _Nullable)kva_sanitizedNameStringForClass:(Class _Nullable)aClass SWIFT_WARN_UNUSED_RESULT;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate;
-/// A method to call when the object did mutate— synchronization free.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate_sf;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will dispatch to the globalSerial dispatch queue before posting the notification.
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_sf_withInfoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will do this on the caller’s thread.
-/// \param childObject The child object which originated the mutation (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-/// \param performSideEffectsIntendedBeforeDispatchBool A boolean indicating of this method perform the side effects intended for before dispatch.  Generally speaking you wouldn’t expect that this should be the case, but you do want to perform those side effects which were intended to be done before the dispatch if you’re already inside of the dispatch, otherwise they’d never be performed.  You should regard the default you should pass for this to be true, and only set it to false if you performed this call for the current scope yourself.
-///
-- (void)kva_didMutate_sf_df_withChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary performSideEffectsIntendedBeforeDispatchBool:(BOOL)performSideEffectsIntendedBeforeDispatchBool;
-/// A method which is called when an object has mutated to perform side effects.
-/// Generally speaking this method will only be called from the globalSerial queue and it will not have any synchronization taken on the current object.  The exception would be if func kva_didMutate_sf_df(…) were to be manually called directly while not on the globalSerial queue or with synchronization taken.  This is something that should not generally be done, but if it is, any code which overrides this method should understand that and be prepared to dispatch to globalSerial if necessary and to keep in mind there may be existing synchronization.  One such place that does this today is the KochavaHost’s log.  All other implementations can assume that this method will be called on the globalSerial queue.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method which is called when an object has mutated to perform side effects— a variant called before the coalescing dispatch.
-/// This method will be called without dispatch and will be its caller’s thread.  This means it does not benefit from any dispatch coalescence which func kva_didMutate_performSideEffects(…) has, and the queue cannot be assumed to be the globalSerial queue in the same way;  however, it benefits from being more timely and retaining any existing synchronization which it should always have already, as long as the APIs are used correctly.  If the side effects you need to perform cannot occur after a dispatch, overriding this methid is the way to do it.  You just need to be more careful about how additionally often it may be called relative to the normal version which has dispatch coalescence, and importantly, which queue it may be called on.  You can however assume that there should already be synchronization taken on the current object.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// Add and return an observer to observe when the value of this object is taken to have mutated.
-/// This mechanism may not ensure that the value returned is definitely different as there are factors such as range checking which may influence the value and may cause it to be the same even when the underlying raw value may have changed.
-///
-/// returns:
-/// An observer.
-- (id <NSObject> _Nullable)kva_didMutate_addObserverUsingClosure:(void (^ _Nullable)(NSNotification * _Nullable))closure SWIFT_WARN_UNUSED_RESULT;
-/// Return whether the object is capable of mutating.
-/// Return true for any class except for those known to be immutable, such as NSString, NSDate, etc.  Excluded are classes such as NSArray and NSDictionary which may contain elements which may themselves mutate.  This method can theoretically be overridden to designate the objects of class as immutable.
-- (BOOL)kva_mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-@property (nonatomic) BOOL kva_didMutateDispatchCondensingAfterBool;
-/// A constant which is used as a key to indicate priority.
-/// This is supported when calling any of the kva_didMutate functions passing an infoDictionary.  Set this key with a value of true to express that a mutation should be processed with priority.  When processed with priority mutations will move forward to be persisted without delay;  however, with priority is not the same as aggressive.  Without being aggressive there is still a dispatch to the globalSerial queue prior to write.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull kva_priorityBoolKey;)
-+ (NSString * _Nonnull)kva_priorityBoolKey SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSString (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create a string from a boolean.
-/// Return the boolean as “true” or “false”.  This is not localized, nor will ever be, and therefore is suitable to be used in JSON and other programmatic interfaces.
-+ (nonnull instancetype)kva_fromBool:(BOOL)aBool SWIFT_WARN_UNUSED_RESULT;
-/// Return a json string serialized from a json object— using modern Objective-C syntax.
+@interface NSString (SWIFT_EXTENSION(KochavaCore))
+/// Return a json string serialized from a json object.
 /// \param prettyPrintBool A boolean indicating whether you want the json to be pretty printed.  Pretty printing involves adding carriage returns, indentation, etc.  It generally makes it more human readable but increases the total bytes.
 ///
 ///
 /// returns:
 /// A formatted string.
 + (NSString * _Nullable)kva_stringFromJSONObject:(id _Nullable)jsonObject prettyPrintBool:(BOOL)prettyPrintBool SWIFT_WARN_UNUSED_RESULT;
-/// Compare two strings for equality, providing for the possibility that either string may be nil.
-/// Although you can test two strings for equality by using the isEqualToString: method directly, that comparison will fail if both strings are nil.  In contrast, this method will safely return true if both strings are nil.  It will also recognize when one string is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_string:(NSString * _Nullable)string isEqualToString:(NSString * _Nullable)anotherString SWIFT_WARN_UNUSED_RESULT;
-/// Return a string which is limited to a maximum length.
-/// If the receiver is within the maximum length then self will be returned without copy.
-/// \param maximumLength The maximum length allowed.
-///
-- (NSString * _Nonnull)kva_withMaximumLength:(NSInteger)maximumLength SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 /// Return a JSON object, assuming that the string represents JSON.
 - (id _Nullable)kva_serializedJSONObjectWithPrintErrorsBool:(BOOL)printErrorsBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
-
-@interface NSProcessInfo (SWIFT_EXTENSION(KochavaCore))
-/// Return the operating system name.
-/// Example:  “macOS”.  This is determined through the use of system compiler flags.
-- (NSString * _Nonnull)kva_operatingSystemNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return a standard version information string for the operating system.
-/// Example:  “macOS 1.0”.  The patch segment of the version will be omitted if it is zero.
-- (NSString * _Nonnull)kva_operatingSystemStandardVersionInfoString SWIFT_WARN_UNUSED_RESULT;
-/// Return the operating system version string.
-/// Example:  “1.0”.  The patch segment of the version will be omitted if it is zero.
-- (NSString * _Nonnull)kva_operatingSystemVersionString SWIFT_WARN_UNUSED_RESULT;
-@end
 
 
 @interface UIApplication (SWIFT_EXTENSION(KochavaCore))
@@ -3020,13 +1296,10 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #if __has_warning("-Watimport-in-framework-header")
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
-@import Dispatch;
 @import Foundation;
 @import ObjectiveC;
 @import UIKit;
 #endif
-
-#import <KochavaCore/KochavaCore.h>
 
 #pragma clang diagnostic ignored "-Wproperty-attribute-mismatch"
 #pragma clang diagnostic ignored "-Wduplicate-method-arg"
@@ -3043,251 +1316,23 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # pragma pop_macro("any")
 #endif
 
-@class KVAContext;
-
-SWIFT_PROTOCOL_NAMED("KVAKeyable")
-@protocol KVAKeyable
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-@end
 
 @class KVANetworking;
-@class NSString;
-@class NSNumber;
-@class KVAValue;
-@class KVATask;
-@class KVAProduct;
-@class KVAConsent;
 
-/// A class which wraps a value and provides a range of features including, but not limited to, adaptation.
-/// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
-/// <h2>Examples</h2>
-/// Example - Creating an adapter which collects a string representation of the current webpage at apple.com (with maximum length limited to 2048 for readability).
-/// \code
-/// let appleDotComStringAdapter = KVAStringAdapter(
-///     networking: KVANetworking.shared,
-///     identifierString: "YourClass.appleDotComStringAdapter",
-///     key: "apple_dot_com",
-///     denyDatapointCheckBool: true,
-///     maximumStalenessTimeIntervalNumber: 15.0,
-///     closure_collectAsynchronously:
-///     {
-///         adapter, completionHandler in
-///
-///         KVANetTransaction.start(
-///             netTransactionObject:
-///             [
-///                 "nameString": "AppleDotComGetNetTransaction",
-///                 "request":
-///                 [
-///                     "urlString": "https://www.apple.com"
-///                 ]
-///             ],
-///             networking: KVANetworking.shared
-///         ){
-///             netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///             completionHandler(adapter, (responseClassObject as? String)?.kva_withMaximumLength(2048))
-///         }
-///     }
-/// )
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Identification</em> (var <code>identifierString</code>) — A unique identifier is provided for use within a global system catalog.  This enables instances of class KVAAdapter to be referenced from JSON objects.  It is also a base component for the formation of a key which can be used to store the associated information in persistent storage.
-///   </li>
-///   <li>
-///     <em>Value</em> (var <code>value</code>) — An instance of class <code>KVAValue</code> stores a single value object along with its associated metadata, such as its startDate.
-///   </li>
-///   <li>
-///     <em>Default Value</em> (par defaultValueObject) — When the valueObject would otherwise be nil, a defaultValueObject can be specified to be wrapped into an instance of <code>KVAValue</code> and returned instead.
-///   </li>
-///   <li>
-///     <em>Value Watching</em> (par watchBool) — For the purposes of understanding when changes have taken place to value, relative to the server, the parameter watchBool may be set to true to indicate that a copy of the value should be made and maintained in order to identify changes.  The presence of a change can be identified by calling func <code>watchValueIndicatesChangeBool()</code>.  The associated var <code>watchValue</code> contains the value recognized to be the server’s value.  Once the new value has been sent to the server, the watchValue can then be set to the current value to watch for future changes.  When sending these values to the server using class <code>KVANetTransaction</code>, you can do this automatically by setting key “valueUpdateBool” to true on each instance of class <code>KVADictionaryEntryFormat</code> which contains a watched value.  When the network transaction is sent successfully, the watchedValue will be set to the specific value which was included in the payload.
-///   </li>
-///   <li>
-///     <em>Validation</em> — Value objects are sanity checked for compliance with the requirements of persistent storage.   They also may be validated to fall within a given range of valid values.
-///   </li>
-///   <li>
-///     <em>Persistent Storage</em> (par persistBool) — When set to true, the associated value will be written to a persistent storage location.  Most often this location is NSUserDefaults.  It will then be automatically retrieved beween sessions of the app.  When value watching the watchValue will also be persisted.
-///   </li>
-///   <li>
-///     <em>Synchronous Collection</em> (par closure_collectSynchronously) — When the value is nil, or else stale, you may automatically collect a new value by returning a raw object from a custom closure which will be called synchronously.  This closure may be used to collect information from the local system on the caller’s thread.  See typealias <code>Closure_CollectSynchronously</code>.
-///   </li>
-///   <li>
-///     <em>Asynchronous Collection</em> (par closure_collectAsynchronously) — When the value is nil, or else stale, you may automatically collect a new value by returning a raw object from a custom closure which will be called asynchronously.  This closure may be used to collect information from the local system, or from an external system.  Because of its asynchronous nature, it may be used to dispatch to a specific queue to perform the work, such as the main thread.  It may also collect a value using another asynchronous call.  The value is returned by calling a supplied completionHandler.  See typealias <code>Closure_CollectAsynchronously</code>.
-///   </li>
-///   <li>
-///     <em>Access Control</em> (par closure_adapter_mayOperateBoolForContext) — Prior to a value being collected, kept, persisted, or shared, this closure is called to first verify if the adapter may operate.  This closure may factor in any number of considerations, such as whether or not the system is configured and ready, if it complies with the requirements of a deny list, etc.  See typealias KVANetworking.Closure_Adapter_MayOperateBoolForContext.
-///   </li>
-///   <li>
-///     <em>Consent Compliance</em> (var <code>consent</code>) — The property consentRequiredBool may be used to broadly indicate if consent is required.  The effects of consent upon the adapter may be fine-tuned using var <code>consentRequiredToCollectBool</code>, var <code>consentRequiredToKeepBool</code>, var <code>consentRequiredToPersistBool</code>, and/or var <code>consentRequiredToShareBool</code>.  These four properties default to true, and may be individually overridden to false.  The adapter will then observe the rules of consent, and only collect, keep, persist, or share the associated value when permitted.  At times when consent may be revoked, or otherwise unknown, this includes removing an existing value from persistent storage, clearing kept memory, etc.  See class <code>KVAConsent</code>.
-///   </li>
-///   <li>
-///     <em>Staleness</em> (var <code>maximumStalenessTimeIntervalNumber</code>) - A value may be automatically discarded and re-collected if it has become stale, as indicated by a specified time interval having elapsed since the value was originally collected.  This notion of staleness detection can transparently cross over between successive launches when persistent storage is used.
-///   </li>
-///   <li>
-///     <em>Interface</em> (par interfaceInDictionary) — For values coming from external sources, an optional parameter can be used to define input values along with corresponding output values.  This enables you to say that when some particular value object is stored in the adapter that it should come out as another value object.
-///   </li>
-///   <li>
-///     <em>Adaptation</em> — The class KVAAdapter, and it’s subclasses, provide methods to adapt values from one type to another, where appropriate.  This is generally expressed through a type-specific subclass, as well as through the capabilities provided by the backing instances of class <code>KVAValue</code>.
-///   </li>
-/// </ul>
+SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
+@protocol KVANetworkingSetterProvider
+@property (nonatomic, strong) KVANetworking * _Nullable networking;
+@end
+
+@class NSString;
+
+/// A class which collects and/or adapts a value to a variety of contexts.
 SWIFT_CLASS_NAMED("KVAAdapter")
-@interface KVAAdapter : NSObject <KVAConfigureWithProtocol, KVAInvalidatable, KVAKeyable>
-/// The designated initialization method for an Adapter— using modern Objective-C syntax.
-+ (nonnull instancetype)adapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueObject:(id _Nullable)defaultValueObject valueObject:(id _Nullable)valueObject valueClass:(Class _Nullable)valueClass closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
+@interface KVAAdapter : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return the value for the adapter, supporting asynchronous collection.
-/// If asynchronous collection is not required, and if you do not need other details associated with the value such as the date of the value, you may instead use a method such as valueObject.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context waitBool:(BOOL)waitBool completionHandler:(void (^ _Nullable)(KVAAdapter * _Nonnull, KVAValue * _Nullable))completionHandler;
-/// Return the value for the adapter, supporting asynchronous collection.
-/// If asynchronous collection is not required, and if you do not need other details associated with the value such as the date of the value, you may instead use a method such as valueObject.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context touchlessBool:(BOOL)touchlessBool waitBool:(BOOL)waitBool completionHandler:(void (^ _Nullable)(KVAAdapter * _Nonnull, KVAValue * _Nullable))completionHandler;
-/// Return whether or not the value will be collected (or re-collected) the next time it is requested.
-- (BOOL)valueWillBeCollectedBoolForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if the adapter may share its value for a given context.
-- (BOOL)mayShareBoolForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (BOOL)persistentStorage_restore SWIFT_WARN_UNUSED_RESULT;
-- (void)persistentStorage_writeIfDidMutateBool_aggressively;
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-@property (nonatomic, copy) NSArray<KVATask *> * _Nullable asynchronousCollectionPrerequisiteTaskArray;
-@property (nonatomic, copy) NSArray<NSString *> * _Nullable asynchronousCollectionPrerequisiteTaskNameStringArray;
-/// A boolean indicating if consent is required to collect.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToCollectBool;
-/// A boolean indicating if consent is required to keep.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.  When this property is true, any value or watchValue will be purged when consent.mayKeepBool becomes false.  When this property is false, any value or watchValue will be left in memory when consent.mayKeepBool becomes no, but it will be effectively inaccessable under certain contexts.  If consent is later granted the value may then again be usable.  It may however still be lost should the tracker deallocate, as nothing will be left in persistent storage (depending on the configuration of consentRequiredToPersistBool).
-@property (nonatomic) BOOL consentRequiredToKeepBool;
-/// A boolean indicating if consent is required to persist.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToPersistBool;
-/// A boolean indicating if consent is required to share.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToShareBool;
-/// A deny datapoint identifier string.
-/// When denied the adapter will not be permitted to collect or share if it is found within a denied datapoint array.
-@property (nonatomic, readonly) BOOL denyDatapointCheckBool;
-/// A deny datapoint identifier string.
-/// When denied the adapter will not be permitted to collect or share if it is found within a denied datapoint array.
-@property (nonatomic, readonly, copy) NSObject * _Nullable key;
-/// A descriptionString for the adapter.
-/// This is a human friendly description which may be used in UI.
-@property (nonatomic, copy) NSString * _Nullable descriptionString;
-/// A closure which is called whenever the adapter is invalidated.
-/// This can be used to invalidate processes within an closure_collectAsynchronously, such as when the gathering of a value is in progress.
-@property (nonatomic, copy) void (^ _Nullable closure_didInvalidate)(KVAAdapter * _Nonnull);
-/// A closure which is called whenever the adapter did mutate.
-/// This includes certain mutations to value and, in particular, anything which may require persistent storage to be updated.  This may include other mutations.  This differs from closure_didSetValue in that it includes when the value itself experiences a mutation, such as is the case when value.rawObject mutates.
-@property (nonatomic, copy) void (^ _Nullable closure_didMutate)(KVAAdapter * _Nonnull);
-/// A closure which is called when the adapter did read from persistent storage.
-/// This can be used to update properties within the value and/or watchValue.
-@property (nonatomic, copy) void (^ _Nullable closure_didReadFromPersistentStorage)(KVAAdapter * _Nonnull);
-/// A closure which is called whenever the KVAValue has been set- called from the same thread.
-/// Because this is called from the same thread, when this is used, consideration must be given to what will happen within the closure with respect to synchronization.  The thread could be any thread.  While access to other adapters will be thread safe automatically, other properties may not be.
-@property (nonatomic, copy) void (^ _Nullable closure_didSetCachedValueOnSameThread)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// A closure which is called whenever the KVAValue has been set.
-@property (nonatomic, copy) void (^ _Nullable closure_didSetValue)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// An identifier for the adapter.
-/// This identifier is used when displaying log entries related to this adapter.  Assuming that the property name is reasonable, this should be set to the string value of that property’s name, but it can be something else that would make sense to the host app developer.
-@property (nonatomic, readonly, copy) NSString * _Nonnull identifierString;
-/// An initialized object which should be used when instantiating an intance of the value.object.
-@property (nonatomic) id _Nullable initializedObject;
-/// A time interval which defines the maximum staleness allowed for the value.
-/// If the value’s staleness exceeds the maximumStalenessTimeIntervalNumber it is essentially taken to not exist.  From there the value may be re-collected (when collection is supported).
-@property (nonatomic, strong) NSNumber * _Nullable maximumStalenessTimeIntervalNumber;
-/// A name for the adapter.
-/// This is a human friendly name which may be used in UI.
-@property (nonatomic, copy) NSString * _Nullable nameString;
+/// An instance of networking.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
-/// A boolean which indicates that the persistence of updates should take place immediately.
-/// This is used to ensure that a write will take place prior to a crash.
-@property (nonatomic) BOOL persistAgressiveBool;
-/// The type of user defaults to use.
-/// Default nil.  See KVAProduct.userDefaultsForTypeString.
-@property (nonatomic, copy) NSString * _Nullable persistUserDefaultsTypeString;
-/// A boolean indicating if a log message should be printed when writing to persistent storage.
-/// Defaults to false.  See var <code>persistentStorageWriteLogMessagePrintBool_optional</code>.
-@property (nonatomic) BOOL persistentStorageWriteLogMessagePrintBool;
-/// A time interval to wait before writing to persistent storage.
-/// Defaults to 0.0.  See var <code>persistentStorageWriteWaitTimeInterval_optional</code>.
-@property (nonatomic) NSTimeInterval persistentStorageWriteWaitTimeInterval;
-/// A KVAProduct.
-/// This is used in the defining of the key used for persistent storage.
-/// This property supports inheritance from networking.
-@property (nonatomic, strong) KVAProduct * _Nullable product;
-/// A closure which formats the value object for the server.
-/// Generally speaking we prefer to store values using their native values, which would not be affected by the formatting required by the server.  Normally a value object is sent to the server as is; however, it can be formatted for the server if the native value is not suitable.
-@property (nonatomic, copy) NSObject * _Nullable (^ _Nullable closure_serverObject)(KVAAdapter * _Nonnull, NSObject * _Nullable);
-/// A string used as an identifier to be used as a component in the persistent storage key to differentiate between different storage spaces.
-/// This property supports inheritance from networking.
-@property (nonatomic, copy) NSString * _Nullable storageIdString;
-/// The “native” class for the value.
-/// Optional.  This is used during ingestion to resolve to native objects.  It is still possible to resolve to a native object without this being configured, so long as the source object is decorated with the class.
-@property (nonatomic, readonly) Class _Nullable valueClass;
-/// The “native” class for any elements of the value.
-/// Optional.  The valueElementClass refers to cases where valueClass is a class with elements, such as arrays and sets.  This is used during ingestion to resolve to native objects.  It is still possible to resolve elements to a native objects without this being configured, so long as the source elements are decorated with the class.
-@property (nonatomic) Class _Nullable valueElementClass;
-/// The value object.
-/// This value is fully validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.  This method may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) id _Nullable valueObject;
-/// A closure which returns meta value(s) for a newly created KVAValue in the form of an array of KVAValue(s) indexed by their adapter’s name string.
-/// At the time when a KVAValue is created, there may be reason(s) why you’d want to store additional meta value(s) with it.  For example, you may need to store the current os version so that you can consider a KVAValue stale when the os version changes.  This closure will be called once when the KVAValue is created, and a dictionary should be returned which contains whatever meta value(s) you wish to be stored with the KVAValue in the form of an array of other KVAValue(s).
-@property (nonatomic, copy) NSDictionary<NSString *, KVAValue *> * _Nullable (^ _Nullable closure_valueMetaValueArrayDictionary)(KVAValue * _Nonnull);
-/// A closure which returns if a KVAValue is stale.
-/// Staleness is initially reckoned by looking at maximumStalenessTimeIntervalNumber;  however, sometimes additional factors must also be considered.  Those factors can be considered in a custom manner using this closure.  If the returned boolean is true, then the value value will be considered stale.  You can use custom meta value(s) stored within the KVAValue as conditions.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_valueStaleBool)(KVAValue * _Nonnull);
-/// The watchValue object.
-/// This value is fully validated and resolved, and may be different than the watchValueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, strong) id _Nullable watchValueObject;
-/// A closure which is called whenever the KVAValue will be set.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_willSetValue)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// A boolean which indicates if asynchronous collection is in progress.
-/// We don’t ever want to asynchronously collect the adapter value twice at the same time.  We use this boolean to recognize that an asynchronous collection is already in progress.  It is assumed that when that collection finishes that all of the callers who wanted the result will be notified through their Closure_GetValueCompletionHandler in the getValueCompletionHandlerArray.
-@property (nonatomic) BOOL asynchronousCollectionInProgressBool;
-@property (nonatomic, readonly, strong) KVATask * _Nonnull asynchronousCollectionTask;
-/// A instance of KVAConsent.
-/// Optional.  This property supports inheritance from networking.
-@property (nonatomic, strong) KVAConsent * _Nullable consent;
-/// The current touchlessValue for this adapter.
-/// Private.  This is equivalent to value, except that it will not allow for collections to be performed that would update the value, synchronous or asynchronous.
-@property (nonatomic, strong) KVAValue * _Nullable touchlessValue;
-/// The current touchlessValue for this adapter.
-/// Private.  This is equivalent to value, except that it will not allow for collections to be performed that would update the value, synchronous or asynchronous.
-@property (nonatomic, strong) id _Nullable touchlessValueObject;
-/// The value.
-/// Private.  This virtual property represents an interface to value which is backed by cachedValue, the persistent store, and the various collection closures.  Getting from this virtual property will first establish the cachedValue and then return it, but it only supports synchronous retrieval.  Setting to this virtual property will also update the cached value.  This virtual property is private because we want all internal or public access to the value to go through valueForContext:completionHandler: to force the consideration the asynchronous option.  This method may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) KVAValue * _Nullable value;
-/// The value raw object.
-/// This value is unvalidated and unaltered.  This method’s getter may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) id _Nullable valueRawObject;
-/// The watch value.
-/// When watched values are sent in the form of updates to a server, this value is taken to be the last value sent to the server.  It can be used later to judge whether a new update is required.
-@property (nonatomic, strong) KVAValue * _Nullable watchValue;
-/// Return a boolean indicating whether the watchValue differs from the current value, indicating that the value has changed.
-- (BOOL)watchValueIndicatesChangeBool SWIFT_WARN_UNUSED_RESULT;
-/// The watchValue raw object.
-/// This value is unvalidated and unaltered.
-@property (nonatomic, strong) id _Nullable watchValueRawObject;
-/// A constant closure which returns a Closure_ServerObject provides the default value for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_default)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_default SWIFT_WARN_UNUSED_RESULT;
-/// A constant closure which returns a Closure_ServerObject which is nil.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_nil)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_nil SWIFT_WARN_UNUSED_RESULT;
-/// A constant which means that the adapter’s value is never stale.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSNumber * _Nullable stalenessNeverTimeIntervalNumber;)
-+ (NSNumber * _Nullable)stalenessNeverTimeIntervalNumber SWIFT_WARN_UNUSED_RESULT;
-/// A constant which means that the adapter’s value is stale immediately.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSNumber * _Nonnull stalenessImmediateTimeIntervalNumber;)
-+ (NSNumber * _Nonnull)stalenessImmediateTimeIntervalNumber SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -3305,23 +1350,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAAppGroups
 + (KVAAppGroups * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
 /// A string which corresponds to an app group identifier to be used as a shared container for the Kochava SDK.
 @property (nonatomic, copy) NSString * _Nullable deviceAppGroupIdentifierString;
-/// A string to use as the name for a notification that the deviceAppGroupIdentifierString did mutate.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull deviceAppGroupIdentifierStringDidMutateNotificationName;)
-+ (NSNotificationName _Nonnull)deviceAppGroupIdentifierStringDidMutateNotificationName SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-/// A class which wraps an array value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts an array value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAArrayAdapter")
 @interface KVAArrayAdapter : KVAAdapter
-/// The designated constructor for an ArrayAdapter—using modern Objective-C syntax.
-+ (KVAArrayAdapter * _Nonnull)arrayAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueArray:(NSArray * _Nullable)defaultValueArray valueObject:(id _Nullable)valueObject valueElementClass:(Class _Nullable)valueElementClass closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueString for the KVAStringAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSArray * _Nullable valueArray;
 @end
 
 
@@ -3329,82 +1366,34 @@ SWIFT_CLASS_NAMED("KVAArrayAdapter")
 /// This class assists in keeping the host app alive, to give KVANetTransaction(s) and a chance to be sent, and other critical tasks the opportunity to finish, in the situation where the app is resigning active.
 SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 @interface KVABackgroundTaskController : NSObject
-/// The singleton shared instance.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVABackgroundTaskController * _Nonnull shared;)
-+ (KVABackgroundTaskController * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// A method which is to be called whenever a KVANetTransaction start comes to be running.
-/// This will begin a core background task if one is not currently already in effect.  It is crucial that a balanced call to func didEndBackgroundSustainingTaskWithIdentifierString(<em>:) be made for every call made to func didBeginBackgroundSustainingTaskWithIdentifierString(</em>:).
-/// \param identifierString A string which identifies the background sustaining task.  This value is used for informational purposes only.
-///
-- (void)didBeginBackgroundSustainingTaskWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// A method which is to be called whenever a KVANetTransaction start comes to stop running.
-/// This will end any existing background task when an internal count reaches zero.  An important feature of this is that It does not do this right away, but always waits for minimumTimeInterval following the last end.  This enables un-anticipated side effects to potentially begin their own background sustaining tasks before the core background task is ended, and this will cause the core background task to continue to be gracefully sustained irrespective of these kinds of short interruptions.
-/// \param identifierString A string which identifies the background sustaining task.  This value is used for informational purposes only.
-///
-- (void)didEndBackgroundSustainingTaskWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// The minimum amount of time that we will keep the app alive while we wait for KVANetTransaction(s) to be created just prior to suspension.
-/// This time interval needs to be long enough to allow any random process which needs to generate a KVANetTransaction to do so, after which we will rely on the presence (or absence) of those transactions to know whether or not we are ready for suspension.
-/// note:
-/// This had been 0.5f for some time.  It was switched to 0.25f as of v5.1.0.  A longer value decreases the liklihood that an end will actually take place before a subsequent begin, resulting in reduced chatter in the log.  A shorter value makes the ends more timely, and closer to the event which triggered them.  A shorter value, however, should not improve performance.  Nothing in the timing of normal tests should be tied to this, and the lifecycle of this class is expected to cross over from test to test.
-@property (nonatomic, readonly) NSTimeInterval minimumTimeInterval;
-/// The maximum length of time that we will keep the app alive while we wait for our internal work to complete.  This includes waiting for KVANetTransaction(s) to be created and complete, location services to settle monitoring activities, among other things.  If these activities are known to have completed sooner than this value (which is normally the case) then we will end our background task and thereby allow the app to suspend sooner.
-/// A side effect of this value is that it provides a certain amount of time for the basic start sequence of the SDK to complete if the app is launched and then exited immediately.  It is therefore good that the amount of time provided here be sufficient to allow this sequence to complete under normal conditions, avoiding complications in the form of network timeouts upon didBecomeActive.  At the time of this writing that length of time is about 8 seconds.  Another factor is the length of time that we allow a new location retrieval to hold up the sending net transaction(s).  Right now that defaults to 15.0 seconds.  If this value is not set above that value then we may not send out the session end in time.  For this reason the current value is set to at least 18.0, giving 3.0 seconds to complete the task of sending and receiving prior to the timeout occurring here.  Another factor is the sample duration for location services.  The duration we may sample locations is the sample duration times 2, as a significant change sample period may be followed up with a precision sample period if what was determined through the significant change service was insufficient.  At the time of this writing the default sample duration is 8.0 seconds, making that a total of 16.0 seconds.  The current value is 33.0.  This is three second more than 30.0 seconds, which we are allowing for location services.  With this value we can assume that the dwell functionality may sustain the background task for up to 30.0 seconds.
-@property (nonatomic, readonly) NSTimeInterval timeoutTimeInterval;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-/// A class which wraps a number value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a number value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVANumberAdapter")
 @interface KVANumberAdapter : KVAAdapter
-/// The designated constructor for a KVANumberAdapter— using modern Objective-C syntax.
-+ (KVANumberAdapter * _Nonnull)numberAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumNumber:(NSNumber * _Nullable)minimumNumber maximumNumber:(NSNumber * _Nullable)maximumNumber defaultValueNumber:(NSNumber * _Nullable)defaultValueNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// The valueNumber for the NumberAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, strong) NSNumber * _Nullable valueNumber;
-/// A constant closure which formats an NSNumber as a four decimal digit number for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_fourDecimal)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_fourDecimal SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-/// A class which wraps an integer value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts an integer value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAIntAdapter")
 @interface KVAIntAdapter : KVANumberAdapter
-/// The designated constructor for an IntAdapter— using modern Objective-C syntax.
-+ (KVAIntAdapter * _Nonnull)intAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumIntegerNumber:(NSNumber * _Nullable)minimumIntegerNumber maximumIntegerNumber:(NSNumber * _Nullable)maximumIntegerNumber defaultValueIntegerNumber:(NSNumber * _Nullable)defaultValueIntegerNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// A convenience property that returns valueNumber in the form of an Int (NSInteger).
-/// It is understood that in order to do this in Objective-C it will resolve a nil value to 0.  Therefore whenever this method is intended to be used, a default value should previously be provided which will further ensure that the value returned is contextually relevant.  You can also assign to this value to provide direct assignment for this same type.
-@property (nonatomic) NSInteger valueInt;
 @end
 
 
-/// A class which wraps a bool value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a boolean value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVABoolAdapter")
 @interface KVABoolAdapter : KVAIntAdapter
-/// The designated constructor for a BoolAdapter— using modern Objective-C syntax.
-+ (KVABoolAdapter * _Nonnull)boolAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueBoolNumber:(NSNumber * _Nullable)defaultValueBoolNumber valueObject:(id _Nullable)valueObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// A convenience property that returns valueNumber in the form of a BOOL.
-/// It is understand that in order to do this in Objective-C it will resolve a nil value to 0.0.  Therefore whenever this method is intended to be used, a default value should previously be provided which will further ensure that the value returned is contextually relevant.  You can also assign to this value to provide direct assignment for this same type.
-@property (nonatomic) BOOL valueBool;
-/// A constant closure which returns a Closure_ServerObject provides a boolean as a number for the server.
-/// The default is to provide booleans as true or false.  This block is used when you want a 0 or 1.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_boolNumberServerObject)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_boolNumberServerObject SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class KVAInstruction;
-@class KVANetTransaction;
-@class KVALogLevel;
 
 /// A class which defines an keyed collection of objects.
 /// <h2>Features</h2>
@@ -3418,107 +1407,22 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nu
 /// </ul>
 SWIFT_CLASS_NAMED("KVACollection")
 @interface KVACollection : NSObject
-/// Conveniently construct a new KVACollection with a single object— using modern Objective-C syntax.
-/// \param object A value source.  It can be any object from which a value can be derived or constructed.
-///
-/// \param identifierString The identifierString for the object within the collection.
-///
-+ (KVACollection * _Nonnull)collectionWithObject:(id _Nullable)object identifierString:(NSString * _Nonnull)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Append another collection to this collection.
-- (void)appendCollection:(KVACollection * _Nullable)collection;
-/// Register an adapter.
-/// The adapter’s identifierString will be used as the identifierString within the collection.  It will also be indexed under the adapter’s key when available as a string [a].
-/// \param adapter The adapter.
-///
-- (void)registerAdapter:(KVAAdapter * _Nullable)adapter;
-/// Register an instruction.
-/// The instruction’s identifierString will be used as the identifierString within the collection.
-/// \param instruction The instruction.
-///
-- (void)registerInstruction:(KVAInstruction * _Nullable)instruction;
-/// Register a network transaction.
-/// The netTransaction’s nameString will be used as the identifierString within the collection.
-/// \param netTransaction The network transaction.
-///
-- (void)registerNetTransaction:(KVANetTransaction * _Nullable)netTransaction;
-/// Register an object with an identifier.
-/// identifierString: An identifier string to associate with the object.
-/// \param object An object.
-///
-- (void)registerObject:(id _Nullable)object identifierString:(NSString * _Nullable)identifierString;
-/// Register a task.
-/// The task’s nameString will be used as the identifierString within the collection.
-/// \param task The task.
-///
-- (void)registerTask:(KVATask * _Nullable)task;
-/// Register a value.
-/// \param value The value.
-///
-/// \param identifierString An identifier string to associate with the value.
-///
-- (void)registerValue:(KVAValue * _Nullable)value identifierString:(NSString * _Nonnull)identifierString;
-/// Register a valueSource.
-/// \param valueSource An object which is a value source.
-///
-/// \param identifierString An identifier string to associate with the valueSource.
-///
-- (void)registerValueSource:(id _Nullable)valueSource identifierString:(NSString * _Nonnull)identifierString;
-/// Unregister an object with the specified identifierString.
-- (void)unregisterObjectWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// Return the adapter for a specified identifierString.
-- (KVAAdapter * _Nullable)adapterWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Apply (execute) a given closure object to the entries of the collection.
-- (void)enumerateUsingClosure:(void (^ _Nullable)(NSString * _Nullable, id _Nullable, BOOL * _Nullable))closure;
-/// Return the KVAInstruction for a specified nameString.
-- (KVAInstruction * _Nullable)instructionWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return the KVANetTransaction for a specified nameString.
-- (KVANetTransaction * _Nullable)netTransactionWithNameString:(NSString * _Nullable)nameString SWIFT_WARN_UNUSED_RESULT;
-/// Return the object for a specified identifierString.
-- (id _Nullable)objectWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return an array of objects for the specified identifierString(s) in an identifierStringArray.
-- (NSArray * _Nullable)objectArrayWithIdentifierStringArray:(NSArray<NSString *> * _Nullable)identifierStringArray SWIFT_WARN_UNUSED_RESULT;
-/// Return the task for a specified identifierString.
-- (KVATask * _Nullable)taskWithNameString:(NSString * _Nullable)nameString SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)valueSourceWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return the current count of registered object(s).
-- (NSInteger)count SWIFT_WARN_UNUSED_RESULT;
-/// Gets the KVAValue(s) for an array of valueSourceCollection(s).
-/// \param valueSourceCollectionArray An array of valueSourceCollection(s).  Each valueSourceCollection can contain any number of KVAAdapter(s), keyed by their name(s).
-///
-/// \param optionalAppendToValueArrayMutableDictionary An optional valueArrayMutableDictionary to append the new KVAValue(s) to.  When passed, the provided dictionary will be mutated on the globalSerial dispatch queue.  For thread safety reasons, this parameter should not be used unless the all other mutations of the passed parameter are also made on the globalSerial dispatch queue.  The benefit of using this parameter is it can improve performance by avoiding needing to use a method such as NSMutableDictionary’s addEntriesFromDictionary later to combine the results with another dictionary, when needed.  If that kind of combination is not needed then this parameter should not be used.  If not passed, a new dictionary will be created.  When using this parameter, it is advisable that you still assign the value provided in the completion handler back to your original property.  This will avoid losing the results if the parameter you passed was unexpectedly nil.
-///
-/// \param context The context for which the values may be gathered.
-///
-/// \param completionHandler A completion handler.
-///
-+ (void)valueArrayDictionaryFromValueSourceCollectionArray:(NSArray<KVACollection *> * _Nullable)valueSourceCollectionArray optionalAppendToValueArrayMutableDictionary:(NSDictionary<NSString *, KVAValue *> * _Nullable)optionalAppendToValueArrayMutableDictionary context:(KVAContext * _Nullable)context completionHandler:(void (^ _Nullable)(NSArray<KVACollection *> * _Nullable, NSDictionary * _Nullable))completionHandler;
-/// Print a directory of elements.
-- (void)printDirectoryWithLogLevel:(KVALogLevel * _Nullable)logLevel;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@protocol KVAMutable;
-
-SWIFT_PROTOCOL_NAMED("KVAMutableDelegator")
-@protocol KVAMutableDelegator
-@property (nonatomic, readonly, weak) id <KVAMutable> _Nullable mutableDelegate;
-@end
-
+@class KVAContext;
+@class NSNumber;
 @class NSDate;
 @class KVAPartner;
 
 /// A feature which serves as an authority related to consent for the sharing of personal data.
 /// Data sharing privacy laws such as GDPR require consent to be obtained before certain kinds of personal data may be collected or calculated, kept in memory, persisted or retained in persistent storage, and/or shared with partners.  During the natural lifecycle, there are times where partners may be added and cause the consent status to fall back to an unknown state.  Later the user may again be prompted and the consent status may (or may not) again come to be known.  All of this is predicated upon whether or not consent is required, which is governed by a variety of factors such as location.
 SWIFT_CLASS_NAMED("KVAConsent")
-@interface KVAConsent : NSObject <NSCopying, KVAConfigureWithProtocol, KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAKeyable, KVAMutableDelegator>
+@interface KVAConsent : NSObject <NSCopying>
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
+- (id _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// A method which is to be called when there has been a prompt for consent.
 /// \param didGrantBoolNumber The response from the user, as a boolean wrapped in an NSNumber.  A value of true means consent was granted.  A value of false means consent was denied.  A value of nil means the user did not provide a response, and this includes if the user may have dismissed the dialog without indicating one way or another. 
 ///
@@ -3555,10 +1459,6 @@ SWIFT_CLASS_NAMED("KVAConsent")
 /// Return a boolean indicating if the app may keep (or retain in memory) data which may be subject to consent.
 /// Return true if consent is not required or else the user did not otherwise previously deny consent.  This will return true while consent is not known, as long as the previous response did not deny consent.  This includes when the definition for consent has changed and the user previously granted consent.  Compare with mayCollectBool, mayPersistBool, and mayShareBool.
 - (BOOL)mayKeepBool SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
 /// A string containing a high level description concerning consent.
 /// Optional.  This may be presented to the user when prompting for consent.
 /// Sample Value: “We share information with various partners… we’d like your consent…”
@@ -3626,60 +1526,59 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAContext *
 /// This is of particular relevance with KVANetTransaction(s) where allowed and/or denied identifiers may not (or not yet) be known, such as config retrievals.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAContext * _Nonnull serverUnrestricted;)
 + (KVAContext * _Nonnull)serverUnrestricted SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-@property (nonatomic, readonly) BOOL isHostBool;
-@property (nonatomic, readonly) BOOL isLogBool;
-@property (nonatomic, readonly) BOOL isPersistentStorageBool;
-@property (nonatomic, readonly) BOOL isSDKBool;
-@property (nonatomic, readonly) BOOL isServerBool;
-/// The name.
-/// Examples:  “host”, “log”, “persistentStorage”, “sdk”, “server”, “serverUnrestricted”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-SWIFT_PROTOCOL_NAMED("KVASharedPropertyProvider")
-@protocol KVASharedPropertyProvider
-/// The shared instance, an ambiguated form of the var shared which conforms to protocol KVASharedPropertyProvider.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-@end
-
-@class NSURL;
-@class NSUserDefaults;
-
 /// A class which defines a product.
 /// A product in this context generally refers to the result of a build.  A product can be used to represent a framework, application, or application extension.
 SWIFT_CLASS_NAMED("KVAProduct")
-@interface KVAProduct : NSObject <KVAFromProtocol>
-/// Create an instance of class <code>KVAProduct</code>— using modern Objective-C syntax.
-+ (KVAProduct * _Nonnull)productWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray compilerFlagPredicateSubstitutionVariablesDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)compilerFlagPredicateSubstitutionVariablesDictionary moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVAProduct : NSObject
+/// Create an instance of class <code>KVAProduct</code>.
+/// <h2>Example</h2>
+/// \code
+/// let product = KVAProduct(
+///     apiVersionString: "1",
+///     buildDateString: nil,
+///     bundleIdentifierString: Bundle(for: type(of: self)).bundleIdentifier,
+///     bundleTypeString: "xcframework",
+///     compilerFlagNameStringArray: nil,
+///     moduleNameString: "MyModule",
+///     nameString: "MyOrganization MyModule",
+///     organizationNameString: "My Organization",
+///     reverseDomainNameString: "com.myCompany.MyProduct",
+///     valueSourceCollection: nil,
+///     versionString: "1.0.0"
+/// )
+///
+/// \endcode\param apiVersionString An optional API version string.  This property is used to establish API compatibility between products.  API compatibility is assumed to be assured when the value compares to be equal for all products with the same organizationNameString.
+///
+/// \param buildDateString An optional string containing the date when the product was built.  It is recommended that you source this a compile time.  The format is optional, but it is recommended that you provide the date in an ISO 8601 date string.
+///
+/// \param bundleIdentifierString A string containing the bundle identifier associated with this product.  This property may be used to cross-reference this product from a Class.  Logging uses this to take the class for a LogMessage and lookup the associated Product.
+///
+/// \param bundleTypeString The bundle type.  Examples:  “app”, “xcframework”, “static library”.
+///
+/// \param compilerFlagNameStringArray An array containing strings which are the names of compiler flags.
+///
+/// \param moduleNameString The name of the module.  Example:  “KochavaCore”.
+///
+/// \param nameString A name string.  Example: “Apple.Core”.
+///
+/// \param organizationNameString A string containing the name of the organization representing the product.  Example:  “Kochava”.
+///
+/// \param reverseDomainNameString A string containing a reverse domain name style representation of the name of the product.  This is used in the definition of keys for persistent storage, dispatch queues, etc.  Example:  “com.kochava.KochavaCore”.
+///
+/// \param valueSourceCollection A collection containing value sources for variable substitution with an NSPredicate, used for predicate evaluation and token substitution.
+///
+/// \param versionString A version string.
+///
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Registers the product.
-/// Generally Kochava products automatically register themselves, but there are a few exceptions.  If you’re using a product which is optional and weakly linked, this method should be called once, early, to register the product for use.  One such example was the product KochavaLocation.  As a weakly-linked optional product, it would be optimized away by the linker if a call to register it was not explicitly made and if there were no other explicit interactions early with its API.  For products which automtically register themselves calling this method is redundant and will have no effect.
-- (void)register;
-/// A string containing the name and the version.
-/// The two are delimited by a space.
-@property (nonatomic, readonly, copy) NSString * _Nonnull standardVersionInfoString;
-/// A string containing the name and the version.
-/// The two are delimited by a space.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameWithVersionString;
-/// Resets any classes.
-/// \param includeExternalBool A boolean indicating if external data should be reset as well.  When this it set it includes additional classes which are external to the product but are bearing on the functionality of the product.  This refers to third party classes.  Even with includeExternalBool set to false it may reset variables which are stored within external classes but which are known to belong to the product.
-///
-- (NSDictionary * _Nullable)resetClassesWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool SWIFT_WARN_UNUSED_RESULT;
-/// Resets any variables.
-/// \param includeExternalBool A boolean indicating if external data should be reset as well.  When this is set it includes additional variables which are external to the product but are bearing on the functionality of the product.  This refers to third party variables.
-///
-- (NSDictionary * _Nullable)resetVariablesWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool SWIFT_WARN_UNUSED_RESULT;
 /// Resets the product.
 /// This involves resetting variables to their original states.  This may include releasing shared instances.  When parameter deleteLocalDataBool is passed true it also includes erasing any keys from persistent storage which are associated with the product.  This method will complete asynchronously.  Before working with this product again you should wait until the reset has completed.  See method reset(deleteLocalDataBool:closure_didComplete:).
 /// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
@@ -3717,51 +1616,6 @@ SWIFT_CLASS_NAMED("KVAProduct")
 /// \param closure_didComplete A closure which is called upon completion.
 ///
 - (void)shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
-/// An API version string.
-/// This property is used to establish API compatibility between products.  API compatibility is assumed to be assured when the value compares to be equal for all products with the same organizationNameString.
-@property (nonatomic, readonly, copy) NSString * _Nullable apiVersionString;
-/// A string containing the date when the product was built.
-@property (nonatomic, readonly, copy) NSString * _Nullable buildDateString;
-/// A string containing the bundle identifier associated with this product.  This property may be used to cross-reference this product from a Class.  Logging uses this to take the class for a LogMessage and lookup the associated Product.
-@property (nonatomic, readonly, copy) NSString * _Nullable bundleIdentifierString;
-/// The bundle type.
-/// Examples:  “app”, “xcframework”, “static library”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull bundleTypeString;
-/// An array containing strings which are the names of compiler flags.
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable compilerFlagNameStringArray;
-/// A dictionary containing substitution variables for use with an NSPredicate containing compiler flags.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSNumber *> * _Nullable compilerFlagPredicateSubstitutionVariablesDictionary;
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable dependentProductClassNameStringArray;
-/// A string containing the name of the organization representing the product.
-@property (nonatomic, readonly, copy) NSString * _Nonnull organizationNameString;
-/// The name of the module.
-/// Example: “KochavaCore”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull moduleNameString;
-/// A name string.
-/// Example: “Apple.Core”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
-/// A string containing a reverse domain name style representation of the name of the product.
-/// This is used in the definition of keys for persistent storage, dispatch queues, etc.
-/// Example:  “com.kochava.KochavaCore”
-/// Note:  This excludes a trailing period.
-@property (nonatomic, readonly, copy) NSString * _Nullable reverseDomainNameString;
-/// A version string.
-@property (nonatomic, readonly, copy) NSString * _Nullable versionString;
-/// Return a URL to the application support directory for the product.
-- (NSURL * _Nullable)applicationSupportDirectoryURL SWIFT_WARN_UNUSED_RESULT;
-/// Ensures that the application support directory for the product is created.
-- (void)applicationSupportDirectoryURL_ensureCreated;
-/// The log level for the product.
-/// Default nil.  When set this overrides the log default for log messages generated within the product.
-@property (nonatomic, strong) KVALogLevel * _Nullable logLevel;
-/// The instance of NSUserDefaults which this product uses for persistent storage.
-@property (nonatomic, readonly, strong) NSUserDefaults * _Nullable userDefaults;
-/// Return the user defaults to use for the product for the specified type string.
-/// \param typeString The typeString for the user defaults.  Use nil or “default” for the default user defaults.  Use “deviceAppGroup” for the deviceAppGroup user defaults.
-///
-- (NSUserDefaults * _Nullable)userDefaultsForTypeString:(NSString * _Nullable)typeString SWIFT_WARN_UNUSED_RESULT;
-/// An optional product which wraps this product.
-@property (nonatomic, strong) KVAProduct * _Nullable wrapperProduct;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -3770,12 +1624,11 @@ SWIFT_CLASS_NAMED("KVAProduct")
 /// A class which defines the core product.
 /// A product in this context generally refers to the result of a build.
 SWIFT_CLASS_NAMED("KVACoreProduct")
-@interface KVACoreProduct : KVAProduct <KVASharedPropertyProvider>
+@interface KVACoreProduct : KVAProduct
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProduct * _Nonnull shared;)
 + (KVAProduct * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -3785,112 +1638,51 @@ SWIFT_CLASS("_TtC11KochavaCore20KVACoreProductParams")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
-@class NSData;
 
-/// A class which wraps a data value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a data value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADataAdapter")
 @interface KVADataAdapter : KVAAdapter
-/// The designated constructor for a DataAdapter— using modern Objective-C syntax.
-+ (KVADataAdapter * _Nonnull)dataAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueData:(NSData * _Nullable)defaultValueData valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueData for the KVADataAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSData * _Nullable valueData;
-/// A Closure_ServerObject which formats an NSData value as a device token for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_deviceToken)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_deviceToken SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-/// A class which wraps a date value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a date value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADateAdapter")
 @interface KVADateAdapter : KVAAdapter
-/// The designated constructor for a KVADateAdapter—using modern Objective-C syntax.
-+ (KVADateAdapter * _Nonnull)dateAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSDate *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumDate:(NSDate * _Nullable)minimumDate maximumDate:(NSDate * _Nullable)maximumDate defaultValueDate:(NSDate * _Nullable)defaultValueDate valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// The valueDate for the KVATimeIntervalAdapter.
-@property (nonatomic, copy) NSDate * _Nullable valueDate;
-/// A constant closure which formats an NSDate value as unix time but expressed in milliseconds.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull unixTimeMillisecondsServerObjectClosure)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))unixTimeMillisecondsServerObjectClosure SWIFT_WARN_UNUSED_RESULT;
-/// A constant closure which formats an NSDate value as unix time expressed in seconds.
-/// The call to NSNumber.kva_from(<em>:) will return a unixTime.  The use of the NSNumber kva_from(</em>:) method is for convenience, as that is what you get when you convert an NSDate to an NSNumber.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull unixTimeServerObjectClosure)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))unixTimeServerObjectClosure SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class for providing diagnostic messages in a format which has been standardized across all Kochava SDK platforms.
 SWIFT_CLASS_NAMED("KVADiagnostic")
 @interface KVADiagnostic : NSObject
-/// Print a diagnostic log message for a host API call.
-+ (void)printHostAPICallWithHeadlineString:(NSString * _Nonnull)headlineString;
-/// Print a diagnostic log message.
-/// \param logLevel The log level at which the diagnostic message will be printed.
-///
-/// \param headlineString The headline of the diagnostic message.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel headlineString:(NSString * _Nullable)headlineString;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-/// A class which wraps a dictionary value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a dictionary value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADictionaryAdapter")
 @interface KVADictionaryAdapter : KVAAdapter
-/// The designated constructor for a DictionaryAdapter— using modern Objective-C syntax.
-+ (KVADictionaryAdapter * _Nonnull)dictionaryAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueDictionary:(NSDictionary * _Nullable)defaultValueDictionary valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueDictionary for the DictionaryAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSDictionary * _Nullable valueDictionary;
 @end
 
 
 /// A class which defines an entry in a dictionary.
 /// This class provides the means of defining how an element in a dictionary should be formatted.
 SWIFT_CLASS_NAMED("KVADictionaryEntryFormat")
-@interface KVADictionaryEntryFormat : NSObject <KVAFromProtocol>
+@interface KVADictionaryEntryFormat : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// The name of the key that the value object is stored with.
-@property (nonatomic, readonly, copy) NSString * _Nullable keyString;
-/// An array of sub-dictionary names, defining the location of the value object.
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable subChunkNameStringArray;
-/// The “native” class for the value.
-/// Optional.  This is used during ingestion to resolve to native objects.  It is still possible to resolve to a native object without this being configured, so long as the source (fromObject) is decorated with the class.  This value will be NSNull if the class name specified was not known to the system.  See valueClassNameString.
-@property (nonatomic, readonly) Class _Nullable valueClass;
-/// The “native” class for any elements of the value.
-/// Optional.  The valueElementClass refers to cases where valueClass is a class with elements, such as arrays and sets.  This is used during ingestion to resolve to native objects.  It is still possible to resolve elements to a native objects without this being configured, so long as the source elements are decorated with the class.  This value will be NSNull if the element class name specified was not known to the system.  See valueElementClassNameString.
-@property (nonatomic, readonly) Class _Nullable valueElementClass;
-/// A static valueObject.
-/// Optional.
-@property (nonatomic, readonly) id _Nullable valueObject;
-/// The nameString of a KVAAdapter used to source the value.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourceNameString;
-/// The nameString of the property within the KVAValue to source the value.
-/// Optional.  Supported values: nil (default) and “startDate.unixTimeDecimalNumber”.  Proposed future supported values: “valueObject”, “valueDate”, “adapterWatchValueObject”.  Default value “valueServerObject”.  Note for future implementation:  The urlString for net transactions uses the notation “.percentEncodedWithURLPathAllowedCharacterSetString” to express a sub-property quality.  At this time I perceive that it’s better not to modify this class to take in a single “valuePropertyNameString” that is automatically split out into a “valueSourceNameString” and a “adapterSubPropertyNameString”, but that is an option.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourcePropertyNameString;
-/// Return a boolean indicating if the value should be updated.
-/// Default false.
-- (BOOL)valueUpdateBool_resolved SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines the structure of a dictionary.
 /// This class provides the means of defining how a dictionary should be formatted.
 SWIFT_CLASS_NAMED("KVADictionaryFormat")
-@interface KVADictionaryFormat : NSObject <KVAFromProtocol>
+@interface KVADictionaryFormat : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// An array of KVADictionaryEntryFormat objects, reflecting the structure of the dictionary.
-@property (nonatomic, readonly, copy) NSArray<KVADictionaryEntryFormat *> * _Nullable dictionaryEntryFormatArray;
 @end
 
 
@@ -3909,7 +1701,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// The main dispatch queue.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQueue * _Nonnull main;)
 + (KVADispatchQueue * _Nonnull)main SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)initWithNameString:(NSString * _Nonnull)nameString osDispatchQueue:(dispatch_queue_t _Nonnull)osDispatchQueue OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Asynchronously dispatch and execute the provided closure providing standardized handling for the requirements of a public entry point.
@@ -3975,8 +1766,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// \param closure The closure to execute (conditionally).
 ///
 + (void)executeWithDispatchQueue:(KVADispatchQueue * _Nullable)dispatchQueue sourceIdString:(NSString * _Nullable)sourceIdString hostAPICallDiagnosticHeadlineString:(NSString * _Nullable)hostAPICallDiagnosticHeadlineString sourceClass:(Class _Nullable)sourceClass asyncBool:(BOOL)asyncBool printLogMessageBool:(BOOL)printLogMessageBool closure:(void (^ _Nullable)(void))closure;
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
-@property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull osDispatchQueue;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVAFile")
+@interface KVAFile : NSObject
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -3985,16 +1783,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// A class which defines instruction which can be executed.
 SWIFT_CLASS_NAMED("KVAInstruction")
 @interface KVAInstruction : NSObject
-- (nonnull instancetype)initWithIdentifierString:(NSString * _Nonnull)identifierString closure:(void (^ _Nonnull)(id _Nullable))closure OBJC_DESIGNATED_INITIALIZER;
-- (void)executeWithValueObject:(id _Nullable)valueObject;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
+@class KVALogLevel;
+@class KVALogMessage;
 
-
-/// A class which is a controller for working with the log.
+/// A class which constitutes a log, which is a collection of log messages.
 SWIFT_CLASS_NAMED("KVALog")
 @interface KVALog : NSObject
 /// The singleton shared instance.
@@ -4015,12 +1812,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALog * _No
 /// A prefix string to be added to the beginning of each item printed to the log.
 /// Default nil.  This can be set to a value such as “KVA: “ to make filtering log messages easier.  When this is used in conjunction with var <code>printLinesIndividuallyBool</code> this prefix will be printed at the beginning of each line.
 @property (nonatomic, copy) NSString * _Nullable printPrefixString;
+/// Return a copy of the logMessageArray.
+/// The copy is made safely with synchronization.
+- (NSArray<KVALogMessage *> * _Nullable)logMessageArray_copy SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines a log level, with enumerated values.
 SWIFT_CLASS_NAMED("KVALogLevel")
-@interface KVALogLevel : NSObject <KVAFromProtocol>
+@interface KVALogLevel : NSObject
 /// A log level which never prints visibly to the log.
 /// When LogMessage(s) are not printed visibly to the log, they are still posted as notifications.  This enables all LogMessage(s) to be observed, regardless of their current visibility.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull never;)
@@ -4052,11 +1852,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull always;)
 + (KVALogLevel * _Nonnull)always SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return a visibleBool indicating if the specified logLevel is visible under under the specified visibleMaximumLogLevel.
-+ (BOOL)logLevel:(KVALogLevel * _Nullable)logLevel visibleBoolWithVisibleMaximumLogLevel:(KVALogLevel * _Nullable)visibleMaximumLogLevel SWIFT_WARN_UNUSED_RESULT;
 /// The name.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
 @property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
@@ -4065,461 +1862,21 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 @end
 
 
-SWIFT_PROTOCOL_NAMED("KVAPrintable")
-@protocol KVAPrintable
-- (void)print;
-@end
-
-@class NSException;
-
 /// A class which defines a log message.
 SWIFT_CLASS_NAMED("KVALogMessage")
-@interface KVALogMessage : NSObject <KVAFromProtocol, KVAPrintable>
-/// Create and print a log message.
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-+ (void)print:(NSString * _Nullable)headlineString;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param rollupLogMessageArray An array of LogMessage(s) to roll up into this LogMessage.  Optional.
-///
-/// \param log An log.  Optional.  When omitted, will use KVALog.shared.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary rollupLogMessageArray:(NSArray<KVALogMessage *> * _Nullable)rollupLogMessageArray log:(KVALog * _Nullable)log;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an error.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printErrorWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an internal inconsistency.
-/// This prints at log level .debug
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printInternalInconsistencyWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an internal error.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param error An error.  Required.
-///
-+ (void)internalErrorWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary error:(NSError * _Nonnull)error;
-/// Create and print an internal exception.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param exception An exception.  Required.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary exception:(NSException * _Nonnull)exception;
-/// Create and print a warning.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print a warning.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass;
-/// The designated initializer for a LogMessage— using modern Objective-C syntax.
-/// If you attempt to use this method from Swift as an initializer, but do not use the result, it will generate a warning.  For this reason if you do not want the result, and do want to print, you should use an alternate method.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param rollupLogMessageArray An array of LogMessage(s) to roll up into this LogMessage.  Optional.
-///
-/// \param printBool A boolean indicating the LogMessage should be printed immediately upon creation.
-///
-/// \param log Optional.  The log.  Default KVALog.shared.
-///
-+ (KVALogMessage * _Nullable)logMessageWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary rollupLogMessageArray:(NSArray<KVALogMessage *> * _Nullable)rollupLogMessageArray printBool:(BOOL)printBool log:(KVALog * _Nullable)log SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Print the LogMessage to the log.
-/// This method is called automatically when printBool is passed as a parameter to a convenience constructor.  This includes convenience print methods.  This method is used when a LogMessage is created without being told to print, and it can be used to configure additional properties within the LogMessage before printing that are not commonly needed.
-- (void)print;
-/// The product associated with this LogMessage.
-/// When not set, this value is attempted to be inferred from the sourceClass.
-@property (nonatomic, readonly, strong) KVAProduct * _Nonnull product;
-/// A class which identifies the source of the LogMessage.
-/// This field is used when possible to determine the associated Product, which it can sometimes infer from the associated bundle’s bundleIdentifier.  Setting this value can then lead to the product information being displayed in the printed LogMessage.
-@property (nonatomic) Class _Nullable sourceClass;
-/// A LogLevel which is the maximum for which this LogMessage should be visible.
-/// To determine whether or not a LogMessage should be visible, this value is compared against logLevel.
-@property (nonatomic, readonly, strong) KVALogLevel * _Nullable visibleMaximumLogLevel;
-/// A dictionary representation of the body of the LogMessage.
-/// This property is lazily configured from either the dictionary, or else in the case that there is a rollupLogMessageArray from the LogMessage’s asPrintDictionaryWithParentLogMessage.
-@property (nonatomic, readonly, copy) NSDictionary * _Nullable bodyDictionary;
-/// The date when the LogMessage was printed.
-/// This value will be nil if the LogMessage has not been printed.
-@property (nonatomic, readonly, copy) NSDate * _Nullable printDidDate;
-/// A string which is formatted to be sent to the print command.
-/// This property is lazily configured upon first reference.  It may be configured to be passed to either NSLog or Swift’s print command, depending on which is being used.  While this property is used internally during the actual print method, it can also be read externally for other purposes if desired.
-@property (nonatomic, readonly, copy) NSString * _Nonnull printString;
-/// A notification name which can be used to observe when a log message did print.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didPrintNotificationName;)
-+ (NSNotificationName _Nonnull)didPrintNotificationName SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@interface KVALogMessage : NSObject
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-
-SWIFT_PROTOCOL_NAMED("KVAMutable")
-@protocol KVAMutable
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate;
-/// A method to call when the object did mutate— synchronization free.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate_sf;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will dispatch to the globalSerial dispatch queue before posting the notification.
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_sf_withInfoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will do this on the caller’s thread.
-/// \param childObject The child object which originated the mutation (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-/// \param performSideEffectsIntendedBeforeDispatchBool A boolean indicating of this method perform the side effects intended for before dispatch.  Generally speaking you wouldn’t expect that this should be the case, but you do want to perform those side effects which were intended to be done before the dispatch if you’re already inside of the dispatch, otherwise they’d never be performed.  You should regard the default you should pass for this to be true, and only set it to false if you performed this call for the current scope yourself.
-///
-- (void)kva_didMutate_sf_df_withChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary performSideEffectsIntendedBeforeDispatchBool:(BOOL)performSideEffectsIntendedBeforeDispatchBool;
-/// A method which is called when an object has mutated to perform side effects.
-/// Generally speaking this method will only be called from the globalSerial queue.  The exception would be if func kva_didMutate_sf_df(…) were to be manually called directly while not on the globalSerial queue.  This is something that should not generally be done, but if it is, any code which overrides this method should understand that and be prepared to dispatch to globalSerial if necessary.  One such place that does this today is the KochavaHost’s log.  All other implementations can assume that this method will be called on the globalSerial queue.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method which is called when an object has mutated to perform side effects— a variant called before the coalescing dispatch.
-/// This method will be called without dispatch and will be its caller’s thread.  This means it does not benefit from any dispatch coalescence which func kva_didMutate_performSideEffects(…) has, and the queue cannot be assumed to be the globalSerial queue in the same way;  however, it benefits from being more timely.  If the side effects you need to perform cannot occur after a dispatch, overriding this methid is the way to do it.  You just need to be more careful about how additionally often it may be called, and importantly, which queue it may be called on.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// Return whether the object is capable of mutating.
-/// Return true for any class except for those known to be immutable, such as NSString, NSDate, etc.  Excluded are classes such as NSArray and NSDictionary which may contain elements which may themselves mutate.  This method can theoretically be overridden to designate the objects of class as immutable.
-- (BOOL)kva_mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@class NSDecimalNumber;
 
 /// A class which defines a network transaction.
-/// This class provides the basic means of sending a network request and then receiving a corresponding network response.  The parameters of a network transaction originate in JSON, encouraging portability.  The same JSON format is then also used for persistence.
-/// <h2>Examples</h2>
-/// Example - Starting a basic network transaction:
-/// \code
-/// KVANetTransaction.start(
-///     netTransactionObject:
-///     [
-///         "nameString": "GoogleGetNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://www.google.com"
-///         ]
-///     ],
-///     networking: KVANetworking.shared
-/// ){
-///     netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///     // ...
-/// }
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Name</em> — A unique standardized name enables activity to be looked up in the log and to be correlated back to its root class.
-///   </li>
-///   <li>
-///     <em>Unique Identification</em> — A unique identifier which is used to correlate duplicate requests.  This is sometimes referred to as the nt_id.
-///   </li>
-///   <li>
-///     <em>Inheritance From Base</em> — The parameters of a network transaction may be inherited from another network transaction which serves as a base.  These overrides can be expressed through remote re-configuration.
-///   </li>
-///   <li>
-///     <em>Overrides</em> — The parameters of a network transaction may be overridden.  These overrides can be expressed through remote re-configuration.
-///   </li>
-///   <li>
-///     <em>Prerequisite Tasks</em> — A sendTask is used to coordinate sending, which is an instance of class <code>KVATask</code>.  Consequently, all network transactions may wait to be attempted until any number of prerequisite tasks have completed.  See class <code>KVATask</code>.  These tasks may also include networking-specialized tasks to regulate how many transactions may be sent concurrently, error retry waterfalls, etc.
-///   </li>
-///   <li>
-///     <em>Consent</em> — If tracking consent is required, and tracking is not allowed, then that network transaction will automatically be blocked from execution.  A copy of consent is internally stamped on a network transaction at the time it is first started, and then it may be graduated to a newer copy if the global consent changes in certain ways.
-///   </li>
-///   <li>
-///     <em>Context</em> — A context is used to contextualize the format of the information being provided to the remote service.  The default is KVAContext.server.  See class <code>KVAContext</code>.
-///   </li>
-///   <li>
-///     <em>Enabled Start Date</em> — A network transaction may be configured so as to not be enabled until a specified date.  In the context of variations, this enabled start date serves to indicate when a variation is enabled.  With these variations you can specify time-based alterations to certain parameters, such as the url.
-///   </li>
-///   <li>
-///     <em>HTTP Method</em> — You can specify which method you want to use.  Examples:  GET, POST, PUT, DELETE, etc.  When not specified the default is GET.
-///   </li>
-///   <li>
-///     <em>Network Service Type</em> — A network service can be specified to provide a hint to the operating system about the nature and use of the underlying traffic.  This hint enhances the system’s ability to prioritize traffic, determine how quickly it needs to wake up the cellular or Wi-Fi radio, and so on.  By providing accurate information, you improve the ability of the system to optimally balance battery life, performance, and other considerations.  The default is “default”, which corresponds to NSURLRequest.NetworkServiceType.default.  You can alternatively specify “background” for lower priority requests, or “responsiveData” for higher priority requests.
-///   </li>
-///   <li>
-///     <em>Persistence</em> — The persistBool parameter can be set to indicate that the network transaction should be persisted.  When persisted, and following a relaunch, it will be automatically restarted and reattempted until the transaction has completed.
-///   </li>
-///   <li>
-///     <em>Long-Term Failure Detection</em> — If excessive errors take place and/or excessive time elapses then the transaction will be completed unsuccessfully.
-///   </li>
-///   <li>
-///     <em>Request Body Dictionary Formatting</em> — The request body may be adorned with (or otherwise constructed from) values collected from value sources specified within a <code>requestBodyDictionaryFormat</code>, which is an instance of class <code>KVADictionaryFormat</code>.  These value sources may be instances of class <code>KVAAdapter</code>, or else anything which conforms to protocol <code>KVAAsForContextProtocol</code>.  Through class extensions this includes primitives such as String and Int.  These values will be collected synchronously or asynchronously, and utlize rules to understand when those values should be retained (or else updated) during subsequent attempts.  This is used colloquially to collect datapoints and then to append them as metadata within requests.
-///   </li>
-///   <li>
-///     <em>Request Body Object</em> — The specified requestBodyObject will be passed in the request body.
-///   </li>
-///   <li>
-///     <em>Request Header Dictionary Formatting</em> — The request header may be adorned with values collected from value sources specified within a requestHeaderDictionaryFormat, which is an instance of class <code>KVADictionaryFormat</code>.  See Request Body Dictionary Formatting for more details about how this similarly works.
-///   </li>
-///   <li>
-///     <em>Request Body Overriding</em> — The request body may be overridden.  That is to say that it may be replaced in whole from what would have ordinarily be used.
-///   </li>
-///   <li>
-///     <em>Request Body Override Appending</em> — The request body may be overridden by appending an object to the natural object.  This is a deep append between dictionaries (or other object types).
-///   </li>
-///   <li>
-///     <em>Response Class</em> — The response body object can be composed into a native class object.  This is commonly used to decode a JSON dictonary into a concrete class type.  For types which can have elements, such as arrays, this can also include the specifying of an element class.
-///   </li>
-///   <li>
-///     <em>Local Responses</em> — A network transaction can be serviced locally.  If serviced locally, a local response is used in place of live network activity.  This is frequently used in testing, but can be used in other circumstances such as when the SDK is disabled.  There feature includes a responseHTTPStatusCodeLocalInt, which can be configured to a value such as 200.
-///   </li>
-///   <li>
-///     <em>Retrying</em> — If an attempt is not accomplished successfully it can retried automatically.  The time to wait between each attempt, as well as the number of attempts which may be made, can be specified through a retryTimeIntervalSeries.  When not specified the default is KVANetworking.retryDefaultTimeIntervalSeries.  See <code>KVANetTransactionQueue</code>.
-///   </li>
-///   <li>
-///     <em>Standardized Logging</em> — A sendTask is used to coordinate sending, which is an instance of class <code>KVATask</code>.  Consequently, all network transactions are capable of printing log messages which provide a consistent output in the log— and this consistency crosses over between classes <code>KVANetTransaction</code> and <code>KVATask</code>.  By default log messages associated with the sendTask will not be printed.  To enable see var sendTaskLogMessagesPrintBool.
-///   </li>
-///   <li>
-///     <em>Sleeping</em> (var sleepObservantBool) — A network transaction’s execution may be deferred, causing it to wait and not proceed while the associated networking instance is asleep.  See class <code>KVANetworking</code> var <code>KVANetworking/sleepBool</code>.
-///   </li>
-///   <li>
-///     <em>URL Overriding</em> — In addition to the default overriding capability offerred throughout KVANetTransaction, additional id-based overrides are also available.  These ids can correspond to externally recognized values such as “init” or “event”.  They can also include sub-ids for secondary identifiers such as the names within events.
-///   </li>
-///   <li>
-///     <em>Type</em> — A type can connect the behavior of one network transaction to subsequent networtk transactions.  These types can correspond to externally recognized values such as “init” or “event”, and can be used to facilitate features such as URL rotation.  See class <code>KVANetTransactionType</code>.
-///   </li>
-///   <li>
-///     <em>Updating Watched Values</em> — When a network transaction completes, adapters which were used as value sources to adorn metadata such as datapoints may be instructed to automatically update their watched values.  This enables a knowledge of what exists at the server to be maintained for each of these datapoints.  See var updateWatchValuesBool.
-///   </li>
-///   <li>
-///     <em>URL String Dictionary Formatting</em> — The request url string may be adorned with values collected from value sources specified within a urlDictionaryFormat, which is an instance of class <code>KVADictionaryFormat</code>.  See Request Body Dictionary Formatting for more details about how this similarly works.
-///   </li>
-///   <li>
-///     <em>Variations</em> — Variantions are instances of class KVANetTransaction which can be specified on a first KVANetTransaction to override certain parameters based on conditions, such as time.  As one example this can be used to specify time-based overrides for URL rotation.  If a variation’s enabling condition(s) are met, then any parameters defined within the enabled variation will override the default parameters.  Note:  Only certain parameters are supported within variations, which is based on the scope of what has been needed for Kochava’s SDK implementation.  The support for additional parameters can be added as needed.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVANetTransaction")
-@interface KVANetTransaction : NSObject <KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAStartable>
-/// Create and start a KVANetTransaction.
-/// \param baseNetTransactionNameString The name string of the base KVANetTransaction.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.  If not passed, this value will be defaulted from the current networking environment.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param networking A networking instance.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (void)startWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create and start a KVANetTransaction.
-/// \param netTransactionObject An object from which to drive a network transaction (presumed to be a JSON representation).
-///
-/// \param networking A networking instance.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.  If not passed, this value will be defaulted from the current networking environment.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (void)startWithNetTransactionObject:(id _Nonnull)netTransactionObject networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create a KVANetTransaction.
-/// \param object A JSON object.  Note that this JSON object may contain the “baseNetTransaction” which is the baseNetTransactionNameString of a KVANetTransaction pre-registered in networking.
-///
-/// \param networking A networking instance.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param startBool A boolean indicating if the KVANetTransaction should be automatically started following the finishing of its construction.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (nullable instancetype)netTransactionFromObject:(id _Nonnull)object networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete SWIFT_WARN_UNUSED_RESULT;
-/// Create a KVANetTransaction— using modern Objective-C syntax.
-+ (KVANetTransaction * _Nonnull)netTransactionWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete SWIFT_WARN_UNUSED_RESULT;
-/// Create a network transaction to be used as a base.
-- (nonnull instancetype)initWithJSONDictionary:(NSDictionary * _Nullable)dictionary closure_enabledBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_enabledBool closure_transformedURLString:(NSString * _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, NSString * _Nullable))closure_transformedURLString closure_willStartRequest:(void (^ _Nullable)(KVANetTransaction * _Nonnull))closure_willStartRequest closure_succededBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable))closure_succededBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create a KVANetTransaction.
-/// \param baseNetTransactionNameString The name string of the base KVANetTransaction.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param networking A networking instance.
-///
-/// \param startBool A boolean indicating if the KVANetTransaction should be automatically started following the finishing of its construction.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-- (nonnull instancetype)initWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Start the instance.
-/// Prior to making the request it will evaluate whether or not it may make the attempt.
-- (void)start;
-/// Start the instance.
-/// Prior to making the request it will evaluate whether or not it may make the attempt.
-/// \param asyncBool A boolean indicating if the work should be asynchronously dispatched.
-///
-/// \param printLogMessageBool A boolean indicating if the function log message should be printed.
-///
-- (void)startWithAsyncBool:(BOOL)asyncBool printLogMessageBool:(BOOL)printLogMessageBool;
+@interface KVANetTransaction : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-/// A networking instance.
+/// An instance of networking.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
-/// A dictionary containing KVAAdapter objects, keyed by their nameString.
-/// This is called “local” because it is taken that these were created locally to the creation of the net transaction.
-@property (nonatomic, strong) KVACollection * _Nullable localValueSourceCollection;
-/// The KVANetTransaction which defines a base for this net transaction.
-@property (nonatomic, strong) KVANetTransaction * _Nullable baseNetTransaction;
-/// Return the first base KVANetTransaction matching the given nameString.
-/// This will include the current instance if the name matches.  When using this keep in mind that the name will be inherited from a baseNetTransaction when not specified.
-- (KVANetTransaction * _Nullable)baseNetTransactionWithNameString:(NSString * _Nonnull)nameString SWIFT_WARN_UNUSED_RESULT;
-/// A closure to execute which returns a boolean indicating if the KVANetTransaction is enabled.
-/// Default true.  This closure may return false to disable the KVANetTransaction.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_enabledBool)(KVANetTransaction * _Nonnull);
-/// A closure to execute which returns a boolean indicating if the KVANetTransaction is successful.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_succededBool)(KVANetTransaction * _Nonnull, id _Nullable);
-- (BOOL)isSuccessfulBoolWithResponseObject:(id _Nullable)responseObject SWIFT_WARN_UNUSED_RESULT;
-/// A closure to execute which returns a string which is a transformed URL.
-@property (nonatomic, copy) NSString * _Nullable (^ _Nullable closure_transformedURLString)(KVANetTransaction * _Nonnull, NSString * _Nullable);
-/// A closure which will be called when the net transaction will start a request.
-/// The request body will not have been built yet when this closure is called.  Modifications may be made to the passed netTransaction, such as adding values to valueArrayDictionary.
-@property (nonatomic, copy) void (^ _Nullable closure_willStartRequest)(KVANetTransaction * _Nonnull);
-/// A nameString for the net transaction.
-/// This is a resolved property which factors in the baseNetTransaction.
-@property (nonatomic, readonly, copy) NSString * _Nullable nameString;
-@property (nonatomic, readonly) BOOL persistBool;
-/// The dictionary format for the request body.
-/// This is a resolved property which factors in the baseNetTransaction, as well as an append property.
-@property (nonatomic, readonly, strong) KVADictionaryFormat * _Nullable requestBodyDictionaryFormat;
-/// The urlString used in the request.
-/// This property is configured to a calculated value at a specific moment.  Calculating the value is somewhat involved, and this ensures that the effort isn’t made repeatedly, and is made when it is ready to be made.
-@property (nonatomic, readonly, copy) NSString * _Nullable urlString;
-/// Return the resolved array of url identifier strings.
-- (NSArray<NSString *> * _Nullable)urlIdStringArray SWIFT_WARN_UNUSED_RESULT;
-/// A boolean which indicates if the net transaction is complete.
-/// A KVANetTransaction is complete when its request has been completed and its response has been received.  It does not need to be successful from the standpoint of the server’s determination of success to be complete.  It will also be completed when all available attempts have been made, or when certain conditions have been met which call for no further attempts to be made.  One such example is if too much time has elapsed (days in queue).
-@property (nonatomic, readonly) BOOL completeBool;
-/// A count of the times that the net transaction did error.
-/// This includes error conditions which may be expressed in the response and would prompt a retry.
-@property (nonatomic, readonly) NSInteger didErrorCount;
-/// A boolean which indicates if the network transaction has experienced any kind of delay.
-/// This is used to help determine if the transaction should be queued or if the re-gathering of datapoints is necessary.
-@property (nonatomic, readonly) BOOL didExperienceDelayBool;
-/// A date indicating when the net transaction first did start.
-/// This is important in knowning whether or not a net transaction may be automatically started.  It can not be automatically started if it start was never called to begin with.  This also prevents net transactions from being added to queues, such as the send queue, until such time as they qualify.
-@property (nonatomic, readonly, copy) NSDate * _Nullable didStartFirstDate;
-/// The amount of time that elapsed during the execution of the KVANetTransaction.
-/// This is an indicator of the network speed combined with the server response time.  This variable is not established nor valid until the KVANetTransaction has been both started and completed.
-@property (nonatomic, readonly) NSTimeInterval elapsedTimeInterval;
-/// An NSDecimalNumber wrapping the elapsedTimeInterval suitable for printing.
-- (NSDecimalNumber * _Nonnull)elapsedTimeIntervalDecimalNumber SWIFT_WARN_UNUSED_RESULT;
-/// The error associated with the completion of the transaction.
-/// Intermediate errors are not represented here.  This will be nil if the transaction ultimately succeeds through retries.  This represents the final error.
-@property (nonatomic, readonly) NSError * _Nullable error;
-/// Append a KVALogMessage to the requestRollupLogMessageArray.
-- (void)requestRollupLogMessageArray_append:(KVALogMessage * _Nullable)logMessage;
-/// A task which sends the NetTransaction’s request and concludes with the retrieval of its response.
-@property (nonatomic, readonly, strong) KVATask * _Nonnull sendTask;
-/// A mutable dictionary which contains KVAValue objects.  These objects are keyed using their KVAAdapter nameString.
-/// Private.  A dictionary was used rather than an array for fast indexing by KVAAdapter nameString.
-@property (nonatomic, copy) NSDictionary<NSString *, KVAValue *> * _Nullable valueArrayDictionary;
-/// Configures the valueArrayDictionary.
-/// The completion handler is called when all asynchronous processes have completed.
-/// \param startingBool A boolean indicating if this is happening when the transaction is starting.
-///
-/// \param startingFirstTimeBool A boolean indicating if this is taking place for the first time (as an addendum to startingBool true).
-///
-- (void)valueArrayDictionary_configureWithStartingBool:(BOOL)startingBool startingFirstTimeBool:(BOOL)startingFirstTimeBool completionHandler:(void (^ _Nonnull)(void))completionHandler;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull attemptDidFinishButNotCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)attemptDidFinishButNotCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)didCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A constant to use for the key for the request body when passing an object as a vaue in a value source dictionary.
-/// The corresponding value should be any object which conforms to protocol KVAAsForContextProtocol, and provides suitable support for the specified context as well as persistentStorage.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull requestBodyKey;)
-+ (NSString * _Nonnull)requestBodyKey SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -4528,252 +1885,22 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// A queue of KVANetTransaction(s).
 /// This class is a queue of KVANetTransaction(s) which exists for the purpose of holding transactions.  This queue is emptied as those transactions are completed.
 SWIFT_CLASS_NAMED("KVANetTransactionQueue")
-@interface KVANetTransactionQueue : NSObject <KVAFromProtocol>
+@interface KVANetTransactionQueue : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)start;
-- (void)invalidate;
-/// Return the count in the queue.
-- (NSInteger)count SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A network transaction type.
 /// This generally corresponds to Kochava’s “action” key.
 SWIFT_CLASS_NAMED("KVANetTransactionType")
-@interface KVANetTransactionType : NSObject <KVAFromProtocol, KVAMutableDelegator>
-/// Create a new instance of KVANetTransationType.
-- (nonnull instancetype)initWithIdString:(NSString * _Nonnull)idString delegate:(id <KVAMutable> _Nullable)delegate OBJC_DESIGNATED_INITIALIZER;
+@interface KVANetTransactionType : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the urlString to use for the specified netTransaction.
-/// When nil this instance is offering no urlString to use, and the actualy urlString will fall back to the default.
-- (NSString * _Nullable)netTransaction_urlString:(KVANetTransaction * _Nullable)netTransaction SWIFT_WARN_UNUSED_RESULT;
-/// A string which is the current url for the currentVariation.
-@property (nonatomic, readonly, copy) NSString * _Nullable currentVariationURLString;
-/// A string which is a unique identifier for the type.
-@property (nonatomic, readonly, copy) NSString * _Nullable idString;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
-/// A date which is the startDate of the currentVariation.urlStringArray.
-/// This used used to watch for changes, which bust the currentVariationURLIndexNumber and currentVariationURLIndexRotatedBool.
-@property (nonatomic, readonly, copy) NSDate * _Nullable currentVariationStartDate;
-/// An NSUInteger which is the last successful index into the currentVariation.urlStringArray.
-/// Default 0.
-@property (nonatomic, readonly, strong) NSNumber * _Nullable currentVariationSuccessfulURLIndexNumber;
-/// A string which is the last successful url for the currentVariation.
-@property (nonatomic, readonly, copy) NSString * _Nullable currentVariationSuccessfulURLString;
-/// An NSUInteger which is the current index into the currentVariation.urlStringArray.
-/// Default 0.
-@property (nonatomic, readonly, strong) NSNumber * _Nullable currentVariationURLIndexNumber;
 @end
 
-@class KVATimeIntervalSeries;
 
 /// The class KVANetworking provides basic networking support.
-/// The class KVANetworking is the main interface for module KochavaCore.  A networking instance manages the exchange of data between the client and various server(s), along with the associated tasks, network transactions, adapters, and instructions.  If you have not already integrated the KochavaCore module into your project, refer to our integration support documentation.
-/// You rarely create instances of class KVANetworking.  Instead, you start the provided shared instance using one of the start instance methods.  See static var <code>shared</code>.  Additionally an instance of networking is already provide within other SDK modules, such as module KochavaTracker.  Take note that such instances are not using var <code>shared</code>, which is reserved for the main host’s optional use.  If you are the application developer, this means you!  All other parties, including third-party SDKs, should create their own instance providing a unique product.
-/// Upon start the networking instance will perform its various tasks.  This is typically done during the earliest phases of the host’s lifecycle, so that networking activity can be quickly begin and data may begin to egress.
-/// You may alternately create an instance.  If you do, it is your responsibility to maintain a strong reference.  And if you create multiple instances, it is your responsibility to configure each with a unique storageIdentifierString.
-/// <h2>Examples</h2>
-/// Example - Configuring the shared networking instance
-/// \code
-/// KVANetworking.shared.configure(product: self.myProduct)
-///
-/// \endcodeExample - A sample network transaction which posts a payload to a test url.  The payload contains a “data” object, which contains a key “apple_dot_com” with a value which is the string representation of the current webpage at apple.com.  It collects that string value using the example adapter <em>appleDotComStringAdapter</em> as described in class <code>KVAAdapter</code>.
-/// \code
-/// let sampleNetTransaction = KVANetTransaction(
-///     jsonDictionary: [
-///         "nameString": "SampleNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://httpstat.us/200",
-///             "httpMethodString": "POST",
-///             "bodyDictionaryFormat":
-///             [
-///                 "dictionaryEntryFormatArray":
-///                 [
-///                     [
-///                         "subChunkNameStringArray": ["data"],
-///                         "keyString": "apple_dot_com",
-///                         "valueSourceNameString": "YourClass.appleDotComStringAdapter"
-///                     ]
-///                 ]
-///             ]
-///         ]
-///     ]
-/// )
-///
-/// \endcodeExample - Registering the sample components
-/// \code
-/// let networking = KVANetworking.shared
-/// networking.valueSourceCollection.register(adapter: self.appleDotComStringAdapter)
-/// networking.baseNetTransactionCollection.register(netTransaction: self.sampleNetTransaction)
-///
-/// \endcodeExample - Starting the networking instance
-/// \code
-/// KVANetworking.shared.start()
-///
-/// \endcodeExample - Sending the sample network transaction
-/// \code
-/// KVANetTransaction.start(
-///     baseNetTransactionNameString: "SampleNetTransaction",
-///     networking: KVANetworking.shared
-/// )
-///
-/// \endcodeExample - Starting a basic ad-hoc network transaction which gets a string representation of the current webpage at google.com (with maximum length limited to 2048 for readability).
-/// \code
-/// KVANetTransaction.start(
-///     netTransactionObject:
-///     [
-///         "nameString": "GoogleDotComGetNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://www.google.com"
-///         ]
-///     ],
-///     networking: KVANetworking.shared
-/// ){
-///     netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///     print("... do something with the response. responseObject=\((responseObject as? String)?.kva_withMaximumLength(2048) ?? "(nil)")\n")
-/// }
-///
-/// \endcode<h2>Features - Core</h2>
-/// <ul>
-///   <li>
-///     <em>Instance Identification</em> (var <code>instanceIdString</code>) — To differentiate between different instances of class KVANetworking running concurrently, a unique instance identifier is automatically assigned and then used in a variety of ways.  Log messages will sometimes reflect this identifier, and a portion of it is used in all network transaction identifiers (nt_id).  See also internal var instanceIdStringAdapter, id “Networking.instanceIdStringAdapter”.
-///   </li>
-///   <li>
-///     <em>Consent</em> (var <code>consent</code>) — If tracking consent is required, and tracking is not allowed, then sensitive objects such as instances of classes <code>KVATask</code>, <code>KVAAdapter</code>, and <code>KVANetTransaction</code> will automatically be blocked from execution.  In the case of network transactions, a copy of consent is internally stamped on the transaction at the time it is first started, and then it may be graduated to a newer copy if the global consent changes in certain ways.
-///   </li>
-///   <li>
-///     <em>Conditional Operation</em> (var closure_adapter_mayOperateBoolForContext) — Through a custom closure, adapters may be configured to conditionally collect, keep, persist, or share their value.   See also typealias Closure_Adapter_MayOperateBoolForContext.
-///   </li>
-///   <li>
-///     <em>Sleep</em> (var <code>sleepBool</code>) — Supported objects, such as instances of classes <code>KVATask</code>, <code>KVAAdapter</code>, and <code>KVANetTransaction</code>, will defer execution while a sleep state is in effect.  When the sleep state is lifted, the state change will be observed and execution will resume immediately with the continuation of any code which was previously deferred.  See also var <code>sleepBoolAdapter</code>.  You may toggle sleep on and off frequently with no measurable impact to performance beyond that which the sleep option is intended to produce when turned on.
-///   </li>
-/// </ul>
-/// <h2>Features - Collections</h2>
-/// <ul>
-///   <li>
-///     <em>Value Source Collection</em> (var <code>valueSourceCollection</code>) — A collection of registered objects from which a value may be sourced.  These may be instances of class <code>KVAAdapter</code>, or else anything which conforms to protocol <code>KVAAsForContextProtocol</code>.  Through class extensions this includes primitives such as String and Int.  Register conforming object(s) using any of the methods available in class <code>KVACollection</code>.
-///   </li>
-///   <li>
-///     <em>Base Network Transaction Collection</em> (var <code>baseNetTransactionCollection</code>) — A collection of registered network transactions which may be used as bases from which network transactions may inherit default parameters.  Register instance(s) of class <code>KVANetTransaction</code> using class <code>KVACollection</code> func <code>KVACollection/register(netTransaction:)</code>.
-///   </li>
-///   <li>
-///     <em>Task Collection</em> (var <code>taskCollection</code>) — A collection of registered tasks which may be used as prerequisites for other tasks.  Register instance(s) of class <code>KVATask</code> using class <code>KVACollection</code> func <code>KVACollection/register(task:)</code>.
-///   </li>
-///   <li>
-///     <em>Instruction Collection</em> (var <code>instructionCollection</code>) — A collection of registered instructions which may be executed using their corresponding identifierString along with an optional valueObject which serves as a parameter.  Register instance(s) of class <code>KVAInstruction</code> using class <code>KVACollection</code> func <code>KVACollection/register(instruction:)</code>.  See func <code>executeAdvancedInstruction(identifierString:valueObject:)</code>.
-///   </li>
-/// </ul>
-/// <h2>Features - Network Transactions</h2>
-/// <ul>
-///   <li>
-///     <em>Queueing</em> (var netTransactionQueue) — Network transactions, when started, are appended into the network transaction queue.  The queue may communicate with these instances, such as to notify them if/when networking may be invalidated.  It is also used for persistence, and to restore and restart transactions following a new launch.  See class <code>KVANetTransactionQueue</code>.
-///   </li>
-///   <li>
-///     <em>Queueing Overrides</em> — The parameters of the netTransactionQueue can be overridden.  One example, of note, is the queue maximum count.  Implemented in internal var queueMaximumCount.  Configurable through func <code>configure(with:context:)</code> with key “queue_maximum_count”.
-///   </li>
-///   <li>
-///     <em>Overriding</em> (var overrideNetTransactionArrayDictionary) — The parameter(s) of network transaction(s) can be individually overridden.  Configure instance(s) of class <code>KVANetTransaction</code> containing corresponding names and then put them in the dictionary.  While present, any parameters which are set will be used as overrides.  Configurable through func <code>configure(with:context:)</code> with key “override_nettransactions”, or alternately key “transactions” (the latter of which expects the alternate format supported by transactionsInstruction).  Also settable through func <code>executeAdvancedInstruction(identifierString:valueObject:)</code> with identifier “networking_transactions”, implemented in private var transactionsInstruction.
-///   </li>
-///   <li>
-///     <em>URL Overriding</em> (var urlsDictionary) — With a dictionary containing externally recognizable type identifiers such as “init” or “event”, paired with URL strings, the URLs defined in network transactions can be overridden.  This is In addition to the default overriding capability offerred throughout class <code>KVANetTransaction</code>.  Using conformance to protocol KVANetTransaction/KVANetTransactionSubURLIdStringMethodProvider, a dictionary can also be used in place of a URL string to express sub-type identifiers.  One such example may include the names found within events.  Configurable through func <code>configure(with:context:)</code> with key “urls”.  Also settable through func <code>executeAdvancedInstruction(identifierString:valueObject:)</code> with identifier “urls”, implemented in private var urlsInstruction.
-///   </li>
-///   <li>
-///     <em>Payload Transformation</em> (var closure_payloadTransformedObject) — Using a custom closure, the contents of a payload can be transformed.  See associated typealias <code>KVANetTransaction/Closure_PayloadTransformedObject</code>.
-///   </li>
-///   <li>
-///     <em>Retry Time Interval Series</em> (var retryTimeIntervalSeries) — When an attempt is not successful, rather than retrying a new attempt immediately, a network transaction will wait for a specified time interval within a series.  By default each subsequent time interval backs off in a waterfall pattern, increasing the time between each unsuccessful attempt.  Configurable through func <code>configure(with:context:)</code> with key “retry_waterfall”.  See class <code>KVATimeIntervalSeries</code>.  See also private static var retryDefaultTimeIntervalSeries.
-///   </li>
-///   <li>
-///     <em>Error Retry Group Waiting</em> — When an error occurs, rather than letting other network transactions of the same group (i.e. url) make attempts to the same service, a group of network transactions may wait for a specified time interval within a series.  By default each subsequent time interval backs off in a waterfall pattern, increasing the time between each unsuccessful attempt.  When the error retry group wait task is assigned to a network transaction, this wait occurs concurrently (and in addition to) the <em>Retry Time Interval Series</em>, with the main difference being that it applies across multiple transactions of the same group.  Because this is group-based, network transactions which use a different group (i.e. a different url) are not affected by one another.  Assign this behavior to a network transaction by adding prerequisite task “Networking.errorRetryGroupWaitTask [groupId]”.
-///   </li>
-///   <li>
-///     <em>Rate Limiting</em> (var rateLimitingWindowTimeInterval) — The speed at which network transaction requests are initiated can be limited.   Implemented in internal var rateLimitingWindowRequestCountRegulationTask, id “Networking.rateLimitingWindowRequestCountRegulationTask”.  See also private var rateLimitingWindowRequestMaximumCount.
-///   </li>
-///   <li>
-///     <em>Concurrent Maximum Count</em> (var concurrentMaximumCount) — Network transactions may or may not initiate requests concurrently with other transactions, depending on configuration and communication status.  Configure through func <code>configure(with:context:)</code> with key “concurrent_maximum_count”.  The default is 5.  Limit the concurrency of a network transaction while other network transaction requests are in-flight by adding prerequisite task attemptInProgressConcurrentMaximumRegulationTask, id “Networking.attemptInProgressConcurrentMaximumRegulationTask”.  When present, the initiation of a request will be restricted while var concurrentMaximumCount is met or exceeded.  While errors are occurring for any network transaction, or the broader status of communication is not known, the effective concurrentMaximumCount is automatically reduced to 1 to avoid excess pressure during degraded server conditions.  See also supporting property private var attemptInProgressCount.
-///   </li>
-///   <li>
-///     <em>Tracking Wait</em> (var trackingWaitTimeInterval) — To allow some time for the server to process earlier transaction(s), a tracking wait is initiated upon the initiation of a network transaction which has “tracking” implications.  Configure the time interval to wait through func <code>configure(with:context:)</code> with key “tracking_wait”.  The default is 10.0 (seconds).  Cause a network transaction to wait by adding prerequisite task trackingWaitTask, id “Networking.trackingWaitTask”.  When present, the initiation of a request will be restricted until var trackingWaitTask completes a time-based countdown following the conclusion of the invoking transaction.
-///   </li>
-///   <li>
-///     <em>Local Responses</em> (var <code>responseLocalBool</code>) — For testing, or for when networking is disabled, network transactions can serve their responses locally.  For conditional control, see also var closure_serviceLocallyBool.  See feature <em>Local Responses</em> in class <code>KVANetTransaction</code> for more details.
-///   </li>
-/// </ul>
-/// <h2>Features - Instructions</h2>
-/// <ul>
-///   <li>
-///     <em>Executing Instructions</em> — Registered with var <code>instructionCollection</code>, instruction(s) can be executed using their associated identifierString (or id).  This includes any instructions which may be registered from outside of class KVANetworking and not otherwise listed within the documentation of this class.  See func <code>executeAdvancedInstruction(identifierString:valueObject:)</code>.  An array of instructions can also be decoded from JSON and executed by calling func <code>configure(with:context:)</code> with key “instructions”.  The parameter valueObject can be decoded from JSON as long as the associated class conforms to protocol KVAProtocol and the class is named within the JSON object using key “$class”.  Some instructions will support a default class.
-///   </li>
-///   <li>
-///     <em>Printing Anything Printable</em> (var printInstruction, id <em>“print”</em>) — By conforming to protocol <code>KVAPrintable</code>, anything can be printed.  These objects may also conform to protocol <code>KVANetworkingSetterProvider</code> so that a networking parameter may be set if/when the instruction’s valueObject is decoded from JSON.  Supported objects, of note, include instances of class <code>KVALogMessage</code>.  When decoding from JSON, if key “<em>$class</em>” is not specified, the default is <code>KVALogMessage</code>.
-///   </li>
-///   <li>
-///     <em>Starting Anything Startable</em> (var startInstruction, id <em>“start”</em>) — By conforming to protocol <code>KVAStartable</code>, anything can be started.  These objects may also conform to protocol <code>KVANetworkingSetterProvider</code> so that a networking parameter may be set if/when the instruction’s valueObject is decoded from JSON.  Supported objects, of note, include instances of class <code>KVANetTransaction</code>.  When decoding from JSON, you must include key “<em>$class</em>”, as no default class is supported.
-///   </li>
-///   <li>
-///     <em>Setting State Active</em> (var stateActiveInstruction, id <em>“state_active”</em>) — Within the SDK, the system’s active state is automatically tracked.  There are cases where you may want to set this state.  Most often this is used when testing the SDK.  Alternatively you may use this to indicate the state within environments where the state cannot currently be tracked, such as iMessage apps.  For the valueObject pass a boolean value of true or false.  See also class <code>KVASystem</code> func <code>KVASystem/stateActiveDidBecome()</code> and func <code>KVASystem/stateActiveWillResign()</code>.
-///   </li>
-///   <li>
-///     <em>Setting App Clip</em> (var instantAppInstruction, <em>“instant_app”</em>)  — Within the SDK, the boolean indicating whether the host is an App Clip (referred to generically as an “Instant App”) is determined automatically by looking for suffix “.clip” on the main bundle’s info.plist’s CFBundleIdentifier.  While to set this suffix is the typical pattern, you can also set this boolean manually if it is not by using this instruction.  For the valueObject pass a boolean of true or false.  See also class <code>KVASystem</code> var <code>KVASystem/appClipBool</code>.
-///   </li>
-///   <li>
-///     <em>URL Overrides</em> (var urlsInstruction, id <em>“urls”</em>) — For network transactions which are typed, their associated URLs can be overridden.  For the valueObject pass a dictionary where each key contains a network tranaction type identifier, and the value is the url string, or else a dictionary containing urls by sub-id.  This is typically used for testing.
-///   </li>
-///   <li>
-///     <em>Setting Watched Values</em> (var watchedValuesInstruction, id <em>“watched_values”</em>)  — Within instances of class <code>KVAAdapter</code>, the current value may be watched for the presence of changes relative to the server.  These changes are indicated by a watchValue not being the same as the value.  Use this instruction to set the watchValue(s) for a set of adapters.  For the valueObject pass a dictionary where each key is the <code>KVAAdapter/identifierString</code> or <code>KVAAdapter/key</code> of an instance of class <code>KVAAdapter</code> which have been registered in var <code>valueSourceCollection</code>, and the value is the new watchValueRawObject.
-///   </li>
-///   <li>
-///     <em>Setting Product Wrapper Information</em> (var wrapperInstruction, id <em>“wrapper”</em>)  — The Apple Kochava SDK can be wrapped within the Kochava SDK for another platform.  In such cases a product can be set to provide name and version information for the wrapper.  For the valueObject pass an object decodable to an instance of class <code>KVAProduct</code>.  Please enquire with your Kochava client success manager if you are interested in this feature.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVANetworking")
-@interface KVANetworking : NSObject <KVAConfigureWithProtocol, KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAKeyable, KVAMutableDelegator, KVASharedPropertyProvider, KVAStartable>
-/// A shared instance.
-/// This shared instance is reserved for the exclusive use of the host.  It is separate from the instance(s) used by other modules in the Kochava SDK.  You may register entitles with the valueSourceCollection, baseNetTransactionCollection, taskCollection, and/or the instructionCollection.  In reference to the valueSourceCollection, registered value sources can be referenced in network transactions to decorate payloads with metadata (i.e. data points).  In reference to the baseNetTransactionCollection, registered base network transactions can be referenced in network transactions to supply defaults, offering a range of performance benefits.  In reference to the taskCollection, registered tasks can be referenced in network tranactions to serve as prerequisites.  In reference to the instructionCollection, registered instructions can be executed from variety of places.  Once your instance has been configured, you may start the instance using func start().  It is at this point that any persisted instances of class <code>KVANetTransaction</code> in the queue will begin to be processed again.  It is also at this point that this networking instance will be ready to receive new activity from new instances of class KVANetTransaction, i.e. creating and starting network transactions.
-/// <h2>Example</h2>
-/// \code
-/// let networking = KVANetworking.shared
-/// networking.configure(product: self.myProduct)
-/// ...
-/// networking.valueSourceCollection.register(adapter: self.appleDotComStringAdapter)
-/// networking.baseNetTransactionCollection.register(netTransaction: self.sampleNetTransaction)
-/// ...
-/// networking.start()
-///
-/// \endcode
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVANetworking * _Nonnull shared;)
-+ (KVANetworking * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// Create an instance of class KVANetworking which has been restored from JSON, or else create a new instance.
-/// This method of creating an instance should be regarded as internal at the present time.  See init(product:storageIdString:).
-- (nonnull instancetype)initWithFromObject:(id _Nullable)object product:(KVAProduct * _Nonnull)product storageIdString:(NSString * _Nullable)storageIdString delegate:(id <KVAMutable> _Nullable)delegate closure_adapter_mayOperateBoolForContext:(BOOL (^ _Nullable)(KVAAdapter * _Nonnull, KVAContext * _Nullable))closure_adapter_mayOperateBoolForContext closure_serviceLocallyBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_serviceLocallyBool closure_payloadTransformedObject:(id _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable, BOOL))closure_payloadTransformedObject;
-/// Create a basic instance.
-/// \param storageIdString An optional storage identifier.
-///
-- (nonnull instancetype)initWithStorageIdString:(NSString * _Nullable)storageIdString OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Configure the instance for use.
-/// \param product The associated product.
-///
-/// \param closure_serviceLocallyBool A closure which returns a boolean indicating if a network transaction should be serviced locally.
-///
-/// \param closure_payloadTransformedObject A closure which transforms the request body or header of a network request.
-///
-/// \param delegate A delegate conforming to KVAMutable.
-///
-- (void)configureWithProduct:(KVAProduct * _Nonnull)product delegate:(id <KVAMutable> _Nullable)delegate closure_serviceLocallyBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_serviceLocallyBool closure_payloadTransformedObject:(id _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable, BOOL))closure_payloadTransformedObject closure_adapter_mayOperateBoolForContext:(BOOL (^ _Nullable)(KVAAdapter * _Nonnull, KVAContext * _Nullable))closure_adapter_mayOperateBoolForContext;
+@interface KVANetworking : NSObject
 /// Configure (update) the instance from another object.
 /// This method is used to configure the instance.  It can be called from the host to override (or else default) various parameters.  The structure of the object you provide has the same capability as that which the server may return.  Additionally you can wrap the parameters you provide in objects $override$, $override.append$, $default$, or $default.append$, to indicate how these options are treated relative to the server’s options.
 /// $override$:  Elements within this object will override any options of the same name specified by the server.
@@ -4785,82 +1912,26 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull 
 /// \param context The context from which the object was provided.  In rare cases this may have some bearing on the proper interpretation of what was provided.
 ///
 - (void)configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
-/// Configure (update) the instance from another object.
-/// See func <code>configure(with:context:)</code>.
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
-/// Start the instance.
-- (void)start;
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Execute an advanced instruction.
 /// \param identifierString An identifier for the advanced instruction.
 ///
 /// \param valueObject A value object for the advanced instruction.
 ///
 - (void)executeAdvancedInstructionWithIdentifierString:(NSString * _Nonnull)identifierString valueObject:(id _Nullable)valueObject;
-/// Invalidate the instance.
-- (void)invalidate;
-/// A collection of base network transactions which have been registered with the networking instance.
-/// Base network transactions are instances of class <code>KVANetTransaction</code>.  Instances are indexed by their nameString and serve as shared resources which may be referenced in network transactions as base network transactions from which to supply default parameters.  Any <code>KVANetTransaction</code> which is registered will be retained, and so only network transactions which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered network transaction.  This means base network transactions within the baseNetTransactionCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull baseNetTransactionCollection;
-/// A collection of instructions which have been registered with the networking instance.
-/// Instructions are instances of class <code>KVAInstruction</code>.  Instances are indexed by their identifierString and serve as instructions which may be executed.  Any instruction which is registered will be retained, and so only instructions which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered instruction.  This means instructions within the instructionCollection can be somewhat transient so long as it is understood that the last one registered under a given identifier will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull instructionCollection;
-/// A collection of tasks which have been registered with the networking instance.
-/// Tasks are instances of class <code>KVATask</code>.  Instances are indexed by their nameString and serve as shared resources which may be referenced in network transactions as prerequisite tasks.  Any task which is registered will be retained, and so only tasks which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered task.  This means tasks within the taskCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.  This approach is applicable to things like the trackingWaitTask, which is periodically re-generated and re-registered.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull taskCollection;
-/// A method which returns a default prerequisiteTaskArray for a given network transaction name string.
-/// \param netTransactionNameString The name of the network transaction.
-///
-- (NSArray<KVATask *> * _Nullable)taskCollection_defaultPrerequisiteTaskArrayForNetTransactionNameString:(NSString * _Nullable)netTransactionNameString SWIFT_WARN_UNUSED_RESULT;
-/// A collection of value sources which have been registered with the networking instance.
-/// Value sources can be instances of class <code>KVAAdapter</code>, <code>KVAValue</code>, or any object from which a instance of class <code>KVAValue</code> can be sourced or else constructed.  This includes JSON value primitive types such as instances of class NSString, NSNumber, NSDictionary, and NSArray.  Instances are indexed by an indentifierString and serve as shared resources which may be referenced in network transactions as the source of values within the request body, header, or url.  Any value souce which is registered will be retained, and so only value sources which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered value source.  This means value sources within he valueSourceCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull valueSourceCollection;
-/// An adapter which the sleepBool.
-/// This is technically the actual storage for the sleepBool.  This adapter can be used to observe changes to the sleepBool.
-@property (nonatomic, readonly, strong) KVABoolAdapter * _Nonnull sleepBoolAdapter;
-/// A closure which is called to determine if the adapter may operate.
-/// This may be used to evaluate allowed and denied conditions, and it applies to all governed major operations- i.e. collect, persist, and keep.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_adapter_mayOperateBoolForContext)(KVAAdapter * _Nonnull, KVAContext * _Nullable);
-/// A consent object.
-@property (nonatomic, strong) KVAConsent * _Nullable consent;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
-/// A boolean indicating that requests should be serviced locally- with modern Objective-C syntax.
-@property (nonatomic, strong) NSNumber * _Nullable responseLocalBoolNumber;
-/// A KVATimeIntervalSeries which defines how networking retries should take place.
-/// This returns a copy which is safe for use in exactly one location.
-- (KVATimeIntervalSeries * _Nonnull)retryTimeIntervalSeries_resolvedCopy SWIFT_WARN_UNUSED_RESULT;
-/// A boolean which when true causes the instance to sleep.
-/// The default is false.  When set to true, this causes tasks to effectively be suspended until this condition is lifted.  While this is set to true, tasks are not lost per-say;  however, if a task may have otherwise occurred multiple times, it may be represented only once once the condition is lifted.
-@property (nonatomic) BOOL sleepBool;
-/// A unique id for the instance.
-@property (nonatomic, readonly, copy) NSString * _Nonnull instanceIdString;
-/// A standard Closure_MetaValueArrayDictionary which includes the instanceId.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, KVAValue *> * _Nullable (^ _Nonnull closure_instanceIdValueMetaValueArrayDictionary)(KVAValue * _Nonnull);
-/// A standard Closure_StaleBool which returns that the specified KVAValue is stale when the instanceIdString changes.
-/// The use of this requires that the instanceIdString be stored in the meta value(s) of the KVAValue.  See closure_instanceIdValueMetaValueArrayDictionary.
-@property (nonatomic, readonly, copy) BOOL (^ _Nonnull closure_staleBool_instanceId)(KVAValue * _Nonnull);
-/// <ul>
-///   <li>
-///     Establishes a trackingWaitTask with a given optional prerequisiteTask.
-///   </li>
-/// </ul>
-- (KVATask * _Nonnull)trackingWaitTask_establishWithPrerequisiteTask:(KVATask * _Nullable)prerequisiteTask SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull willDeallocNotificationName;)
-+ (NSNotificationName _Nonnull)willDeallocNotificationName SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
 
+
 /// The class KVAPartner defines a partner in the context of managing user consent in relationship to GDPR.
 /// When prompting for consent, the user should be presented with a list of the partners with which data would be shared.  That list can grow or contract independent of software version because data sharing can take place server-to-server.  With these partners being defined within your Kochava dashboard, changes can be made automatically, promptly, and across a range of software versions.
 SWIFT_CLASS_NAMED("KVAPartner")
-@interface KVAPartner : NSObject <KVAConfigureWithProtocol, KVAFromProtocol>
+@interface KVAPartner : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
 /// Return a boolean indicating if this partner raises a need to prompt for consent.
 /// Compare with shouldBeIncludedInPromptBool.
 - (BOOL)shouldPromptBool SWIFT_WARN_UNUSED_RESULT;
@@ -4894,44 +1965,67 @@ SWIFT_CLASS_NAMED("KVAPartner")
 
 
 
-
 /// A controller for working with products.
 SWIFT_CLASS_NAMED("KVAProductController")
 @interface KVAProductController : NSObject
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProductController * _Nonnull shared;)
 + (KVAProductController * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// Register a Product with the ProductController.
-- (void)registerProduct:(KVAProduct * _Nullable)product;
-/// Return a product for a given Class.
-/// If a matching product cannot be located, this returns nil.  However, there is a special rule when the SDK is identified as not having a bundle of its own to map all classes which begin with the product organization to KVACoreProduct.shared.  This makes it possible to yield an acceptable result even when bundleForClass would otherwise return the main bundle.
-- (KVAProduct * _Nullable)productForClass:(Class _Nullable)aClass SWIFT_WARN_UNUSED_RESULT;
-/// Return a product with a matching module name.
-- (KVAProduct * _Nullable)productWithModuleNameString:(NSString * _Nullable)moduleNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return whether or not a condition was successful.
-/// A nil conditionString will always be regarded as successful.
-/// \param conditionString A conditionString to evaluate.
+/// Resets product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
 ///
-- (BOOL)allProducts_evaluationResultBoolForConditionString:(NSString * _Nullable)conditionString SWIFT_WARN_UNUSED_RESULT;
-/// The array of registered products.
-@property (nonatomic, readonly, copy) NSArray<KVAProduct *> * _Nonnull productArray;
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_resetWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Resets product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param includeExternalBool A boolean indicating whether or not external variables should be deleted.  This is intended for testing purposes.  See func <code>reset(deleteLocalDataBool:)</code> which always supplies this parameter as false.
+///
+/// \param includeDeviceAppGroupBool A boolean indicating whether or not the deviceAppGroup user defaults should be deleted.  This is where App Clip data is stored.
+///
+/// \param printLogMessageBool A boolean indicating whether or not a log message should be printed consistent with a public entry point.
+///
+/// \param includeHostBool A boolean indicating if you want to include the host.  The host requires an explicit authorization through this boolean.
+///
+/// \param includeUIBool A boolean indicating if you want to include module KochavaUI.  Module KochavaUI requires an explicit authorization through this boolean.
+///
+/// \param includeCoreBool A boolean indicating if you want to include module KochavaCore.  Module KochavaCore requires an explicit authorization through this boolean.
+///
+/// \param moduleNameStringArray An array of modules to include.  Optional.  If this array is not set then all modules are allowed.  If this is set then only those products whose module names are in this array will be included.  If you set an ‘include’ parameter and also set any value in this array, the name of that ‘include’ parameter must still also be in this array to be included.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_resetWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool includeDeviceAppGroupBool:(BOOL)includeDeviceAppGroupBool printLogMessageBool:(BOOL)printLogMessageBool includeHostBool:(BOOL)includeHostBool includeUIBool:(BOOL)includeUIBool includeCoreBool:(BOOL)includeCoreBool moduleNameStringArray:(NSArray<NSString *> * _Nullable)moduleNameStringArray closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Shuts down product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Shuts down product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param includeHostBool A boolean indicating if you want to include the host.  The host requires an explicit authorization through this boolean.
+///
+/// \param includeUIBool A boolean indicating if you want to include module KochavaUI.  Module KochavaUI requires an explicit authorization through this boolean.
+///
+/// \param includeCoreBool A boolean indicating if you want to include module KochavaCore.  Module KochavaCore requires an explicit authorization through this boolean.
+///
+/// \param moduleNameStringArray An array of modules to include.  Optional.  If this array is not set then all modules are allowed.  If this is set then only those products whose module names are in this array will be included.  If you set an ‘include’ parameter and also set any value in this array, the name of that ‘include’ parameter must still also be in this array to be included.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeHostBool:(BOOL)includeHostBool includeUIBool:(BOOL)includeUIBool includeCoreBool:(BOOL)includeCoreBool moduleNameStringArray:(NSArray<NSString *> * _Nullable)moduleNameStringArray closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-
-/// A class which wraps a string value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a string value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAStringAdapter")
 @interface KVAStringAdapter : KVAAdapter
-/// The designated constructor for a StringAdapter— using modern Objective-C syntax.
-+ (KVAStringAdapter * _Nonnull)stringAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSString *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary<NSString *, NSString *> * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueString:(NSString * _Nullable)defaultValueString valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueString for the KVAStringAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSString * _Nullable valueString;
 @end
 
 
@@ -4945,14 +2039,9 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// See var <code>shared</code>.  This variable will be nil prior to the shared instance being defaulted.  This may be used to optionally invalidate any existing shared instance without causing it to first be defaulted in the process.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * _Nullable shared_optional;)
 + (KVASystem * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
-/// A method which may be called when a primary system starts and executes on the main thread.
-/// This method must be called on the main thread.  This is used to expedite defaulting of the system’s state, which must be obtained on the main thread.  The system object will do this on its own once it has dispatched to the main queue for the first time, but this method can be called to ensure that this is done timely prior to the execution of later code.  Because of the lack of a class initializer in Swift equivalent to Objective-C’s + (void)initialize, this will technically be the moment after which it can be guaranteed that the stateActiveBool will be accurate.  Prior to that it may return its default value of false.  I say “may” because if KVASystem is accessed it will move forward to gather the state on its own, and so that can cause it to be collected earlier.
-- (void)primarySystemStartDidExecuteOnMainThread;
 /// A boolean indicating if the current host is an app clip.
 /// This property will return a default value based on whether or not it can be detected that the host is an app clip.  It uses the bundle identifier and looks for the default suffix of “.Clip” (case insensitive).  If it finds that suffix then this value will default to true, otherwise false.  If this assumption is not accurate for the host, this value can be set explicitly.
 @property (nonatomic) BOOL appClipBool;
-/// A boolean indicating if the current host is an app extension.
-@property (nonatomic, readonly) BOOL appExtensionBool;
 /// A method which can be called to report that the active state should become true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
 - (void)stateActiveDidBecome;
@@ -4969,29 +2058,12 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
 - (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString;
-- (NSString * _Nonnull)nameString SWIFT_WARN_UNUSED_RESULT;
-/// A boolean indicating if the system’s state is active.
-/// This considers the application active state and/or the extension active state (when applicable).  It unifies the notion of an system active state.
-/// A boolean indicating if the state is active.
-@property (nonatomic, readonly) BOOL stateActiveBool;
 /// A constant to use as the source when reporting that a MessagesAppViewController did become active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString;)
 + (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString;)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
-/// A Notification.Name to use for observing when the system’s state active did become true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull stateActiveDidBecomeNotificationName;)
-+ (NSNotificationName _Nonnull)stateActiveDidBecomeNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A string to use as the name for a notification to observe when the system’s state active did become true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull stateActiveDidBecomeNotificationNameString;)
-+ (NSString * _Nonnull)stateActiveDidBecomeNotificationNameString SWIFT_WARN_UNUSED_RESULT;
-/// A Notification.Name to use for observing when the system’s state active will resign true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull stateActiveWillResignNotificationName;)
-+ (NSNotificationName _Nonnull)stateActiveWillResignNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A string to use as the name for a notification to observe when the system’s state active will resign true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull stateActiveWillResignNotificationNameString;)
-+ (NSString * _Nonnull)stateActiveWillResignNotificationNameString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -5000,362 +2072,58 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// This class is a higher-level wrapper for system (sys/) functions, such as sys/utsname.h
 SWIFT_CLASS_NAMED("KVASystemLow")
 @interface KVASystemLow : NSObject
-/// Return the cpu type and sub-type information (i.e. architecture)
-/// The string returned from here is period separated, and expected to be unique for the platform.  It is not human readable, and a lookup table may employed to convert this information to a human-readable string.
-/// note:
-/// Thread Safety:  Thread safe <em>probably</em> (sysctlbyname).  sysctlbyname thread safety is undocumented by Apple at the time of this writing, but their broader documentation on thread safety says, “Immutable objects are generally thread-safe. Once you create them, you can safely pass these objects to and from threads.”  Because none of the properties which are being accessed are taken to be mutable, generally speaking, what we are doing is taken to be thread safe.
-+ (NSString * _Nullable)architectureString SWIFT_WARN_UNUSED_RESULT;
-/// Return the system’s boot date.
-/// The precision is in microseconds (1 / 1,000,000).
-/// note:
-/// Thread Safety:  Thread safe <em>probably</em> (sysctl).  sysctl thread safety is undocumented by Apple at the time of this writing, but their broader documentation on thread safety says, “Immutable objects are generally thread-safe. Once you create them, you can safely pass these objects to and from threads.”  Because none of the properties which are being accessed are taken to be mutable, generally speaking, what we are doing is taken to be thread safe.
-+ (NSDate * _Nullable)bootDate SWIFT_WARN_UNUSED_RESULT;
-/// Return the hardware machine [id] (model id) string.
-/// The term “machine” is said to be an older term, and it is still reflected in the system-level functions required to retrieve the value.  “Model” is how this value is currently represented to the public by Apple.  A typical return from this method would be something like “iPhone9,1” and “iPhone9,3” (two variants of iPhone 7).  For a list of Apple Touch OS model ids (phones, pads, ipods, apple tv, apple watch) see here: https://www.theiphonewiki.com/wiki/Models  For a list of MacBook Pro model ids see here: https://support.apple.com/en-us/HT201300
-+ (NSString * _Nonnull)hardwareMachineModelIdString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
 /// A class which defines a high-level task.
-/// <h2>Examples</h2>
-/// Example - Creating a basic task with some prerequisite tasks:
-/// \code
-/// lazy var someTask = KVATask(
-///     networking: KVATracker.shared.networking,
-///     nameString: "CurrentClass.someTask",
-///     identifierString: nil,
-///     logMessagesPrintBool: true,
-///     prerequisiteTaskNameStringArray:
-///     [
-///         "TrackerConfig.retrieveTask",
-///         "Install.sendTask"
-///     ],
-///     sleepObservantBool: true,
-///     closure_startAttempt:
-///     {
-///         task in
-///
-///         print("... do something")
-///
-///         task.complete()
-///     }
-/// )
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Name</em> (var <code>nameString</code>) — A task is named using a unique standardized name, enabling its activity to be looked up in the log and to be correlated back to its root class.
-///   </li>
-///   <li>
-///     <em>Prerequisite Tasks</em> (var prerequisiteTaskArray) — Before a task may execute, it will wait until any number of prerequisite tasks have completed.  Once a task has been started, and when all prerequisite tasks have completed, the task will automatically start an attempt with no additional input.  Any tasks which are dependent upon that task will themselves make an attempt when they see that task has completed, along with all other tasks which it may have as prerequisites.
-///   </li>
-///   <li>
-///     <em>Timeout</em> (var attemptTimeoutTimeInterval) — A task’s attempt can be recognized as timing out, ensuring that subsequent retry attempts can move forward.
-///   </li>
-///   <li>
-///     <em>Retrying</em> (var <code>retryTimeIntervalSeries</code>) — If a task’s attempt does not accomplish the work it set out to do, it can be retried automatically.  The time to wait between each retry, as well as how many retries may be attempted, can be defined with a series of time intervals.  See class <code>KVATimeIntervalSeries</code>.
-///   </li>
-///   <li>
-///     <em>Consent</em> (var consent) — If a task requires tracking consent, and tracking is not allowed, then that task will automatically be blocked from execution.  See class <code>KVAConsent</code>.
-///   </li>
-///   <li>
-///     <em>Sleeping</em> (var sleepObservantBool) — A task’s execution may be deferred, causing it to wait and not proceed while the associated networking instance is asleep.  See class <code>KVANetworking</code> var <code>KVANetworking/sleepBool</code>.
-///   </li>
-///   <li>
-///     <em>Reset</em> (func <code>reset()</code>) — Following completion, a task may be reset so that it can be executed again.  A task may also reset other tasks when it resets, enabling dependent tasks to be automatically reexecuted (or at minimum reconsidered for execution).
-///   </li>
-///   <li>
-///     <em>Passive Reset</em> (var <code>resetPassiveTimeInterval</code>) — Following completion, a task may be passively reset so it can be executed again.  When the task is evaluated to determine if it should be regarded as completed, it may further evaluate that it should move back from a state of completed to not-completed, so that it may proceed to execute again.  This provides for the task to be executed again when certain conditions exist, but not when there is no on-going activity which would be prompting the need for the task to execute.  An example is resetting a config task to re-collect a fresh configuration after a certain amount of time has elapsed, but only when new activity occurs which would require the use of that configuration.
-///   </li>
-///   <li>
-///     <em>Logging</em> (var <code>logMessagesPrintBool</code>) — The activity and lifecycle of a task may be printed to the log through the task itself, providing log messages which are consistent and referenceable.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVATask")
-@interface KVATask : NSObject <KVAInvalidatable, KVAStartable>
-/// The main constructor for a task.
-/// \param networking An instance of networking.  From this can be derived prerequisite tasks from their associated names, sleep support, consent, etc.
-///
-/// \param nameString The name of the task.  This is a human readable name which is displayed in places such as the log.
-///
-/// \param identifierString An identifier for the task.  This is used to further qualify the name of the task when the same task name may be used multiple times.
-///
-/// \param logMessagesPrintBool A boolean indicating if log messages should be printed.
-///
-/// \param prerequisiteTaskArray An array of Task objects which are regarded to be prerequisites which must be fulfilled before this task may start.
-///
-/// \param attemptTimeoutTimeInterval The time interval after which an attempt is automatically regarded to have timed out (a failure).
-///
-/// \param retryTimeIntervalSeries A TimeIntervalSeries which describes the default pattern whereby retries should subsequently take place following a failure.  This value is a default and it may be overridden later in context depending upon the specifics of a failure.
-///
-/// \param consentRequiredBool A boolean indicating that consent is required.
-///
-/// \param consent A consent instance.
-///
-/// \param closure_shouldAttemptBool A closure which returns whether or not an attempt should be made for this task.  This closure provides input from the caller which can vary based on conditions within the caller.
-///
-/// \param closure_didExperienceDelay A closure which is executed if the task experiences a delay.
-///
-/// \param closure_startAttempt A closure which starts an attempt.  This closure performs the core logic for the task.
-///
-/// \param closure_didComplete A closure that is called when the task becomes completed.  This closure can be used to clean up properties used during the execution of the task.
-///
-/// \param closure_didReset A closure that is called when the task becomes reset.
-///
-/// \param sleepObservantBool A boolean indicating that sleep should be observed.
-///
-/// \param resetFollowedTaskArray An array of tasks which when reset should trigger this task to follow with its own reset.
-///
-/// \param resetPassiveTimeInterval A time interval after which the task should passively reset the next time its completion status is checked.
-///
-- (nonnull instancetype)initWithNetworking:(KVANetworking * _Nullable)networking nameString:(NSString * _Nullable)nameString identifierString:(NSString * _Nullable)identifierString logMessagesPrintBool:(BOOL)logMessagesPrintBool prerequisiteTaskNameStringArray:(NSArray<NSString *> * _Nullable)prerequisiteTaskNameStringArray prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray attemptTimeoutTimeInterval:(NSTimeInterval)attemptTimeoutTimeInterval retryTimeIntervalSeries:(KVATimeIntervalSeries * _Nullable)retryTimeIntervalSeries consentRequiredBool:(BOOL)consentRequiredBool consent:(KVAConsent * _Nullable)consent sleepObservantBool:(BOOL)sleepObservantBool resetFollowedTaskNameStringArray:(NSArray<NSString *> * _Nullable)resetFollowedTaskNameStringArray resetFollowedTaskArray:(NSArray<KVATask *> * _Nullable)resetFollowedTaskArray resetPassiveTimeInterval:(NSTimeInterval)resetPassiveTimeInterval closure_shouldAttemptBool:(BOOL (^ _Nullable)(KVATask * _Nonnull))closure_shouldAttemptBool closure_didExperienceDelay:(void (^ _Nullable)(KVATask * _Nonnull))closure_didExperienceDelay closure_didInvalidate:(void (^ _Nullable)(KVATask * _Nonnull))closure_didInvalidate closure_didComplete:(void (^ _Nullable)(KVATask * _Nonnull))closure_didComplete closure_didReset:(void (^ _Nullable)(KVATask * _Nonnull))closure_didReset closure_startAttempt:(void (^ _Nullable)(KVATask * _Nonnull))closure_startAttempt OBJC_DESIGNATED_INITIALIZER;
-- (void)start;
-/// Evaluate the task.
-/// If the task should start an attempt then an attempt will be started.  If nothing should be done then nothing will be done.
-- (void)evaluate;
-/// End an attempt.
-/// This method may be called when no attempt is in progress.  That gesture serves to shut down the task from further activity.  The evaluate method, for example, does this automatically if it is called and the task is not in progress but also should not be attempted.
-/// \param accomplishedBool A boolean which indicates whether or not the attempt reached the point where it was done.  This is equivalent to being accomplished successfully.
-///
-/// \param allowRetryBool A boolean indicating whether retries should be allowed.  If the task is now done (accomplished successfully) this boolean has no effect.  If the task is not done, it will lead to the retry logic being used.
-///
-/// \param retryInsertTimeIntervalNumber An NSTimeInterval wrapped in an NSNumber which can optionally be supplied to be inserted into the retryTimeIntervalSeries for any retry logic flowing out of the ending attempt.
-///
-- (void)endAttemptWithAccomplishedBool:(BOOL)accomplishedBool allowRetryBool:(BOOL)allowRetryBool retryInsertTimeIntervalNumber:(NSNumber * _Nullable)retryInsertTimeIntervalNumber;
-/// Complete the task.
-/// If the task is already in a completed state then nothing will be done.  It is safe to call this method regardless of state.
-- (void)complete;
-/// Complete the task.
-/// If the task is already in a completed state then nothing will be done.  It is safe to call this method regardless of state.
-/// \param logMessagesPrintBool A boolean indicating if log messages should print.  A value of true will still not print log messages if the task itself has been configured to not print log messages.
-///
-- (void)completeWithLogMessagesPrintBool:(BOOL)logMessagesPrintBool;
-/// Reset the task.
-/// Typically a task’s lifecycle runs its course when it reaches its completed state, and it takes no further actions.  In some cases you may wish for a task to execute again without redefining a new task.  Use this method to reset the task back to an original state whereby it may be run through its standard attempt lifecycle again.  If a task has been invalidated, this method will also restore it back to a valid state.
-- (void)reset;
-/// Resets the attempt series.
-/// This resets any retry waterfall and will reevaluate the task.
-- (void)resetAttemptSeries;
-/// Executes any defined custom method with the specified nameString.
-/// \param nameString The name of the custom method.
-///
-/// \param parametersDictionary An optional parameters dictionary.  Any keys and values are custom to the custom method.
-///
-- (void)executeCustomMethodWithNameString:(NSString * _Nonnull)nameString parametersDictionary:(NSDictionary * _Nullable)parametersDictionary;
-- (void)invalidate;
-/// Defines a closure which is intended to hold custom methods which can be used to extend individual instances of an object.
-@property (nonatomic, copy) void (^ _Nullable closure_executeCustomMethod)(NSObject * _Nonnull, NSString * _Nonnull, NSDictionary * _Nullable);
-/// A boolean indicating if log messages should be printed.
-/// This only applies to normal log messages, not exceptions and other errors.  This boolean exists so that task instances can be used for lower-level functionality without creating confusion in the log.  It is exposed publicly so that it may be overridden to false at times when something should terminate silently.
-@property (nonatomic) BOOL logMessagesPrintBool;
-/// The name of the task.
-/// This is a human readable name which is displayed in places such as the log.
-@property (nonatomic, readonly, copy) NSString * _Nullable nameString;
-@property (nonatomic, strong) KVANetworking * _Nullable networking;
-/// A time interval after which the task should passively reset the next time its completion status is checked.
-@property (nonatomic) NSTimeInterval resetPassiveTimeInterval;
-/// A TimeIntervalSeries which describes the default pattern whereby retries should subsequently take place following a failure.
-/// This value is a default and it may be overridden later in context depending upon the specifics of a failure.
-@property (nonatomic, strong) KVATimeIntervalSeries * _Nullable retryTimeIntervalSeries;
-/// A boolean indicating if this task is done.
-/// The state of being done means that the task did execute an attempt and did finish successfully.  This is as opposed to being complete, which is when the task will no longer make subsequent attempts irrespective of considerations such as whether an attempt to execute the task was ever made or whether an attempt finished successfully.
-@property (nonatomic, readonly) BOOL accomplishedBool;
-/// A boolean indicating if this task is in progress.
-/// A task becomes in progress when an attempt is started, and it becomes no longer in progress when it is not going to retry, and completedBool is true.  At this point accomplishedBool may or may not be true.  See also attemptInProgressBool.
-@property (nonatomic, readonly) BOOL attemptSeriesInProgressBool;
-/// The NSTimeInterval that the task was/has been in progress.
-- (NSTimeInterval)attemptSeriesInProgressTimeInterval SWIFT_WARN_UNUSED_RESULT;
-/// A boolean indicating if this task is completed.
-/// The state of being completed means that the task will no longer make subsequent attempts.  This does not indicate whether or not the task was able to attempt to execute or that an attempt did finish successfully (see accomplishedBool).
-@property (nonatomic, readonly) BOOL completedBool;
+@interface KVATask : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// A boolean indicating if the task experienced any delay from the moment it was started.
-/// Delays would include things like prerequisites not being met, an attempt ending without accomplishing, etc.
-@property (nonatomic, readonly) BOOL didExperienceDelayBool;
-/// A constant to be used as a notification name string for when a task becomes completed.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)didCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A constant to be used as a notification name string for when a task becomes reset.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didResetNotificationName;)
-+ (NSNotificationName _Nonnull)didResetNotificationName SWIFT_WARN_UNUSED_RESULT;
+/// An instance of networking.
+@property (nonatomic, strong) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-/// A class which wraps a time interval value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a time interval value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVATimeIntervalAdapter")
 @interface KVATimeIntervalAdapter : KVANumberAdapter
-/// The designated constructor for a KVATimeIntervalAdapter— using modern Objective-C syntax.
-+ (KVATimeIntervalAdapter * _Nonnull)timeIntervalAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumTimeIntervalNumber:(NSNumber * _Nullable)minimumTimeIntervalNumber maximumTimeIntervalNumber:(NSNumber * _Nullable)maximumTimeIntervalNumber defaultValueTimeIntervalNumber:(NSNumber * _Nullable)defaultValueTimeIntervalNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueTimeInterval for the KVATimeIntervalAdapter.
-@property (nonatomic) NSTimeInterval valueTimeInterval;
-/// A constant closure which formats an NSNumber value as a time interval number for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_timeInterval)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_timeInterval SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines a series of time intervals, which express a waterfall pattern.
-/// This class defines a series of time intervals (often resembling a resonation from smaller to larger intervals of time) along with methods to walk through the series and describe its current state.
 SWIFT_CLASS_NAMED("KVATimeIntervalSeries")
-@interface KVATimeIntervalSeries : NSObject <KVAConfigureWithProtocol, KVAFromProtocol>
-/// The main constructor for a TimeIntervalSeries— using modern Objective-C syntax.
-/// \param timeIntervalArray An array of TimeInterval wrapped in NSNumber.  This array is sequenced in the order that these time intervals should be used.
-///
-/// \param repeatFinalTimeIntervalBool A boolean which indicates whether the last time interval in the timeIntervalArray should repeat indefinitely.  If this value is false then there are no subsequent time intervals returned following the last time interval, effectively bringing a TimeIntervalSeries to a close.
-///
-+ (KVATimeIntervalSeries * _Nonnull)timeIntervalSeriesWithTimeIntervalArray:(NSArray<NSNumber *> * _Nullable)timeIntervalArray repeatFinalTimeIntervalBool:(BOOL)repeatFinalTimeIntervalBool SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVATimeIntervalSeries : NSObject <NSCopying>
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
 - (BOOL)isEqual:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Advance to the next time interval.
-- (void)advance;
-/// Return a description for the current state.
-- (NSString * _Nonnull)previousIterationString SWIFT_WARN_UNUSED_RESULT;
-/// Reset the TimeIntervalSeries so that the next time interval will be the first in the array.
-- (void)reset;
-/// A time interval wrapped in an NSNumber which is to be used in place of the next time interval.
-/// When this property is set it will effectively block the next advance of the currentIndex, and it will be consumed such that during the next period the currentTimeInterval will return this value instead of the one normally specified.
-@property (nonatomic, strong) NSNumber * _Nullable insertTimeIntervalNumber;
-/// An array of NSTimeInterval wrapped in NSNumber.  This array is sequenced in the order that these time intervals should be used.
-@property (nonatomic, readonly, copy) NSArray<NSNumber *> * _Nullable timeIntervalArray;
-/// An integer which represents the current attempt, starting at zero.
-/// This integer represents the human-readable attempt that we are currently at, intended to be called following a call to currentTimeIntervalWithAdvanceBool.  It is similar to currentIndex in that it generally starts off as currentIndex, but it is different from currentIndex in that it increments indefinitely even when currentIndex may have reached the end and be continuing using repeatFinalTimeIntervalBool.
-@property (nonatomic, readonly) NSInteger currentIteration;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
 /// A class which wraps a timer with an advanced and high-level interface.
-/// Traditional timers, once fired or invalidated, cannot be restarted.  This requires them to be reconstructed from scratch each time they are to be started again.  They also have naunced thread-safety requirements which requires careful consideration.  This class provides a wrapping mechanism which allows you to use a single instance which can be started, stopped, or reset.  Thread considerations are abstracted internally.  Additionally the timer can be configured to decide for itself if it should be started based on a supplied custom closure, enabling a single call to manage changes to the timer.
 SWIFT_CLASS_NAMED("KVATimer")
-@interface KVATimer : NSObject <KVAInvalidatable, KVAStartable>
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)start;
-- (void)stop;
-- (void)reset;
-- (void)invalidate;
-/// A boolean indicating if the timer is started.
-@property (nonatomic, readonly) BOOL startedBool;
-/// A boolean indicating if the timer is considered active.
-/// The timer may not actually exist at this point, as a dispatch may be in progress, but for all intents and purposes we can consider it as effectively existing.
-@property (nonatomic, readonly) BOOL timerActiveBool;
+@interface KVATimer : NSObject
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
 /// A high-level wrapper for a value, along with its associated meta value(s).
-/// <h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Decoding</em> — New instances can be decoded from JSON.
-///   </li>
-///   <li>
-///     <em>Encoding</em> — Existing instances can be encoded as a dictionary which can be serialized into JSON.
-///   </li>
-///   <li>
-///     <em>Identification</em> — The property idString provides a universally unique identifier for the value.
-///   </li>
-///   <li>
-///     <em>Adapter Subordination</em> — The property adapter, along with its related property valueSourceNameString, associate the value with an instance of class <code>KVAAdapter</code>. This extends it to recognize, and in some cases abide by, the features provided by the adapter.
-///   </li>
-///   <li>
-///     <em>Adaptation</em> — A variety of methods are provided to gracefully adapt the value object to a variety of other types.
-///   </li>
-///   <li>
-///     <em>Start Date</em> (var <code>startDate</code>) — The property startDate defines when the value effectively started.  It can then be used to recognize freshness (or staleness).
-///   </li>
-///   <li>
-///     <em>Staleness</em> (func <code>staleBool()</code>) — The value can determine and report if it is stale.
-///   </li>
-///   <li>
-///     <em>Meta Values</em> —  The property metaValueArrayDictionary provides for the storage of custom meta value(s).
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVAValue")
-@interface KVAValue : NSObject <KVAFromProtocol>
-/// Create an instance from parameters— using modern Objective-C syntax.
-+ (KVAValue * _Nonnull)valueWithIdString:(NSString * _Nullable)idString rawObject:(id _Nullable)rawObject object:(id _Nullable)object serverObject:(id _Nullable)serverObject valueSourceNameString:(NSString * _Nullable)valueSourceNameString adapter:(KVAAdapter * _Nullable)adapter metaValueArrayDictionary:(NSDictionary<NSString *, KVAValue *> * _Nullable)metaValueArrayDictionary startDate:(NSDate * _Nullable)startDate placeholderForAsynchronousCollectionBool:(BOOL)placeholderForAsynchronousCollectionBool SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVAValue : NSObject
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return an NSArray cast of object if it is an NSArray.  Returns nil if not.  A convenience method.
-- (NSArray * _Nullable)array SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean representation of object if it is an NSNumber.  Returns false if not.  A convenience method.
-- (BOOL)boolean SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSData cast of object if it is an NSData.  Returns nil if not.  A convenience method.
-/// Important Note:  If this is not data, such as a string that is not a base64 encoded version of a string, this will return nil.  This does not convert a simple string to become base64 encoded data.
-- (NSData * _Nullable)data SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDate cast of object if it is an Date.  Returns nil if not.  A convenience method.
-- (NSDate * _Nullable)date SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDictionary cast of object if it is an NSDictionary.  Returns nil if not.  A convenience method.
-- (NSDictionary * _Nullable)dictionary SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSInteger cast of object if it is an NSInteger.  Returns zero if not.  A convenience method.
-- (NSInteger)integer SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSNumber cast of object if it is an NSNumber.  Returns nil if not.  A convenience method.
-- (NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSString cast of object if it is an NSString.  Returns nil if not.  A convenience method.
-- (NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSTimeInterval cast of object if it is an NSNumber.  Returns nil if not.  A convenience method.
-- (NSTimeInterval)timeInterval SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if the object should be considered stale.
-- (BOOL)staleBool SWIFT_WARN_UNUSED_RESULT;
-/// Return a value for the specified object and for the specified context.
-/// This method is a little odd here in class KVAValue because values are themselves values, but this method signature is used by other classes as well.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create a dictionary containing an array of KVAValue(s), keyed by their adapter name strings, from an array of objects.
-/// \param objectArray An array of objects from which to create the dictionary.
-///
-/// \param globalValueSourceCollection A global array of KVAAdapter(s) wrapped in an NSDictionary.
-///
-+ (NSDictionary<NSString *, KVAValue *> * _Nullable)valueArrayDictionaryFromObjectArray:(NSArray * _Nullable)objectArray globalValueSourceCollection:(KVACollection * _Nullable)globalValueSourceCollection SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if this KVAValue may mutate.
-/// This is referring specfically to the conditions where didMutate may be called, producing the associated observable notification.
-- (BOOL)mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-/// The associated adapter.
-/// The reason why this is weak is because if it is not it sets up a reference cycle with the adapter when the adapter has it set as its cachedValue.  We’ve designed this class to function gracefully without this property set, there being other fields which stand in when the adapter is missing.  That was done for other reasons, but it also assists with the weak quality of this property.
-@property (nonatomic, weak) KVAAdapter * _Nullable adapter;
-/// A dictionary containing a global array of adapters keyed by their names.
-@property (nonatomic, weak) KVACollection * _Nullable globalValueSourceCollection;
-/// A universally unique identifier (UUID).
-@property (nonatomic, readonly, copy) NSString * _Nullable idString;
-/// An optional dictionary containing custom meta value(s) in the form of an array of KVAValue(s) indexed by the adapter’s name string.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, KVAValue *> * _Nullable metaValueArrayDictionary;
-/// The value object.
-/// This value has been validated.
-@property (nonatomic, readonly, strong) id _Nullable object;
-/// A boolean indicating that this value is a placeholder for an asynchronous collection.
-/// When getting the KVAValue for a KVAAdapter, it is necessary at times to create a new KVAValue if none is present.  This is to ensure that a value exists to express concepts such as defaults and staleness.  But in the case of asynchronous collections, if another caller requests a value while a collection is ongoing, it would be unacceptable to return this value in place of adding the caller’s completion handler to the array to be processed later.  This boolean serves to note that this condition exists.  When set, this boolean has the effect of conferring automatic staleness.
-@property (nonatomic, readonly) BOOL placeholderForAsynchronousCollectionBool;
-/// The raw value object.
-/// This value has not been validated or reformatted for the server.  It is used as the base for producing some form of output.
-@property (nonatomic, readonly, strong) id _Nullable rawObject;
-/// Return a resolved serverObject.
-/// This factors in the current adapter, if one is known, and ensures at this level that the value provided back should be JSON serializable.  The phrase “should be” is used because this is using the NSJSONSerialization isValidJSONObject method to verify that NSDictionary(s) and NSArray(s) are serializable, and at the time of this writing there are some known limitations.  It is expected to still potentially miss NaN and numeric overflow conditions.
-- (id _Nullable)serverObject SWIFT_WARN_UNUSED_RESULT;
-/// Return a server formated value object which has been resolved and returned as a string.
-/// If the underlying value is not a string, it will attempt to automatically convert it.
-- (NSString * _Nullable)serverObject_string SWIFT_WARN_UNUSED_RESULT;
-/// The date that the value started its freshness cycle.
-@property (nonatomic, readonly, copy) NSDate * _Nonnull startDate;
-/// Return a resolved valueSourceNameString.
-/// This factors in the current adapter, if one is known.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourceNameString;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-@interface NSArray<ObjectType> (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+@interface NSArray<ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 /// Create an instance from another object, allowing for the elementClass to be explictly specified.
 /// \param object An object from which to create the instance.  This is expected to be an NSArray.  The elements inside may be native class objects or may be other representations which can be resolved to native class objects.
@@ -5363,261 +2131,45 @@ SWIFT_CLASS_NAMED("KVAValue")
 /// \param elementClass The class of the element(s).
 ///
 + (nullable instancetype)kva_from:(id _Nullable)object elementClass:(Class _Nullable)elementClass initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSData (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-/// Create an instance from a hex string
-/// If the provided hexString is not valid it will attempt to return nil;  however, that outcome cannot be guaranteed.
-- (nullable instancetype)kva_initWithHexString:(NSString * _Nullable)hexString SWIFT_METHOD_FAMILY(init);
+@interface NSData (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the data expressed as a hex string.
-- (NSString * _Nullable)kva_hexString SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 @interface NSDate (SWIFT_EXTENSION(KochavaCore))
-/// Return a sendDateString
-/// \param requestBodyDictionary A network request body dictionary.
-///
-- (NSString * _Nonnull)kva_sendDateStringFromRequestBodyDictionary:(NSDictionary * _Nullable)requestBodyDictionary SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSDate (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-/// Create an NSDate from an String.
-/// The following formats are currently supported, in this order:  1) UTC ISO 8601.  In the future this list could be expanded.
-+ (nullable instancetype)kva_dateFromString:(NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime.
-/// This is effectively the date as a timeIntervalSince1970, converted from a double to a long long (the integer portion only).
-/// One could argue that this would be better returned as a double rather than a long long, but unix time is traditionally an integer.
-- (uint64_t)kva_unixTime SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime wrapped in an NSDecimalNumber.
-/// At the present time the unixTime is a long long, identical to what is returned by kva_unixTime.
-- (NSDecimalNumber * _Nonnull)kva_unixTimeDecimalNumber SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime in milliseconds.
-- (uint64_t)kva_unixTimeMilliseconds SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTimeString.
-/// This is effectively the date as a timeIntervalSince1970, converted from a double to a long long (the integer portion only), and then stored in a string.
-- (NSString * _Nonnull)kva_unixTimeString SWIFT_WARN_UNUSED_RESULT;
-/// Return the date in the form of an ISO 8601 date string.  Example:  “2017-09-28T19:10:32.138+00:00”.
-- (NSString * _Nonnull)kva_iso8601DateString SWIFT_WARN_UNUSED_RESULT;
-/// Return the date in the form of an ISO 8601 short date string.  Example:  “2017-09-28T19:10:32.138Z”.
-- (NSString * _Nonnull)kva_iso8601ShortDateString SWIFT_WARN_UNUSED_RESULT;
-/// <ul>
-///   <li>
-///     A convenience method to convert the date into a particular string format.
-///   </li>
-/// </ul>
-- (NSString * _Nullable)kva_stringWithDateStyle:(NSDateFormatterStyle)dateDateFormatterStyle timeStyle:(NSDateFormatterStyle)timeDateFormatterStyle SWIFT_WARN_UNUSED_RESULT;
-/// Get the current time interval “ago” for the given date.
-/// Given the assumption that the date is in the past (and not nil) this method returns an NSTimeInterval for the number of seconds since that date and up until the current date.  If the date is in the future this time interval will be negative.
-- (NSTimeInterval)kva_agoTimeInterval SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class NSDecimalNumberHandler;
 
-@interface NSDecimalNumber (SWIFT_EXTENSION(KochavaCore))
-/// Create an NSDecimalNumber from a double with a banker’s scale four rounding mode.
-+ (NSDecimalNumber * _Nonnull)kva_bankersScaleFourRoundingModeDecimalNumberFromDouble:(double)aDouble SWIFT_WARN_UNUSED_RESULT;
-/// Create an NSDecimalNumber from an NSNumber with a banker’s scale four rounding mode.
-+ (NSDecimalNumber * _Nullable)kva_bankersScaleFourRoundingModeDecimalNumberFromNumber:(NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Create an NSDecimalNumber from a any object with a banker’s scale four rounding mode.
-/// Return nil if a conversion pathway for the object is not known.
-+ (NSDecimalNumber * _Nullable)kva_bankersScaleFourRoundingModeDecimalNumberFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-+ (NSDecimalNumber * _Nullable)kva_timeIntervalRoundingModeDecimalNumberFromNumber:(NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-/// Return nil if a conversion pathway for the object is not known.
-+ (NSDecimalNumber * _Nullable)kva_timeIntervalRoundingModeDecimalNumberFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-+ (NSDecimalNumber * _Nonnull)kva_timeIntervalRoundingModeDecimalNumberFromTimeInterval:(NSTimeInterval)timeInterval SWIFT_WARN_UNUSED_RESULT;
-/// An NSDecimalNumberHandler which provides standard formatting for an NSDecimalNumber that has four decimal digits.
-/// The number of decimal digits (scale) rounds to 2.  Rounding is .bankers.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSDecimalNumberHandler * _Nonnull kva_bankersScaleFourRoundingModeDecimalNumberHandler;)
-+ (NSDecimalNumberHandler * _Nonnull)kva_bankersScaleFourRoundingModeDecimalNumberHandler SWIFT_WARN_UNUSED_RESULT;
-@end
 
-@class NSMutableDictionary;
-
-@interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+@interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create an array containing asForContextObject(s) for the given dictionary containing an array of KVAAsForContextProtocol objects.
-/// The keys of the dictionary are assumed to be some relevant value for indexing, but are otherwise irrelevant to this method.  They are not represented in the returned array;  however, they are likely to be a property contained within the returned objects.
-/// \param context A context.
-///
-- (NSArray<NSObject *> * _Nullable)kva_asForContextArrayWithContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Lowercase any keys which are strings at the top level of the dictionary.
-- (NSMutableDictionary * _Nonnull)kva_stringKeysLowercasedDictionary SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSError (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+
+
+@interface NSNumber (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSException (SWIFT_EXTENSION(KochavaCore))
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSMutableArray<ObjectType> (SWIFT_EXTENSION(KochavaCore))
-/// Add an object which may safely be nil.
-- (void)kva_addNullableObject:(NSObject * _Nullable)object;
-/// Add objects from an array which may safely be nil.
-- (void)kva_addObjectsFromNullableArray:(NSArray * _Nullable)otherArray;
-@end
-
-
-@interface NSMutableDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
-/// Add entries from a dictionary which may safely be nil.
-- (void)kva_addEntriesFromNullableDictionary:(NSDictionary * _Nullable)dictionary;
-@end
-
-
-@interface NSNumber (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-+ (nullable instancetype)kva_numberFromString:(NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Compare two numbers for equality, providing for the possibility that either string may be nil.
-/// Although you can test two numbers for equality by using the isEqualToNumber: method directly, that comparison will fail if both numbers are nil.  In contrast, this method will safely return true if both numbers are nil.  It will also recognize when one number is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_number:(NSNumber * _Nullable)number isEqualToNumber:(NSNumber * _Nullable)anotherNumber SWIFT_WARN_UNUSED_RESULT;
-/// Returns a boolean indicating if this NSNumber is recognized as being a boolean.
-/// This method should probably not be regarded as a perfect indictor, as the means by which it makes its determination is by checking for a specific backing CFTypeID, and theoretically the OS could change this in the future.  Nevertheless, at present it can be observed to work in the context(s) we’re using it, and so it is taken to be safe to use as a hint to help improve the visual formatting of booleans.
-- (BOOL)kva_isBoolBool SWIFT_WARN_UNUSED_RESULT;
-@end
-
-@class NSNotification;
-@protocol NSObject;
-
-@interface NSObject (SWIFT_EXTENSION(KochavaCore)) <KVAAsForContextProtocol, KVAMutable>
-/// Return a native object for a class from another object.
-/// If an object cannot be converted then kva_from will be returned as-is, making this method safe to be used on any object to see if it can be brought into a native class object.
-/// \param object An object which may or may not be a native class object, with the hope that it may not be but may be convertable to one.  Non-native objects are typically instances of NSDictionary or NSArray which were created from a call to a kva_as(forContext:) method.  They may also have originated from external sources, such as servers, and often are valid JSON.
-///
-/// \param aClass The target class.  This parameter is optional.  When omitted the class to use will be inferred from kva_from, if possible.  This typically becomes possible when kva_from is a dictionary which contains a key “$class” which specifies the class, or else when kva_from is an array of objects which can be similarly resolved.  When this parameter is passed, it takes precedence over these specifications, and will enforce the class by attempting to create an object from the specified class.  If kva_from is not truly an object which can be converted to the class, the results may be less than desireable, as you should generally expect to end up with an object of the specified class which is relatively unconfigured (or nil altogether).
-///
-/// \param elementClass A target class for any elements.  This parameter is optional.  This parameter generally applies to cases of class where the class would have elements, such as arrays and sets.  The rules for how this is used is identical to class, except applied to any elements within the class.
-///
-+ (id _Nullable)kva_from:(id _Nullable)object class:(Class _Nullable)aClass elementClass:(Class _Nullable)elementClass initializedObject:(id _Nullable)initializedObject networking:(KVANetworking * _Nullable)networking SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Compare two objects for equality, providing for the possibility that either object may be nil.
-/// Although you can test two objects for equality by using the isEqual: method directly, that comparison will fail if both strings are nil.  In contrast, this method will safely return true if both objects are nil.  It will also recognize when one object is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_object:(NSObject * _Nullable)object isEqualToObject:(NSObject * _Nullable)anotherObject SWIFT_WARN_UNUSED_RESULT;
-/// Append a second object to a first.
-/// Supports the appending of two objects with deep support for specific types such as NSDictionary and NSArray.  This supports working with JSON objects.
-+ (id _Nullable)kva_objectAppendingObject1:(id _Nullable)object1 object2:(id _Nullable)object2 SWIFT_WARN_UNUSED_RESULT;
-/// Return a redacted copy.
-/// This method only redacts.  As such, any containers within the returned object will be the same as those provided.  That is to say that if those containers were mutable they will remain mutable.  Also this does not effect a deep copy, optimizing for performance.
-/// \param keyStringRedactedBoolDictionary A dictionary containing redactedBoolNumber(s) keyed by keyString(s).
-///
-/// \param redactedKeyArray An array of keys which were redacted, which is modified.
-///
-- (id _Nullable)kva_redactedCopyFromKeyStringRedactedBoolDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)keyStringRedactedBoolDictionary key:(NSObject * _Nullable)key redactionKeySuffixString:(NSString * _Nullable)redactionKeySuffixString redactedKeyArray:(NSMutableArray * _Nullable)redactedKeyArray SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)kva_redactedCopyFromKeyStringRedactedBoolDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)keyStringRedactedBoolDictionary key:(NSObject * _Nullable)key parentKey:(id _Nullable)parentKey level:(NSInteger)level redactionKeySuffixString:(NSString * _Nullable)redactionKeySuffixString redactedKeyArray:(NSMutableArray * _Nullable)redactedKeyArray SWIFT_WARN_UNUSED_RESULT;
-/// @method + kva_nonnullObjectFromObject:
-///
-/// returns:
-/// A santized object purposed for use as a dictionary value.  The returned value is guaranteed to not be nil so that it can be safely sent straight into a dictionary constructor that would crash with if passed a nil value.
-+ (id _Nonnull)kva_nonnullObjectFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return a sanitized name for a class.
-/// Occasionally when we receive an object back from the operating system, it has an unexpected class.  It’s usually some low-level or undocumented class that is supposed to behave equivalently to the class we expect, but the problem is that these names are not safe to be persisted.  A future operating system could come along with a new underlying class name and have no support for the previous one.  This method santizes for the things we know about.
-+ (NSString * _Nullable)kva_sanitizedNameStringForClass:(Class _Nullable)aClass SWIFT_WARN_UNUSED_RESULT;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate;
-/// A method to call when the object did mutate— synchronization free.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate_sf;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will dispatch to the globalSerial dispatch queue before posting the notification.
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_sf_withInfoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will do this on the caller’s thread.
-/// \param childObject The child object which originated the mutation (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-/// \param performSideEffectsIntendedBeforeDispatchBool A boolean indicating of this method perform the side effects intended for before dispatch.  Generally speaking you wouldn’t expect that this should be the case, but you do want to perform those side effects which were intended to be done before the dispatch if you’re already inside of the dispatch, otherwise they’d never be performed.  You should regard the default you should pass for this to be true, and only set it to false if you performed this call for the current scope yourself.
-///
-- (void)kva_didMutate_sf_df_withChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary performSideEffectsIntendedBeforeDispatchBool:(BOOL)performSideEffectsIntendedBeforeDispatchBool;
-/// A method which is called when an object has mutated to perform side effects.
-/// Generally speaking this method will only be called from the globalSerial queue and it will not have any synchronization taken on the current object.  The exception would be if func kva_didMutate_sf_df(…) were to be manually called directly while not on the globalSerial queue or with synchronization taken.  This is something that should not generally be done, but if it is, any code which overrides this method should understand that and be prepared to dispatch to globalSerial if necessary and to keep in mind there may be existing synchronization.  One such place that does this today is the KochavaHost’s log.  All other implementations can assume that this method will be called on the globalSerial queue.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method which is called when an object has mutated to perform side effects— a variant called before the coalescing dispatch.
-/// This method will be called without dispatch and will be its caller’s thread.  This means it does not benefit from any dispatch coalescence which func kva_didMutate_performSideEffects(…) has, and the queue cannot be assumed to be the globalSerial queue in the same way;  however, it benefits from being more timely and retaining any existing synchronization which it should always have already, as long as the APIs are used correctly.  If the side effects you need to perform cannot occur after a dispatch, overriding this methid is the way to do it.  You just need to be more careful about how additionally often it may be called relative to the normal version which has dispatch coalescence, and importantly, which queue it may be called on.  You can however assume that there should already be synchronization taken on the current object.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// Add and return an observer to observe when the value of this object is taken to have mutated.
-/// This mechanism may not ensure that the value returned is definitely different as there are factors such as range checking which may influence the value and may cause it to be the same even when the underlying raw value may have changed.
-///
-/// returns:
-/// An observer.
-- (id <NSObject> _Nullable)kva_didMutate_addObserverUsingClosure:(void (^ _Nullable)(NSNotification * _Nullable))closure SWIFT_WARN_UNUSED_RESULT;
-/// Return whether the object is capable of mutating.
-/// Return true for any class except for those known to be immutable, such as NSString, NSDate, etc.  Excluded are classes such as NSArray and NSDictionary which may contain elements which may themselves mutate.  This method can theoretically be overridden to designate the objects of class as immutable.
-- (BOOL)kva_mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-@property (nonatomic) BOOL kva_didMutateDispatchCondensingAfterBool;
-/// A constant which is used as a key to indicate priority.
-/// This is supported when calling any of the kva_didMutate functions passing an infoDictionary.  Set this key with a value of true to express that a mutation should be processed with priority.  When processed with priority mutations will move forward to be persisted without delay;  however, with priority is not the same as aggressive.  Without being aggressive there is still a dispatch to the globalSerial queue prior to write.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull kva_priorityBoolKey;)
-+ (NSString * _Nonnull)kva_priorityBoolKey SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSString (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create a string from a boolean.
-/// Return the boolean as “true” or “false”.  This is not localized, nor will ever be, and therefore is suitable to be used in JSON and other programmatic interfaces.
-+ (nonnull instancetype)kva_fromBool:(BOOL)aBool SWIFT_WARN_UNUSED_RESULT;
-/// Return a json string serialized from a json object— using modern Objective-C syntax.
+@interface NSString (SWIFT_EXTENSION(KochavaCore))
+/// Return a json string serialized from a json object.
 /// \param prettyPrintBool A boolean indicating whether you want the json to be pretty printed.  Pretty printing involves adding carriage returns, indentation, etc.  It generally makes it more human readable but increases the total bytes.
 ///
 ///
 /// returns:
 /// A formatted string.
 + (NSString * _Nullable)kva_stringFromJSONObject:(id _Nullable)jsonObject prettyPrintBool:(BOOL)prettyPrintBool SWIFT_WARN_UNUSED_RESULT;
-/// Compare two strings for equality, providing for the possibility that either string may be nil.
-/// Although you can test two strings for equality by using the isEqualToString: method directly, that comparison will fail if both strings are nil.  In contrast, this method will safely return true if both strings are nil.  It will also recognize when one string is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_string:(NSString * _Nullable)string isEqualToString:(NSString * _Nullable)anotherString SWIFT_WARN_UNUSED_RESULT;
-/// Return a string which is limited to a maximum length.
-/// If the receiver is within the maximum length then self will be returned without copy.
-/// \param maximumLength The maximum length allowed.
-///
-- (NSString * _Nonnull)kva_withMaximumLength:(NSInteger)maximumLength SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 /// Return a JSON object, assuming that the string represents JSON.
 - (id _Nullable)kva_serializedJSONObjectWithPrintErrorsBool:(BOOL)printErrorsBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
-
-@interface NSProcessInfo (SWIFT_EXTENSION(KochavaCore))
-/// Return the operating system name.
-/// Example:  “macOS”.  This is determined through the use of system compiler flags.
-- (NSString * _Nonnull)kva_operatingSystemNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return a standard version information string for the operating system.
-/// Example:  “macOS 1.0”.  The patch segment of the version will be omitted if it is zero.
-- (NSString * _Nonnull)kva_operatingSystemStandardVersionInfoString SWIFT_WARN_UNUSED_RESULT;
-/// Return the operating system version string.
-/// Example:  “1.0”.  The patch segment of the version will be omitted if it is zero.
-- (NSString * _Nonnull)kva_operatingSystemVersionString SWIFT_WARN_UNUSED_RESULT;
-@end
 
 
 @interface UIApplication (SWIFT_EXTENSION(KochavaCore))
@@ -5843,13 +2395,10 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #if __has_warning("-Watimport-in-framework-header")
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
-@import Dispatch;
 @import Foundation;
 @import ObjectiveC;
 @import UIKit;
 #endif
-
-#import <KochavaCore/KochavaCore.h>
 
 #pragma clang diagnostic ignored "-Wproperty-attribute-mismatch"
 #pragma clang diagnostic ignored "-Wduplicate-method-arg"
@@ -5866,251 +2415,23 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # pragma pop_macro("any")
 #endif
 
-@class KVAContext;
-
-SWIFT_PROTOCOL_NAMED("KVAKeyable")
-@protocol KVAKeyable
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-@end
 
 @class KVANetworking;
-@class NSString;
-@class NSNumber;
-@class KVAValue;
-@class KVATask;
-@class KVAProduct;
-@class KVAConsent;
 
-/// A class which wraps a value and provides a range of features including, but not limited to, adaptation.
-/// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
-/// <h2>Examples</h2>
-/// Example - Creating an adapter which collects a string representation of the current webpage at apple.com (with maximum length limited to 2048 for readability).
-/// \code
-/// let appleDotComStringAdapter = KVAStringAdapter(
-///     networking: KVANetworking.shared,
-///     identifierString: "YourClass.appleDotComStringAdapter",
-///     key: "apple_dot_com",
-///     denyDatapointCheckBool: true,
-///     maximumStalenessTimeIntervalNumber: 15.0,
-///     closure_collectAsynchronously:
-///     {
-///         adapter, completionHandler in
-///
-///         KVANetTransaction.start(
-///             netTransactionObject:
-///             [
-///                 "nameString": "AppleDotComGetNetTransaction",
-///                 "request":
-///                 [
-///                     "urlString": "https://www.apple.com"
-///                 ]
-///             ],
-///             networking: KVANetworking.shared
-///         ){
-///             netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///             completionHandler(adapter, (responseClassObject as? String)?.kva_withMaximumLength(2048))
-///         }
-///     }
-/// )
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Identification</em> (var <code>identifierString</code>) — A unique identifier is provided for use within a global system catalog.  This enables instances of class KVAAdapter to be referenced from JSON objects.  It is also a base component for the formation of a key which can be used to store the associated information in persistent storage.
-///   </li>
-///   <li>
-///     <em>Value</em> (var <code>value</code>) — An instance of class <code>KVAValue</code> stores a single value object along with its associated metadata, such as its startDate.
-///   </li>
-///   <li>
-///     <em>Default Value</em> (par defaultValueObject) — When the valueObject would otherwise be nil, a defaultValueObject can be specified to be wrapped into an instance of <code>KVAValue</code> and returned instead.
-///   </li>
-///   <li>
-///     <em>Value Watching</em> (par watchBool) — For the purposes of understanding when changes have taken place to value, relative to the server, the parameter watchBool may be set to true to indicate that a copy of the value should be made and maintained in order to identify changes.  The presence of a change can be identified by calling func <code>watchValueIndicatesChangeBool()</code>.  The associated var <code>watchValue</code> contains the value recognized to be the server’s value.  Once the new value has been sent to the server, the watchValue can then be set to the current value to watch for future changes.  When sending these values to the server using class <code>KVANetTransaction</code>, you can do this automatically by setting key “valueUpdateBool” to true on each instance of class <code>KVADictionaryEntryFormat</code> which contains a watched value.  When the network transaction is sent successfully, the watchedValue will be set to the specific value which was included in the payload.
-///   </li>
-///   <li>
-///     <em>Validation</em> — Value objects are sanity checked for compliance with the requirements of persistent storage.   They also may be validated to fall within a given range of valid values.
-///   </li>
-///   <li>
-///     <em>Persistent Storage</em> (par persistBool) — When set to true, the associated value will be written to a persistent storage location.  Most often this location is NSUserDefaults.  It will then be automatically retrieved beween sessions of the app.  When value watching the watchValue will also be persisted.
-///   </li>
-///   <li>
-///     <em>Synchronous Collection</em> (par closure_collectSynchronously) — When the value is nil, or else stale, you may automatically collect a new value by returning a raw object from a custom closure which will be called synchronously.  This closure may be used to collect information from the local system on the caller’s thread.  See typealias <code>Closure_CollectSynchronously</code>.
-///   </li>
-///   <li>
-///     <em>Asynchronous Collection</em> (par closure_collectAsynchronously) — When the value is nil, or else stale, you may automatically collect a new value by returning a raw object from a custom closure which will be called asynchronously.  This closure may be used to collect information from the local system, or from an external system.  Because of its asynchronous nature, it may be used to dispatch to a specific queue to perform the work, such as the main thread.  It may also collect a value using another asynchronous call.  The value is returned by calling a supplied completionHandler.  See typealias <code>Closure_CollectAsynchronously</code>.
-///   </li>
-///   <li>
-///     <em>Access Control</em> (par closure_adapter_mayOperateBoolForContext) — Prior to a value being collected, kept, persisted, or shared, this closure is called to first verify if the adapter may operate.  This closure may factor in any number of considerations, such as whether or not the system is configured and ready, if it complies with the requirements of a deny list, etc.  See typealias KVANetworking.Closure_Adapter_MayOperateBoolForContext.
-///   </li>
-///   <li>
-///     <em>Consent Compliance</em> (var <code>consent</code>) — The property consentRequiredBool may be used to broadly indicate if consent is required.  The effects of consent upon the adapter may be fine-tuned using var <code>consentRequiredToCollectBool</code>, var <code>consentRequiredToKeepBool</code>, var <code>consentRequiredToPersistBool</code>, and/or var <code>consentRequiredToShareBool</code>.  These four properties default to true, and may be individually overridden to false.  The adapter will then observe the rules of consent, and only collect, keep, persist, or share the associated value when permitted.  At times when consent may be revoked, or otherwise unknown, this includes removing an existing value from persistent storage, clearing kept memory, etc.  See class <code>KVAConsent</code>.
-///   </li>
-///   <li>
-///     <em>Staleness</em> (var <code>maximumStalenessTimeIntervalNumber</code>) - A value may be automatically discarded and re-collected if it has become stale, as indicated by a specified time interval having elapsed since the value was originally collected.  This notion of staleness detection can transparently cross over between successive launches when persistent storage is used.
-///   </li>
-///   <li>
-///     <em>Interface</em> (par interfaceInDictionary) — For values coming from external sources, an optional parameter can be used to define input values along with corresponding output values.  This enables you to say that when some particular value object is stored in the adapter that it should come out as another value object.
-///   </li>
-///   <li>
-///     <em>Adaptation</em> — The class KVAAdapter, and it’s subclasses, provide methods to adapt values from one type to another, where appropriate.  This is generally expressed through a type-specific subclass, as well as through the capabilities provided by the backing instances of class <code>KVAValue</code>.
-///   </li>
-/// </ul>
+SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
+@protocol KVANetworkingSetterProvider
+@property (nonatomic, strong) KVANetworking * _Nullable networking;
+@end
+
+@class NSString;
+
+/// A class which collects and/or adapts a value to a variety of contexts.
 SWIFT_CLASS_NAMED("KVAAdapter")
-@interface KVAAdapter : NSObject <KVAConfigureWithProtocol, KVAInvalidatable, KVAKeyable>
-/// The designated initialization method for an Adapter— using modern Objective-C syntax.
-+ (nonnull instancetype)adapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueObject:(id _Nullable)defaultValueObject valueObject:(id _Nullable)valueObject valueClass:(Class _Nullable)valueClass closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
+@interface KVAAdapter : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return the value for the adapter, supporting asynchronous collection.
-/// If asynchronous collection is not required, and if you do not need other details associated with the value such as the date of the value, you may instead use a method such as valueObject.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context waitBool:(BOOL)waitBool completionHandler:(void (^ _Nullable)(KVAAdapter * _Nonnull, KVAValue * _Nullable))completionHandler;
-/// Return the value for the adapter, supporting asynchronous collection.
-/// If asynchronous collection is not required, and if you do not need other details associated with the value such as the date of the value, you may instead use a method such as valueObject.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context touchlessBool:(BOOL)touchlessBool waitBool:(BOOL)waitBool completionHandler:(void (^ _Nullable)(KVAAdapter * _Nonnull, KVAValue * _Nullable))completionHandler;
-/// Return whether or not the value will be collected (or re-collected) the next time it is requested.
-- (BOOL)valueWillBeCollectedBoolForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if the adapter may share its value for a given context.
-- (BOOL)mayShareBoolForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (BOOL)persistentStorage_restore SWIFT_WARN_UNUSED_RESULT;
-- (void)persistentStorage_writeIfDidMutateBool_aggressively;
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-@property (nonatomic, copy) NSArray<KVATask *> * _Nullable asynchronousCollectionPrerequisiteTaskArray;
-@property (nonatomic, copy) NSArray<NSString *> * _Nullable asynchronousCollectionPrerequisiteTaskNameStringArray;
-/// A boolean indicating if consent is required to collect.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToCollectBool;
-/// A boolean indicating if consent is required to keep.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.  When this property is true, any value or watchValue will be purged when consent.mayKeepBool becomes false.  When this property is false, any value or watchValue will be left in memory when consent.mayKeepBool becomes no, but it will be effectively inaccessable under certain contexts.  If consent is later granted the value may then again be usable.  It may however still be lost should the tracker deallocate, as nothing will be left in persistent storage (depending on the configuration of consentRequiredToPersistBool).
-@property (nonatomic) BOOL consentRequiredToKeepBool;
-/// A boolean indicating if consent is required to persist.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToPersistBool;
-/// A boolean indicating if consent is required to share.
-/// Defaults to true.  This property takes effect when consentRequiredBool is true.
-@property (nonatomic) BOOL consentRequiredToShareBool;
-/// A deny datapoint identifier string.
-/// When denied the adapter will not be permitted to collect or share if it is found within a denied datapoint array.
-@property (nonatomic, readonly) BOOL denyDatapointCheckBool;
-/// A deny datapoint identifier string.
-/// When denied the adapter will not be permitted to collect or share if it is found within a denied datapoint array.
-@property (nonatomic, readonly, copy) NSObject * _Nullable key;
-/// A descriptionString for the adapter.
-/// This is a human friendly description which may be used in UI.
-@property (nonatomic, copy) NSString * _Nullable descriptionString;
-/// A closure which is called whenever the adapter is invalidated.
-/// This can be used to invalidate processes within an closure_collectAsynchronously, such as when the gathering of a value is in progress.
-@property (nonatomic, copy) void (^ _Nullable closure_didInvalidate)(KVAAdapter * _Nonnull);
-/// A closure which is called whenever the adapter did mutate.
-/// This includes certain mutations to value and, in particular, anything which may require persistent storage to be updated.  This may include other mutations.  This differs from closure_didSetValue in that it includes when the value itself experiences a mutation, such as is the case when value.rawObject mutates.
-@property (nonatomic, copy) void (^ _Nullable closure_didMutate)(KVAAdapter * _Nonnull);
-/// A closure which is called when the adapter did read from persistent storage.
-/// This can be used to update properties within the value and/or watchValue.
-@property (nonatomic, copy) void (^ _Nullable closure_didReadFromPersistentStorage)(KVAAdapter * _Nonnull);
-/// A closure which is called whenever the KVAValue has been set- called from the same thread.
-/// Because this is called from the same thread, when this is used, consideration must be given to what will happen within the closure with respect to synchronization.  The thread could be any thread.  While access to other adapters will be thread safe automatically, other properties may not be.
-@property (nonatomic, copy) void (^ _Nullable closure_didSetCachedValueOnSameThread)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// A closure which is called whenever the KVAValue has been set.
-@property (nonatomic, copy) void (^ _Nullable closure_didSetValue)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// An identifier for the adapter.
-/// This identifier is used when displaying log entries related to this adapter.  Assuming that the property name is reasonable, this should be set to the string value of that property’s name, but it can be something else that would make sense to the host app developer.
-@property (nonatomic, readonly, copy) NSString * _Nonnull identifierString;
-/// An initialized object which should be used when instantiating an intance of the value.object.
-@property (nonatomic) id _Nullable initializedObject;
-/// A time interval which defines the maximum staleness allowed for the value.
-/// If the value’s staleness exceeds the maximumStalenessTimeIntervalNumber it is essentially taken to not exist.  From there the value may be re-collected (when collection is supported).
-@property (nonatomic, strong) NSNumber * _Nullable maximumStalenessTimeIntervalNumber;
-/// A name for the adapter.
-/// This is a human friendly name which may be used in UI.
-@property (nonatomic, copy) NSString * _Nullable nameString;
+/// An instance of networking.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
-/// A boolean which indicates that the persistence of updates should take place immediately.
-/// This is used to ensure that a write will take place prior to a crash.
-@property (nonatomic) BOOL persistAgressiveBool;
-/// The type of user defaults to use.
-/// Default nil.  See KVAProduct.userDefaultsForTypeString.
-@property (nonatomic, copy) NSString * _Nullable persistUserDefaultsTypeString;
-/// A boolean indicating if a log message should be printed when writing to persistent storage.
-/// Defaults to false.  See var <code>persistentStorageWriteLogMessagePrintBool_optional</code>.
-@property (nonatomic) BOOL persistentStorageWriteLogMessagePrintBool;
-/// A time interval to wait before writing to persistent storage.
-/// Defaults to 0.0.  See var <code>persistentStorageWriteWaitTimeInterval_optional</code>.
-@property (nonatomic) NSTimeInterval persistentStorageWriteWaitTimeInterval;
-/// A KVAProduct.
-/// This is used in the defining of the key used for persistent storage.
-/// This property supports inheritance from networking.
-@property (nonatomic, strong) KVAProduct * _Nullable product;
-/// A closure which formats the value object for the server.
-/// Generally speaking we prefer to store values using their native values, which would not be affected by the formatting required by the server.  Normally a value object is sent to the server as is; however, it can be formatted for the server if the native value is not suitable.
-@property (nonatomic, copy) NSObject * _Nullable (^ _Nullable closure_serverObject)(KVAAdapter * _Nonnull, NSObject * _Nullable);
-/// A string used as an identifier to be used as a component in the persistent storage key to differentiate between different storage spaces.
-/// This property supports inheritance from networking.
-@property (nonatomic, copy) NSString * _Nullable storageIdString;
-/// The “native” class for the value.
-/// Optional.  This is used during ingestion to resolve to native objects.  It is still possible to resolve to a native object without this being configured, so long as the source object is decorated with the class.
-@property (nonatomic, readonly) Class _Nullable valueClass;
-/// The “native” class for any elements of the value.
-/// Optional.  The valueElementClass refers to cases where valueClass is a class with elements, such as arrays and sets.  This is used during ingestion to resolve to native objects.  It is still possible to resolve elements to a native objects without this being configured, so long as the source elements are decorated with the class.
-@property (nonatomic) Class _Nullable valueElementClass;
-/// The value object.
-/// This value is fully validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.  This method may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) id _Nullable valueObject;
-/// A closure which returns meta value(s) for a newly created KVAValue in the form of an array of KVAValue(s) indexed by their adapter’s name string.
-/// At the time when a KVAValue is created, there may be reason(s) why you’d want to store additional meta value(s) with it.  For example, you may need to store the current os version so that you can consider a KVAValue stale when the os version changes.  This closure will be called once when the KVAValue is created, and a dictionary should be returned which contains whatever meta value(s) you wish to be stored with the KVAValue in the form of an array of other KVAValue(s).
-@property (nonatomic, copy) NSDictionary<NSString *, KVAValue *> * _Nullable (^ _Nullable closure_valueMetaValueArrayDictionary)(KVAValue * _Nonnull);
-/// A closure which returns if a KVAValue is stale.
-/// Staleness is initially reckoned by looking at maximumStalenessTimeIntervalNumber;  however, sometimes additional factors must also be considered.  Those factors can be considered in a custom manner using this closure.  If the returned boolean is true, then the value value will be considered stale.  You can use custom meta value(s) stored within the KVAValue as conditions.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_valueStaleBool)(KVAValue * _Nonnull);
-/// The watchValue object.
-/// This value is fully validated and resolved, and may be different than the watchValueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, strong) id _Nullable watchValueObject;
-/// A closure which is called whenever the KVAValue will be set.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_willSetValue)(KVAAdapter * _Nonnull, KVAValue * _Nullable, KVAValue * _Nullable);
-/// A boolean which indicates if asynchronous collection is in progress.
-/// We don’t ever want to asynchronously collect the adapter value twice at the same time.  We use this boolean to recognize that an asynchronous collection is already in progress.  It is assumed that when that collection finishes that all of the callers who wanted the result will be notified through their Closure_GetValueCompletionHandler in the getValueCompletionHandlerArray.
-@property (nonatomic) BOOL asynchronousCollectionInProgressBool;
-@property (nonatomic, readonly, strong) KVATask * _Nonnull asynchronousCollectionTask;
-/// A instance of KVAConsent.
-/// Optional.  This property supports inheritance from networking.
-@property (nonatomic, strong) KVAConsent * _Nullable consent;
-/// The current touchlessValue for this adapter.
-/// Private.  This is equivalent to value, except that it will not allow for collections to be performed that would update the value, synchronous or asynchronous.
-@property (nonatomic, strong) KVAValue * _Nullable touchlessValue;
-/// The current touchlessValue for this adapter.
-/// Private.  This is equivalent to value, except that it will not allow for collections to be performed that would update the value, synchronous or asynchronous.
-@property (nonatomic, strong) id _Nullable touchlessValueObject;
-/// The value.
-/// Private.  This virtual property represents an interface to value which is backed by cachedValue, the persistent store, and the various collection closures.  Getting from this virtual property will first establish the cachedValue and then return it, but it only supports synchronous retrieval.  Setting to this virtual property will also update the cached value.  This virtual property is private because we want all internal or public access to the value to go through valueForContext:completionHandler: to force the consideration the asynchronous option.  This method may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) KVAValue * _Nullable value;
-/// The value raw object.
-/// This value is unvalidated and unaltered.  This method’s getter may require asynchronous work to return a proper result, but we will not be providing a completion handler here.  This means the value we receive may be stale (or not yet set) but we accept this limitation of this synchronous-only “convenience” method.  For this reason valueForContext:completionHandler: should be called directly whenever the value needs to be capable of being asynchronously collected and fresh.
-@property (nonatomic, strong) id _Nullable valueRawObject;
-/// The watch value.
-/// When watched values are sent in the form of updates to a server, this value is taken to be the last value sent to the server.  It can be used later to judge whether a new update is required.
-@property (nonatomic, strong) KVAValue * _Nullable watchValue;
-/// Return a boolean indicating whether the watchValue differs from the current value, indicating that the value has changed.
-- (BOOL)watchValueIndicatesChangeBool SWIFT_WARN_UNUSED_RESULT;
-/// The watchValue raw object.
-/// This value is unvalidated and unaltered.
-@property (nonatomic, strong) id _Nullable watchValueRawObject;
-/// A constant closure which returns a Closure_ServerObject provides the default value for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_default)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_default SWIFT_WARN_UNUSED_RESULT;
-/// A constant closure which returns a Closure_ServerObject which is nil.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_nil)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_nil SWIFT_WARN_UNUSED_RESULT;
-/// A constant which means that the adapter’s value is never stale.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSNumber * _Nullable stalenessNeverTimeIntervalNumber;)
-+ (NSNumber * _Nullable)stalenessNeverTimeIntervalNumber SWIFT_WARN_UNUSED_RESULT;
-/// A constant which means that the adapter’s value is stale immediately.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSNumber * _Nonnull stalenessImmediateTimeIntervalNumber;)
-+ (NSNumber * _Nonnull)stalenessImmediateTimeIntervalNumber SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -6128,23 +2449,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAAppGroups
 + (KVAAppGroups * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
 /// A string which corresponds to an app group identifier to be used as a shared container for the Kochava SDK.
 @property (nonatomic, copy) NSString * _Nullable deviceAppGroupIdentifierString;
-/// A string to use as the name for a notification that the deviceAppGroupIdentifierString did mutate.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull deviceAppGroupIdentifierStringDidMutateNotificationName;)
-+ (NSNotificationName _Nonnull)deviceAppGroupIdentifierStringDidMutateNotificationName SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-/// A class which wraps an array value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts an array value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAArrayAdapter")
 @interface KVAArrayAdapter : KVAAdapter
-/// The designated constructor for an ArrayAdapter—using modern Objective-C syntax.
-+ (KVAArrayAdapter * _Nonnull)arrayAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueArray:(NSArray * _Nullable)defaultValueArray valueObject:(id _Nullable)valueObject valueElementClass:(Class _Nullable)valueElementClass closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueString for the KVAStringAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSArray * _Nullable valueArray;
 @end
 
 
@@ -6152,82 +2465,34 @@ SWIFT_CLASS_NAMED("KVAArrayAdapter")
 /// This class assists in keeping the host app alive, to give KVANetTransaction(s) and a chance to be sent, and other critical tasks the opportunity to finish, in the situation where the app is resigning active.
 SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 @interface KVABackgroundTaskController : NSObject
-/// The singleton shared instance.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVABackgroundTaskController * _Nonnull shared;)
-+ (KVABackgroundTaskController * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// A method which is to be called whenever a KVANetTransaction start comes to be running.
-/// This will begin a core background task if one is not currently already in effect.  It is crucial that a balanced call to func didEndBackgroundSustainingTaskWithIdentifierString(<em>:) be made for every call made to func didBeginBackgroundSustainingTaskWithIdentifierString(</em>:).
-/// \param identifierString A string which identifies the background sustaining task.  This value is used for informational purposes only.
-///
-- (void)didBeginBackgroundSustainingTaskWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// A method which is to be called whenever a KVANetTransaction start comes to stop running.
-/// This will end any existing background task when an internal count reaches zero.  An important feature of this is that It does not do this right away, but always waits for minimumTimeInterval following the last end.  This enables un-anticipated side effects to potentially begin their own background sustaining tasks before the core background task is ended, and this will cause the core background task to continue to be gracefully sustained irrespective of these kinds of short interruptions.
-/// \param identifierString A string which identifies the background sustaining task.  This value is used for informational purposes only.
-///
-- (void)didEndBackgroundSustainingTaskWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// The minimum amount of time that we will keep the app alive while we wait for KVANetTransaction(s) to be created just prior to suspension.
-/// This time interval needs to be long enough to allow any random process which needs to generate a KVANetTransaction to do so, after which we will rely on the presence (or absence) of those transactions to know whether or not we are ready for suspension.
-/// note:
-/// This had been 0.5f for some time.  It was switched to 0.25f as of v5.1.0.  A longer value decreases the liklihood that an end will actually take place before a subsequent begin, resulting in reduced chatter in the log.  A shorter value makes the ends more timely, and closer to the event which triggered them.  A shorter value, however, should not improve performance.  Nothing in the timing of normal tests should be tied to this, and the lifecycle of this class is expected to cross over from test to test.
-@property (nonatomic, readonly) NSTimeInterval minimumTimeInterval;
-/// The maximum length of time that we will keep the app alive while we wait for our internal work to complete.  This includes waiting for KVANetTransaction(s) to be created and complete, location services to settle monitoring activities, among other things.  If these activities are known to have completed sooner than this value (which is normally the case) then we will end our background task and thereby allow the app to suspend sooner.
-/// A side effect of this value is that it provides a certain amount of time for the basic start sequence of the SDK to complete if the app is launched and then exited immediately.  It is therefore good that the amount of time provided here be sufficient to allow this sequence to complete under normal conditions, avoiding complications in the form of network timeouts upon didBecomeActive.  At the time of this writing that length of time is about 8 seconds.  Another factor is the length of time that we allow a new location retrieval to hold up the sending net transaction(s).  Right now that defaults to 15.0 seconds.  If this value is not set above that value then we may not send out the session end in time.  For this reason the current value is set to at least 18.0, giving 3.0 seconds to complete the task of sending and receiving prior to the timeout occurring here.  Another factor is the sample duration for location services.  The duration we may sample locations is the sample duration times 2, as a significant change sample period may be followed up with a precision sample period if what was determined through the significant change service was insufficient.  At the time of this writing the default sample duration is 8.0 seconds, making that a total of 16.0 seconds.  The current value is 33.0.  This is three second more than 30.0 seconds, which we are allowing for location services.  With this value we can assume that the dwell functionality may sustain the background task for up to 30.0 seconds.
-@property (nonatomic, readonly) NSTimeInterval timeoutTimeInterval;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-/// A class which wraps a number value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a number value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVANumberAdapter")
 @interface KVANumberAdapter : KVAAdapter
-/// The designated constructor for a KVANumberAdapter— using modern Objective-C syntax.
-+ (KVANumberAdapter * _Nonnull)numberAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumNumber:(NSNumber * _Nullable)minimumNumber maximumNumber:(NSNumber * _Nullable)maximumNumber defaultValueNumber:(NSNumber * _Nullable)defaultValueNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// The valueNumber for the NumberAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, strong) NSNumber * _Nullable valueNumber;
-/// A constant closure which formats an NSNumber as a four decimal digit number for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_fourDecimal)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_fourDecimal SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-/// A class which wraps an integer value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts an integer value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAIntAdapter")
 @interface KVAIntAdapter : KVANumberAdapter
-/// The designated constructor for an IntAdapter— using modern Objective-C syntax.
-+ (KVAIntAdapter * _Nonnull)intAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumIntegerNumber:(NSNumber * _Nullable)minimumIntegerNumber maximumIntegerNumber:(NSNumber * _Nullable)maximumIntegerNumber defaultValueIntegerNumber:(NSNumber * _Nullable)defaultValueIntegerNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// A convenience property that returns valueNumber in the form of an Int (NSInteger).
-/// It is understood that in order to do this in Objective-C it will resolve a nil value to 0.  Therefore whenever this method is intended to be used, a default value should previously be provided which will further ensure that the value returned is contextually relevant.  You can also assign to this value to provide direct assignment for this same type.
-@property (nonatomic) NSInteger valueInt;
 @end
 
 
-/// A class which wraps a bool value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a boolean value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVABoolAdapter")
 @interface KVABoolAdapter : KVAIntAdapter
-/// The designated constructor for a BoolAdapter— using modern Objective-C syntax.
-+ (KVABoolAdapter * _Nonnull)boolAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueBoolNumber:(NSNumber * _Nullable)defaultValueBoolNumber valueObject:(id _Nullable)valueObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// A convenience property that returns valueNumber in the form of a BOOL.
-/// It is understand that in order to do this in Objective-C it will resolve a nil value to 0.0.  Therefore whenever this method is intended to be used, a default value should previously be provided which will further ensure that the value returned is contextually relevant.  You can also assign to this value to provide direct assignment for this same type.
-@property (nonatomic) BOOL valueBool;
-/// A constant closure which returns a Closure_ServerObject provides a boolean as a number for the server.
-/// The default is to provide booleans as true or false.  This block is used when you want a 0 or 1.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_boolNumberServerObject)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_boolNumberServerObject SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class KVAInstruction;
-@class KVANetTransaction;
-@class KVALogLevel;
 
 /// A class which defines an keyed collection of objects.
 /// <h2>Features</h2>
@@ -6241,107 +2506,22 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nu
 /// </ul>
 SWIFT_CLASS_NAMED("KVACollection")
 @interface KVACollection : NSObject
-/// Conveniently construct a new KVACollection with a single object— using modern Objective-C syntax.
-/// \param object A value source.  It can be any object from which a value can be derived or constructed.
-///
-/// \param identifierString The identifierString for the object within the collection.
-///
-+ (KVACollection * _Nonnull)collectionWithObject:(id _Nullable)object identifierString:(NSString * _Nonnull)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Append another collection to this collection.
-- (void)appendCollection:(KVACollection * _Nullable)collection;
-/// Register an adapter.
-/// The adapter’s identifierString will be used as the identifierString within the collection.  It will also be indexed under the adapter’s key when available as a string [a].
-/// \param adapter The adapter.
-///
-- (void)registerAdapter:(KVAAdapter * _Nullable)adapter;
-/// Register an instruction.
-/// The instruction’s identifierString will be used as the identifierString within the collection.
-/// \param instruction The instruction.
-///
-- (void)registerInstruction:(KVAInstruction * _Nullable)instruction;
-/// Register a network transaction.
-/// The netTransaction’s nameString will be used as the identifierString within the collection.
-/// \param netTransaction The network transaction.
-///
-- (void)registerNetTransaction:(KVANetTransaction * _Nullable)netTransaction;
-/// Register an object with an identifier.
-/// identifierString: An identifier string to associate with the object.
-/// \param object An object.
-///
-- (void)registerObject:(id _Nullable)object identifierString:(NSString * _Nullable)identifierString;
-/// Register a task.
-/// The task’s nameString will be used as the identifierString within the collection.
-/// \param task The task.
-///
-- (void)registerTask:(KVATask * _Nullable)task;
-/// Register a value.
-/// \param value The value.
-///
-/// \param identifierString An identifier string to associate with the value.
-///
-- (void)registerValue:(KVAValue * _Nullable)value identifierString:(NSString * _Nonnull)identifierString;
-/// Register a valueSource.
-/// \param valueSource An object which is a value source.
-///
-/// \param identifierString An identifier string to associate with the valueSource.
-///
-- (void)registerValueSource:(id _Nullable)valueSource identifierString:(NSString * _Nonnull)identifierString;
-/// Unregister an object with the specified identifierString.
-- (void)unregisterObjectWithIdentifierString:(NSString * _Nonnull)identifierString;
-/// Return the adapter for a specified identifierString.
-- (KVAAdapter * _Nullable)adapterWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Apply (execute) a given closure object to the entries of the collection.
-- (void)enumerateUsingClosure:(void (^ _Nullable)(NSString * _Nullable, id _Nullable, BOOL * _Nullable))closure;
-/// Return the KVAInstruction for a specified nameString.
-- (KVAInstruction * _Nullable)instructionWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return the KVANetTransaction for a specified nameString.
-- (KVANetTransaction * _Nullable)netTransactionWithNameString:(NSString * _Nullable)nameString SWIFT_WARN_UNUSED_RESULT;
-/// Return the object for a specified identifierString.
-- (id _Nullable)objectWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return an array of objects for the specified identifierString(s) in an identifierStringArray.
-- (NSArray * _Nullable)objectArrayWithIdentifierStringArray:(NSArray<NSString *> * _Nullable)identifierStringArray SWIFT_WARN_UNUSED_RESULT;
-/// Return the task for a specified identifierString.
-- (KVATask * _Nullable)taskWithNameString:(NSString * _Nullable)nameString SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)valueSourceWithIdentifierString:(NSString * _Nullable)identifierString SWIFT_WARN_UNUSED_RESULT;
-/// Return the current count of registered object(s).
-- (NSInteger)count SWIFT_WARN_UNUSED_RESULT;
-/// Gets the KVAValue(s) for an array of valueSourceCollection(s).
-/// \param valueSourceCollectionArray An array of valueSourceCollection(s).  Each valueSourceCollection can contain any number of KVAAdapter(s), keyed by their name(s).
-///
-/// \param optionalAppendToValueArrayMutableDictionary An optional valueArrayMutableDictionary to append the new KVAValue(s) to.  When passed, the provided dictionary will be mutated on the globalSerial dispatch queue.  For thread safety reasons, this parameter should not be used unless the all other mutations of the passed parameter are also made on the globalSerial dispatch queue.  The benefit of using this parameter is it can improve performance by avoiding needing to use a method such as NSMutableDictionary’s addEntriesFromDictionary later to combine the results with another dictionary, when needed.  If that kind of combination is not needed then this parameter should not be used.  If not passed, a new dictionary will be created.  When using this parameter, it is advisable that you still assign the value provided in the completion handler back to your original property.  This will avoid losing the results if the parameter you passed was unexpectedly nil.
-///
-/// \param context The context for which the values may be gathered.
-///
-/// \param completionHandler A completion handler.
-///
-+ (void)valueArrayDictionaryFromValueSourceCollectionArray:(NSArray<KVACollection *> * _Nullable)valueSourceCollectionArray optionalAppendToValueArrayMutableDictionary:(NSDictionary<NSString *, KVAValue *> * _Nullable)optionalAppendToValueArrayMutableDictionary context:(KVAContext * _Nullable)context completionHandler:(void (^ _Nullable)(NSArray<KVACollection *> * _Nullable, NSDictionary * _Nullable))completionHandler;
-/// Print a directory of elements.
-- (void)printDirectoryWithLogLevel:(KVALogLevel * _Nullable)logLevel;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@protocol KVAMutable;
-
-SWIFT_PROTOCOL_NAMED("KVAMutableDelegator")
-@protocol KVAMutableDelegator
-@property (nonatomic, readonly, weak) id <KVAMutable> _Nullable mutableDelegate;
-@end
-
+@class KVAContext;
+@class NSNumber;
 @class NSDate;
 @class KVAPartner;
 
 /// A feature which serves as an authority related to consent for the sharing of personal data.
 /// Data sharing privacy laws such as GDPR require consent to be obtained before certain kinds of personal data may be collected or calculated, kept in memory, persisted or retained in persistent storage, and/or shared with partners.  During the natural lifecycle, there are times where partners may be added and cause the consent status to fall back to an unknown state.  Later the user may again be prompted and the consent status may (or may not) again come to be known.  All of this is predicated upon whether or not consent is required, which is governed by a variety of factors such as location.
 SWIFT_CLASS_NAMED("KVAConsent")
-@interface KVAConsent : NSObject <NSCopying, KVAConfigureWithProtocol, KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAKeyable, KVAMutableDelegator>
+@interface KVAConsent : NSObject <NSCopying>
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
+- (id _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// A method which is to be called when there has been a prompt for consent.
 /// \param didGrantBoolNumber The response from the user, as a boolean wrapped in an NSNumber.  A value of true means consent was granted.  A value of false means consent was denied.  A value of nil means the user did not provide a response, and this includes if the user may have dismissed the dialog without indicating one way or another. 
 ///
@@ -6378,10 +2558,6 @@ SWIFT_CLASS_NAMED("KVAConsent")
 /// Return a boolean indicating if the app may keep (or retain in memory) data which may be subject to consent.
 /// Return true if consent is not required or else the user did not otherwise previously deny consent.  This will return true while consent is not known, as long as the previous response did not deny consent.  This includes when the definition for consent has changed and the user previously granted consent.  Compare with mayCollectBool, mayPersistBool, and mayShareBool.
 - (BOOL)mayKeepBool SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
 /// A string containing a high level description concerning consent.
 /// Optional.  This may be presented to the user when prompting for consent.
 /// Sample Value: “We share information with various partners… we’d like your consent…”
@@ -6449,60 +2625,59 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAContext *
 /// This is of particular relevance with KVANetTransaction(s) where allowed and/or denied identifiers may not (or not yet) be known, such as config retrievals.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAContext * _Nonnull serverUnrestricted;)
 + (KVAContext * _Nonnull)serverUnrestricted SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-@property (nonatomic, readonly) BOOL isHostBool;
-@property (nonatomic, readonly) BOOL isLogBool;
-@property (nonatomic, readonly) BOOL isPersistentStorageBool;
-@property (nonatomic, readonly) BOOL isSDKBool;
-@property (nonatomic, readonly) BOOL isServerBool;
-/// The name.
-/// Examples:  “host”, “log”, “persistentStorage”, “sdk”, “server”, “serverUnrestricted”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-SWIFT_PROTOCOL_NAMED("KVASharedPropertyProvider")
-@protocol KVASharedPropertyProvider
-/// The shared instance, an ambiguated form of the var shared which conforms to protocol KVASharedPropertyProvider.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-@end
-
-@class NSURL;
-@class NSUserDefaults;
-
 /// A class which defines a product.
 /// A product in this context generally refers to the result of a build.  A product can be used to represent a framework, application, or application extension.
 SWIFT_CLASS_NAMED("KVAProduct")
-@interface KVAProduct : NSObject <KVAFromProtocol>
-/// Create an instance of class <code>KVAProduct</code>— using modern Objective-C syntax.
-+ (KVAProduct * _Nonnull)productWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray compilerFlagPredicateSubstitutionVariablesDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)compilerFlagPredicateSubstitutionVariablesDictionary moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVAProduct : NSObject
+/// Create an instance of class <code>KVAProduct</code>.
+/// <h2>Example</h2>
+/// \code
+/// let product = KVAProduct(
+///     apiVersionString: "1",
+///     buildDateString: nil,
+///     bundleIdentifierString: Bundle(for: type(of: self)).bundleIdentifier,
+///     bundleTypeString: "xcframework",
+///     compilerFlagNameStringArray: nil,
+///     moduleNameString: "MyModule",
+///     nameString: "MyOrganization MyModule",
+///     organizationNameString: "My Organization",
+///     reverseDomainNameString: "com.myCompany.MyProduct",
+///     valueSourceCollection: nil,
+///     versionString: "1.0.0"
+/// )
+///
+/// \endcode\param apiVersionString An optional API version string.  This property is used to establish API compatibility between products.  API compatibility is assumed to be assured when the value compares to be equal for all products with the same organizationNameString.
+///
+/// \param buildDateString An optional string containing the date when the product was built.  It is recommended that you source this a compile time.  The format is optional, but it is recommended that you provide the date in an ISO 8601 date string.
+///
+/// \param bundleIdentifierString A string containing the bundle identifier associated with this product.  This property may be used to cross-reference this product from a Class.  Logging uses this to take the class for a LogMessage and lookup the associated Product.
+///
+/// \param bundleTypeString The bundle type.  Examples:  “app”, “xcframework”, “static library”.
+///
+/// \param compilerFlagNameStringArray An array containing strings which are the names of compiler flags.
+///
+/// \param moduleNameString The name of the module.  Example:  “KochavaCore”.
+///
+/// \param nameString A name string.  Example: “Apple.Core”.
+///
+/// \param organizationNameString A string containing the name of the organization representing the product.  Example:  “Kochava”.
+///
+/// \param reverseDomainNameString A string containing a reverse domain name style representation of the name of the product.  This is used in the definition of keys for persistent storage, dispatch queues, etc.  Example:  “com.kochava.KochavaCore”.
+///
+/// \param valueSourceCollection A collection containing value sources for variable substitution with an NSPredicate, used for predicate evaluation and token substitution.
+///
+/// \param versionString A version string.
+///
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Registers the product.
-/// Generally Kochava products automatically register themselves, but there are a few exceptions.  If you’re using a product which is optional and weakly linked, this method should be called once, early, to register the product for use.  One such example was the product KochavaLocation.  As a weakly-linked optional product, it would be optimized away by the linker if a call to register it was not explicitly made and if there were no other explicit interactions early with its API.  For products which automtically register themselves calling this method is redundant and will have no effect.
-- (void)register;
-/// A string containing the name and the version.
-/// The two are delimited by a space.
-@property (nonatomic, readonly, copy) NSString * _Nonnull standardVersionInfoString;
-/// A string containing the name and the version.
-/// The two are delimited by a space.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameWithVersionString;
-/// Resets any classes.
-/// \param includeExternalBool A boolean indicating if external data should be reset as well.  When this it set it includes additional classes which are external to the product but are bearing on the functionality of the product.  This refers to third party classes.  Even with includeExternalBool set to false it may reset variables which are stored within external classes but which are known to belong to the product.
-///
-- (NSDictionary * _Nullable)resetClassesWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool SWIFT_WARN_UNUSED_RESULT;
-/// Resets any variables.
-/// \param includeExternalBool A boolean indicating if external data should be reset as well.  When this is set it includes additional variables which are external to the product but are bearing on the functionality of the product.  This refers to third party variables.
-///
-- (NSDictionary * _Nullable)resetVariablesWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool SWIFT_WARN_UNUSED_RESULT;
 /// Resets the product.
 /// This involves resetting variables to their original states.  This may include releasing shared instances.  When parameter deleteLocalDataBool is passed true it also includes erasing any keys from persistent storage which are associated with the product.  This method will complete asynchronously.  Before working with this product again you should wait until the reset has completed.  See method reset(deleteLocalDataBool:closure_didComplete:).
 /// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
@@ -6540,51 +2715,6 @@ SWIFT_CLASS_NAMED("KVAProduct")
 /// \param closure_didComplete A closure which is called upon completion.
 ///
 - (void)shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
-/// An API version string.
-/// This property is used to establish API compatibility between products.  API compatibility is assumed to be assured when the value compares to be equal for all products with the same organizationNameString.
-@property (nonatomic, readonly, copy) NSString * _Nullable apiVersionString;
-/// A string containing the date when the product was built.
-@property (nonatomic, readonly, copy) NSString * _Nullable buildDateString;
-/// A string containing the bundle identifier associated with this product.  This property may be used to cross-reference this product from a Class.  Logging uses this to take the class for a LogMessage and lookup the associated Product.
-@property (nonatomic, readonly, copy) NSString * _Nullable bundleIdentifierString;
-/// The bundle type.
-/// Examples:  “app”, “xcframework”, “static library”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull bundleTypeString;
-/// An array containing strings which are the names of compiler flags.
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable compilerFlagNameStringArray;
-/// A dictionary containing substitution variables for use with an NSPredicate containing compiler flags.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSNumber *> * _Nullable compilerFlagPredicateSubstitutionVariablesDictionary;
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable dependentProductClassNameStringArray;
-/// A string containing the name of the organization representing the product.
-@property (nonatomic, readonly, copy) NSString * _Nonnull organizationNameString;
-/// The name of the module.
-/// Example: “KochavaCore”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull moduleNameString;
-/// A name string.
-/// Example: “Apple.Core”.
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
-/// A string containing a reverse domain name style representation of the name of the product.
-/// This is used in the definition of keys for persistent storage, dispatch queues, etc.
-/// Example:  “com.kochava.KochavaCore”
-/// Note:  This excludes a trailing period.
-@property (nonatomic, readonly, copy) NSString * _Nullable reverseDomainNameString;
-/// A version string.
-@property (nonatomic, readonly, copy) NSString * _Nullable versionString;
-/// Return a URL to the application support directory for the product.
-- (NSURL * _Nullable)applicationSupportDirectoryURL SWIFT_WARN_UNUSED_RESULT;
-/// Ensures that the application support directory for the product is created.
-- (void)applicationSupportDirectoryURL_ensureCreated;
-/// The log level for the product.
-/// Default nil.  When set this overrides the log default for log messages generated within the product.
-@property (nonatomic, strong) KVALogLevel * _Nullable logLevel;
-/// The instance of NSUserDefaults which this product uses for persistent storage.
-@property (nonatomic, readonly, strong) NSUserDefaults * _Nullable userDefaults;
-/// Return the user defaults to use for the product for the specified type string.
-/// \param typeString The typeString for the user defaults.  Use nil or “default” for the default user defaults.  Use “deviceAppGroup” for the deviceAppGroup user defaults.
-///
-- (NSUserDefaults * _Nullable)userDefaultsForTypeString:(NSString * _Nullable)typeString SWIFT_WARN_UNUSED_RESULT;
-/// An optional product which wraps this product.
-@property (nonatomic, strong) KVAProduct * _Nullable wrapperProduct;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -6593,12 +2723,11 @@ SWIFT_CLASS_NAMED("KVAProduct")
 /// A class which defines the core product.
 /// A product in this context generally refers to the result of a build.
 SWIFT_CLASS_NAMED("KVACoreProduct")
-@interface KVACoreProduct : KVAProduct <KVASharedPropertyProvider>
+@interface KVACoreProduct : KVAProduct
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProduct * _Nonnull shared;)
 + (KVAProduct * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifierString:(NSString * _Nullable)bundleIdentifierString bundleTypeString:(NSString * _Nonnull)bundleTypeString compilerFlagNameStringArray:(NSArray<NSString *> * _Nullable)compilerFlagNameStringArray moduleNameString:(NSString * _Nonnull)moduleNameString nameString:(NSString * _Nonnull)nameString organizationNameString:(NSString * _Nonnull)organizationNameString reverseDomainNameString:(NSString * _Nullable)reverseDomainNameString valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -6608,112 +2737,51 @@ SWIFT_CLASS("_TtC11KochavaCore20KVACoreProductParams")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
-@class NSData;
 
-/// A class which wraps a data value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a data value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADataAdapter")
 @interface KVADataAdapter : KVAAdapter
-/// The designated constructor for a DataAdapter— using modern Objective-C syntax.
-+ (KVADataAdapter * _Nonnull)dataAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueData:(NSData * _Nullable)defaultValueData valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueData for the KVADataAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSData * _Nullable valueData;
-/// A Closure_ServerObject which formats an NSData value as a device token for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_deviceToken)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_deviceToken SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-/// A class which wraps a date value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a date value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADateAdapter")
 @interface KVADateAdapter : KVAAdapter
-/// The designated constructor for a KVADateAdapter—using modern Objective-C syntax.
-+ (KVADateAdapter * _Nonnull)dateAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSDate *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumDate:(NSDate * _Nullable)minimumDate maximumDate:(NSDate * _Nullable)maximumDate defaultValueDate:(NSDate * _Nullable)defaultValueDate valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)validatedObjectForAnyObject:(id _Nullable)anyObject reportingContextNameString:(NSString * _Nonnull)reportingContextNameString SWIFT_WARN_UNUSED_RESULT;
-/// The valueDate for the KVATimeIntervalAdapter.
-@property (nonatomic, copy) NSDate * _Nullable valueDate;
-/// A constant closure which formats an NSDate value as unix time but expressed in milliseconds.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull unixTimeMillisecondsServerObjectClosure)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))unixTimeMillisecondsServerObjectClosure SWIFT_WARN_UNUSED_RESULT;
-/// A constant closure which formats an NSDate value as unix time expressed in seconds.
-/// The call to NSNumber.kva_from(<em>:) will return a unixTime.  The use of the NSNumber kva_from(</em>:) method is for convenience, as that is what you get when you convert an NSDate to an NSNumber.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull unixTimeServerObjectClosure)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))unixTimeServerObjectClosure SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class for providing diagnostic messages in a format which has been standardized across all Kochava SDK platforms.
 SWIFT_CLASS_NAMED("KVADiagnostic")
 @interface KVADiagnostic : NSObject
-/// Print a diagnostic log message for a host API call.
-+ (void)printHostAPICallWithHeadlineString:(NSString * _Nonnull)headlineString;
-/// Print a diagnostic log message.
-/// \param logLevel The log level at which the diagnostic message will be printed.
-///
-/// \param headlineString The headline of the diagnostic message.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel headlineString:(NSString * _Nullable)headlineString;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-/// A class which wraps a dictionary value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a dictionary value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVADictionaryAdapter")
 @interface KVADictionaryAdapter : KVAAdapter
-/// The designated constructor for a DictionaryAdapter— using modern Objective-C syntax.
-+ (KVADictionaryAdapter * _Nonnull)dictionaryAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueDictionary:(NSDictionary * _Nullable)defaultValueDictionary valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueDictionary for the DictionaryAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSDictionary * _Nullable valueDictionary;
 @end
 
 
 /// A class which defines an entry in a dictionary.
 /// This class provides the means of defining how an element in a dictionary should be formatted.
 SWIFT_CLASS_NAMED("KVADictionaryEntryFormat")
-@interface KVADictionaryEntryFormat : NSObject <KVAFromProtocol>
+@interface KVADictionaryEntryFormat : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// The name of the key that the value object is stored with.
-@property (nonatomic, readonly, copy) NSString * _Nullable keyString;
-/// An array of sub-dictionary names, defining the location of the value object.
-@property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable subChunkNameStringArray;
-/// The “native” class for the value.
-/// Optional.  This is used during ingestion to resolve to native objects.  It is still possible to resolve to a native object without this being configured, so long as the source (fromObject) is decorated with the class.  This value will be NSNull if the class name specified was not known to the system.  See valueClassNameString.
-@property (nonatomic, readonly) Class _Nullable valueClass;
-/// The “native” class for any elements of the value.
-/// Optional.  The valueElementClass refers to cases where valueClass is a class with elements, such as arrays and sets.  This is used during ingestion to resolve to native objects.  It is still possible to resolve elements to a native objects without this being configured, so long as the source elements are decorated with the class.  This value will be NSNull if the element class name specified was not known to the system.  See valueElementClassNameString.
-@property (nonatomic, readonly) Class _Nullable valueElementClass;
-/// A static valueObject.
-/// Optional.
-@property (nonatomic, readonly) id _Nullable valueObject;
-/// The nameString of a KVAAdapter used to source the value.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourceNameString;
-/// The nameString of the property within the KVAValue to source the value.
-/// Optional.  Supported values: nil (default) and “startDate.unixTimeDecimalNumber”.  Proposed future supported values: “valueObject”, “valueDate”, “adapterWatchValueObject”.  Default value “valueServerObject”.  Note for future implementation:  The urlString for net transactions uses the notation “.percentEncodedWithURLPathAllowedCharacterSetString” to express a sub-property quality.  At this time I perceive that it’s better not to modify this class to take in a single “valuePropertyNameString” that is automatically split out into a “valueSourceNameString” and a “adapterSubPropertyNameString”, but that is an option.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourcePropertyNameString;
-/// Return a boolean indicating if the value should be updated.
-/// Default false.
-- (BOOL)valueUpdateBool_resolved SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines the structure of a dictionary.
 /// This class provides the means of defining how a dictionary should be formatted.
 SWIFT_CLASS_NAMED("KVADictionaryFormat")
-@interface KVADictionaryFormat : NSObject <KVAFromProtocol>
+@interface KVADictionaryFormat : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// An array of KVADictionaryEntryFormat objects, reflecting the structure of the dictionary.
-@property (nonatomic, readonly, copy) NSArray<KVADictionaryEntryFormat *> * _Nullable dictionaryEntryFormatArray;
 @end
 
 
@@ -6732,7 +2800,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// The main dispatch queue.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQueue * _Nonnull main;)
 + (KVADispatchQueue * _Nonnull)main SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)initWithNameString:(NSString * _Nonnull)nameString osDispatchQueue:(dispatch_queue_t _Nonnull)osDispatchQueue OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Asynchronously dispatch and execute the provided closure providing standardized handling for the requirements of a public entry point.
@@ -6798,8 +2865,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// \param closure The closure to execute (conditionally).
 ///
 + (void)executeWithDispatchQueue:(KVADispatchQueue * _Nullable)dispatchQueue sourceIdString:(NSString * _Nullable)sourceIdString hostAPICallDiagnosticHeadlineString:(NSString * _Nullable)hostAPICallDiagnosticHeadlineString sourceClass:(Class _Nullable)sourceClass asyncBool:(BOOL)asyncBool printLogMessageBool:(BOOL)printLogMessageBool closure:(void (^ _Nullable)(void))closure;
-@property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
-@property (nonatomic, readonly, strong) dispatch_queue_t _Nonnull osDispatchQueue;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVAFile")
+@interface KVAFile : NSObject
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -6808,16 +2882,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 /// A class which defines instruction which can be executed.
 SWIFT_CLASS_NAMED("KVAInstruction")
 @interface KVAInstruction : NSObject
-- (nonnull instancetype)initWithIdentifierString:(NSString * _Nonnull)identifierString closure:(void (^ _Nonnull)(id _Nullable))closure OBJC_DESIGNATED_INITIALIZER;
-- (void)executeWithValueObject:(id _Nullable)valueObject;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
+@class KVALogLevel;
+@class KVALogMessage;
 
-
-/// A class which is a controller for working with the log.
+/// A class which constitutes a log, which is a collection of log messages.
 SWIFT_CLASS_NAMED("KVALog")
 @interface KVALog : NSObject
 /// The singleton shared instance.
@@ -6838,12 +2911,15 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALog * _No
 /// A prefix string to be added to the beginning of each item printed to the log.
 /// Default nil.  This can be set to a value such as “KVA: “ to make filtering log messages easier.  When this is used in conjunction with var <code>printLinesIndividuallyBool</code> this prefix will be printed at the beginning of each line.
 @property (nonatomic, copy) NSString * _Nullable printPrefixString;
+/// Return a copy of the logMessageArray.
+/// The copy is made safely with synchronization.
+- (NSArray<KVALogMessage *> * _Nullable)logMessageArray_copy SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines a log level, with enumerated values.
 SWIFT_CLASS_NAMED("KVALogLevel")
-@interface KVALogLevel : NSObject <KVAFromProtocol>
+@interface KVALogLevel : NSObject
 /// A log level which never prints visibly to the log.
 /// When LogMessage(s) are not printed visibly to the log, they are still posted as notifications.  This enables all LogMessage(s) to be observed, regardless of their current visibility.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull never;)
@@ -6875,11 +2951,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull always;)
 + (KVALogLevel * _Nonnull)always SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return a visibleBool indicating if the specified logLevel is visible under under the specified visibleMaximumLogLevel.
-+ (BOOL)logLevel:(KVALogLevel * _Nullable)logLevel visibleBoolWithVisibleMaximumLogLevel:(KVALogLevel * _Nullable)visibleMaximumLogLevel SWIFT_WARN_UNUSED_RESULT;
 /// The name.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
 @property (nonatomic, readonly, copy) NSString * _Nonnull nameString;
@@ -6888,461 +2961,21 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 @end
 
 
-SWIFT_PROTOCOL_NAMED("KVAPrintable")
-@protocol KVAPrintable
-- (void)print;
-@end
-
-@class NSException;
-
 /// A class which defines a log message.
 SWIFT_CLASS_NAMED("KVALogMessage")
-@interface KVALogMessage : NSObject <KVAFromProtocol, KVAPrintable>
-/// Create and print a log message.
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-+ (void)print:(NSString * _Nullable)headlineString;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param rollupLogMessageArray An array of LogMessage(s) to roll up into this LogMessage.  Optional.
-///
-/// \param log An log.  Optional.  When omitted, will use KVALog.shared.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary rollupLogMessageArray:(NSArray<KVALogMessage *> * _Nullable)rollupLogMessageArray log:(KVALog * _Nullable)log;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print a log message.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an error.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printErrorWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an internal inconsistency.
-/// This prints at log level .debug
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printInternalInconsistencyWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print an internal error.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param error An error.  Required.
-///
-+ (void)internalErrorWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary error:(NSError * _Nonnull)error;
-/// Create and print an internal exception.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param exception An exception.  Required.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass dictionary:(NSDictionary * _Nullable)dictionary exception:(NSException * _Nonnull)exception;
-/// Create and print a warning.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary;
-/// Create and print a warning.
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  Required.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-+ (void)printWarningWithSourceIdString:(NSString * _Nonnull)sourceIdString sourceClass:(Class _Nullable)sourceClass;
-/// The designated initializer for a LogMessage— using modern Objective-C syntax.
-/// If you attempt to use this method from Swift as an initializer, but do not use the result, it will generate a warning.  For this reason if you do not want the result, and do want to print, you should use an alternate method.
-/// \param logLevel The log level at which to print.  If the current log level is at or above this parameter then the LogMessage will print.  Optional.  When omitted, the default value is .always.
-///
-/// \param sourceIdString A unique identifier (preferably a universally unique identifier (UUID)), which uniquely identifies the location in code where this LogMessage was generated.  This may alternately be a category.  Optional.
-///
-/// \param sourceClass The class which was the source for this LogMessage.  Optional.
-///
-/// \param headlineString The headline for the LogMessage.  Optional.
-///
-/// \param dictionary A dictionary with information.  All keys should be strings and all values should be JSON serializable.  Optional.
-///
-/// \param rollupLogMessageArray An array of LogMessage(s) to roll up into this LogMessage.  Optional.
-///
-/// \param printBool A boolean indicating the LogMessage should be printed immediately upon creation.
-///
-/// \param log Optional.  The log.  Default KVALog.shared.
-///
-+ (KVALogMessage * _Nullable)logMessageWithLogLevel:(KVALogLevel * _Nullable)logLevel sourceIdString:(NSString * _Nullable)sourceIdString sourceClass:(Class _Nullable)sourceClass headlineString:(NSString * _Nullable)headlineString dictionary:(NSDictionary * _Nullable)dictionary rollupLogMessageArray:(NSArray<KVALogMessage *> * _Nullable)rollupLogMessageArray printBool:(BOOL)printBool log:(KVALog * _Nullable)log SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Print the LogMessage to the log.
-/// This method is called automatically when printBool is passed as a parameter to a convenience constructor.  This includes convenience print methods.  This method is used when a LogMessage is created without being told to print, and it can be used to configure additional properties within the LogMessage before printing that are not commonly needed.
-- (void)print;
-/// The product associated with this LogMessage.
-/// When not set, this value is attempted to be inferred from the sourceClass.
-@property (nonatomic, readonly, strong) KVAProduct * _Nonnull product;
-/// A class which identifies the source of the LogMessage.
-/// This field is used when possible to determine the associated Product, which it can sometimes infer from the associated bundle’s bundleIdentifier.  Setting this value can then lead to the product information being displayed in the printed LogMessage.
-@property (nonatomic) Class _Nullable sourceClass;
-/// A LogLevel which is the maximum for which this LogMessage should be visible.
-/// To determine whether or not a LogMessage should be visible, this value is compared against logLevel.
-@property (nonatomic, readonly, strong) KVALogLevel * _Nullable visibleMaximumLogLevel;
-/// A dictionary representation of the body of the LogMessage.
-/// This property is lazily configured from either the dictionary, or else in the case that there is a rollupLogMessageArray from the LogMessage’s asPrintDictionaryWithParentLogMessage.
-@property (nonatomic, readonly, copy) NSDictionary * _Nullable bodyDictionary;
-/// The date when the LogMessage was printed.
-/// This value will be nil if the LogMessage has not been printed.
-@property (nonatomic, readonly, copy) NSDate * _Nullable printDidDate;
-/// A string which is formatted to be sent to the print command.
-/// This property is lazily configured upon first reference.  It may be configured to be passed to either NSLog or Swift’s print command, depending on which is being used.  While this property is used internally during the actual print method, it can also be read externally for other purposes if desired.
-@property (nonatomic, readonly, copy) NSString * _Nonnull printString;
-/// A notification name which can be used to observe when a log message did print.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didPrintNotificationName;)
-+ (NSNotificationName _Nonnull)didPrintNotificationName SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@interface KVALogMessage : NSObject
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-
-SWIFT_PROTOCOL_NAMED("KVAMutable")
-@protocol KVAMutable
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate;
-/// A method to call when the object did mutate— synchronization free.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate_sf;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will dispatch to the globalSerial dispatch queue before posting the notification.
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_sf_withInfoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will do this on the caller’s thread.
-/// \param childObject The child object which originated the mutation (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-/// \param performSideEffectsIntendedBeforeDispatchBool A boolean indicating of this method perform the side effects intended for before dispatch.  Generally speaking you wouldn’t expect that this should be the case, but you do want to perform those side effects which were intended to be done before the dispatch if you’re already inside of the dispatch, otherwise they’d never be performed.  You should regard the default you should pass for this to be true, and only set it to false if you performed this call for the current scope yourself.
-///
-- (void)kva_didMutate_sf_df_withChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary performSideEffectsIntendedBeforeDispatchBool:(BOOL)performSideEffectsIntendedBeforeDispatchBool;
-/// A method which is called when an object has mutated to perform side effects.
-/// Generally speaking this method will only be called from the globalSerial queue.  The exception would be if func kva_didMutate_sf_df(…) were to be manually called directly while not on the globalSerial queue.  This is something that should not generally be done, but if it is, any code which overrides this method should understand that and be prepared to dispatch to globalSerial if necessary.  One such place that does this today is the KochavaHost’s log.  All other implementations can assume that this method will be called on the globalSerial queue.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method which is called when an object has mutated to perform side effects— a variant called before the coalescing dispatch.
-/// This method will be called without dispatch and will be its caller’s thread.  This means it does not benefit from any dispatch coalescence which func kva_didMutate_performSideEffects(…) has, and the queue cannot be assumed to be the globalSerial queue in the same way;  however, it benefits from being more timely.  If the side effects you need to perform cannot occur after a dispatch, overriding this methid is the way to do it.  You just need to be more careful about how additionally often it may be called, and importantly, which queue it may be called on.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// Return whether the object is capable of mutating.
-/// Return true for any class except for those known to be immutable, such as NSString, NSDate, etc.  Excluded are classes such as NSArray and NSDictionary which may contain elements which may themselves mutate.  This method can theoretically be overridden to designate the objects of class as immutable.
-- (BOOL)kva_mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@class NSDecimalNumber;
 
 /// A class which defines a network transaction.
-/// This class provides the basic means of sending a network request and then receiving a corresponding network response.  The parameters of a network transaction originate in JSON, encouraging portability.  The same JSON format is then also used for persistence.
-/// <h2>Examples</h2>
-/// Example - Starting a basic network transaction:
-/// \code
-/// KVANetTransaction.start(
-///     netTransactionObject:
-///     [
-///         "nameString": "GoogleGetNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://www.google.com"
-///         ]
-///     ],
-///     networking: KVANetworking.shared
-/// ){
-///     netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///     // ...
-/// }
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Name</em> — A unique standardized name enables activity to be looked up in the log and to be correlated back to its root class.
-///   </li>
-///   <li>
-///     <em>Unique Identification</em> — A unique identifier which is used to correlate duplicate requests.  This is sometimes referred to as the nt_id.
-///   </li>
-///   <li>
-///     <em>Inheritance From Base</em> — The parameters of a network transaction may be inherited from another network transaction which serves as a base.  These overrides can be expressed through remote re-configuration.
-///   </li>
-///   <li>
-///     <em>Overrides</em> — The parameters of a network transaction may be overridden.  These overrides can be expressed through remote re-configuration.
-///   </li>
-///   <li>
-///     <em>Prerequisite Tasks</em> — A sendTask is used to coordinate sending, which is an instance of class <code>KVATask</code>.  Consequently, all network transactions may wait to be attempted until any number of prerequisite tasks have completed.  See class <code>KVATask</code>.  These tasks may also include networking-specialized tasks to regulate how many transactions may be sent concurrently, error retry waterfalls, etc.
-///   </li>
-///   <li>
-///     <em>Consent</em> — If tracking consent is required, and tracking is not allowed, then that network transaction will automatically be blocked from execution.  A copy of consent is internally stamped on a network transaction at the time it is first started, and then it may be graduated to a newer copy if the global consent changes in certain ways.
-///   </li>
-///   <li>
-///     <em>Context</em> — A context is used to contextualize the format of the information being provided to the remote service.  The default is KVAContext.server.  See class <code>KVAContext</code>.
-///   </li>
-///   <li>
-///     <em>Enabled Start Date</em> — A network transaction may be configured so as to not be enabled until a specified date.  In the context of variations, this enabled start date serves to indicate when a variation is enabled.  With these variations you can specify time-based alterations to certain parameters, such as the url.
-///   </li>
-///   <li>
-///     <em>HTTP Method</em> — You can specify which method you want to use.  Examples:  GET, POST, PUT, DELETE, etc.  When not specified the default is GET.
-///   </li>
-///   <li>
-///     <em>Network Service Type</em> — A network service can be specified to provide a hint to the operating system about the nature and use of the underlying traffic.  This hint enhances the system’s ability to prioritize traffic, determine how quickly it needs to wake up the cellular or Wi-Fi radio, and so on.  By providing accurate information, you improve the ability of the system to optimally balance battery life, performance, and other considerations.  The default is “default”, which corresponds to NSURLRequest.NetworkServiceType.default.  You can alternatively specify “background” for lower priority requests, or “responsiveData” for higher priority requests.
-///   </li>
-///   <li>
-///     <em>Persistence</em> — The persistBool parameter can be set to indicate that the network transaction should be persisted.  When persisted, and following a relaunch, it will be automatically restarted and reattempted until the transaction has completed.
-///   </li>
-///   <li>
-///     <em>Long-Term Failure Detection</em> — If excessive errors take place and/or excessive time elapses then the transaction will be completed unsuccessfully.
-///   </li>
-///   <li>
-///     <em>Request Body Dictionary Formatting</em> — The request body may be adorned with (or otherwise constructed from) values collected from value sources specified within a <code>requestBodyDictionaryFormat</code>, which is an instance of class <code>KVADictionaryFormat</code>.  These value sources may be instances of class <code>KVAAdapter</code>, or else anything which conforms to protocol <code>KVAAsForContextProtocol</code>.  Through class extensions this includes primitives such as String and Int.  These values will be collected synchronously or asynchronously, and utlize rules to understand when those values should be retained (or else updated) during subsequent attempts.  This is used colloquially to collect datapoints and then to append them as metadata within requests.
-///   </li>
-///   <li>
-///     <em>Request Body Object</em> — The specified requestBodyObject will be passed in the request body.
-///   </li>
-///   <li>
-///     <em>Request Header Dictionary Formatting</em> — The request header may be adorned with values collected from value sources specified within a requestHeaderDictionaryFormat, which is an instance of class <code>KVADictionaryFormat</code>.  See Request Body Dictionary Formatting for more details about how this similarly works.
-///   </li>
-///   <li>
-///     <em>Request Body Overriding</em> — The request body may be overridden.  That is to say that it may be replaced in whole from what would have ordinarily be used.
-///   </li>
-///   <li>
-///     <em>Request Body Override Appending</em> — The request body may be overridden by appending an object to the natural object.  This is a deep append between dictionaries (or other object types).
-///   </li>
-///   <li>
-///     <em>Response Class</em> — The response body object can be composed into a native class object.  This is commonly used to decode a JSON dictonary into a concrete class type.  For types which can have elements, such as arrays, this can also include the specifying of an element class.
-///   </li>
-///   <li>
-///     <em>Local Responses</em> — A network transaction can be serviced locally.  If serviced locally, a local response is used in place of live network activity.  This is frequently used in testing, but can be used in other circumstances such as when the SDK is disabled.  There feature includes a responseHTTPStatusCodeLocalInt, which can be configured to a value such as 200.
-///   </li>
-///   <li>
-///     <em>Retrying</em> — If an attempt is not accomplished successfully it can retried automatically.  The time to wait between each attempt, as well as the number of attempts which may be made, can be specified through a retryTimeIntervalSeries.  When not specified the default is KVANetworking.retryDefaultTimeIntervalSeries.  See <code>KVANetTransactionQueue</code>.
-///   </li>
-///   <li>
-///     <em>Standardized Logging</em> — A sendTask is used to coordinate sending, which is an instance of class <code>KVATask</code>.  Consequently, all network transactions are capable of printing log messages which provide a consistent output in the log— and this consistency crosses over between classes <code>KVANetTransaction</code> and <code>KVATask</code>.  By default log messages associated with the sendTask will not be printed.  To enable see var sendTaskLogMessagesPrintBool.
-///   </li>
-///   <li>
-///     <em>Sleeping</em> (var sleepObservantBool) — A network transaction’s execution may be deferred, causing it to wait and not proceed while the associated networking instance is asleep.  See class <code>KVANetworking</code> var <code>KVANetworking/sleepBool</code>.
-///   </li>
-///   <li>
-///     <em>URL Overriding</em> — In addition to the default overriding capability offerred throughout KVANetTransaction, additional id-based overrides are also available.  These ids can correspond to externally recognized values such as “init” or “event”.  They can also include sub-ids for secondary identifiers such as the names within events.
-///   </li>
-///   <li>
-///     <em>Type</em> — A type can connect the behavior of one network transaction to subsequent networtk transactions.  These types can correspond to externally recognized values such as “init” or “event”, and can be used to facilitate features such as URL rotation.  See class <code>KVANetTransactionType</code>.
-///   </li>
-///   <li>
-///     <em>Updating Watched Values</em> — When a network transaction completes, adapters which were used as value sources to adorn metadata such as datapoints may be instructed to automatically update their watched values.  This enables a knowledge of what exists at the server to be maintained for each of these datapoints.  See var updateWatchValuesBool.
-///   </li>
-///   <li>
-///     <em>URL String Dictionary Formatting</em> — The request url string may be adorned with values collected from value sources specified within a urlDictionaryFormat, which is an instance of class <code>KVADictionaryFormat</code>.  See Request Body Dictionary Formatting for more details about how this similarly works.
-///   </li>
-///   <li>
-///     <em>Variations</em> — Variantions are instances of class KVANetTransaction which can be specified on a first KVANetTransaction to override certain parameters based on conditions, such as time.  As one example this can be used to specify time-based overrides for URL rotation.  If a variation’s enabling condition(s) are met, then any parameters defined within the enabled variation will override the default parameters.  Note:  Only certain parameters are supported within variations, which is based on the scope of what has been needed for Kochava’s SDK implementation.  The support for additional parameters can be added as needed.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVANetTransaction")
-@interface KVANetTransaction : NSObject <KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAStartable>
-/// Create and start a KVANetTransaction.
-/// \param baseNetTransactionNameString The name string of the base KVANetTransaction.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.  If not passed, this value will be defaulted from the current networking environment.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param networking A networking instance.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (void)startWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create and start a KVANetTransaction.
-/// \param netTransactionObject An object from which to drive a network transaction (presumed to be a JSON representation).
-///
-/// \param networking A networking instance.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.  If not passed, this value will be defaulted from the current networking environment.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (void)startWithNetTransactionObject:(id _Nonnull)netTransactionObject networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create a KVANetTransaction.
-/// \param object A JSON object.  Note that this JSON object may contain the “baseNetTransaction” which is the baseNetTransactionNameString of a KVANetTransaction pre-registered in networking.
-///
-/// \param networking A networking instance.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param startBool A boolean indicating if the KVANetTransaction should be automatically started following the finishing of its construction.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-+ (nullable instancetype)netTransactionFromObject:(id _Nonnull)object networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete SWIFT_WARN_UNUSED_RESULT;
-/// Create a KVANetTransaction— using modern Objective-C syntax.
-+ (KVANetTransaction * _Nonnull)netTransactionWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete SWIFT_WARN_UNUSED_RESULT;
-/// Create a network transaction to be used as a base.
-- (nonnull instancetype)initWithJSONDictionary:(NSDictionary * _Nullable)dictionary closure_enabledBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_enabledBool closure_transformedURLString:(NSString * _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, NSString * _Nullable))closure_transformedURLString closure_willStartRequest:(void (^ _Nullable)(KVANetTransaction * _Nonnull))closure_willStartRequest closure_succededBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable))closure_succededBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-/// Create a KVANetTransaction.
-/// \param baseNetTransactionNameString The name string of the base KVANetTransaction.
-///
-/// \param prerequisiteTaskArray An array of prerequisite tasks.
-///
-/// \param localValueSourceCollection A dictionary that contains an array of KVAAdapter(s), with the key equal to the name of the adapter.
-///
-/// \param networking A networking instance.
-///
-/// \param startBool A boolean indicating if the KVANetTransaction should be automatically started following the finishing of its construction.
-///
-/// \param closure_didComplete A closure to be called when the request completes successfully.
-///
-- (nonnull instancetype)initWithBaseNetTransactionNameString:(NSString * _Nullable)baseNetTransactionNameString networking:(KVANetworking * _Nullable)networking prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray localValueSourceCollection:(KVACollection * _Nullable)localValueSourceCollection startBool:(BOOL)startBool closure_didComplete:(void (^ _Nullable)(KVANetTransaction * _Nonnull, BOOL, id _Nullable, id _Nullable))closure_didComplete;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Start the instance.
-/// Prior to making the request it will evaluate whether or not it may make the attempt.
-- (void)start;
-/// Start the instance.
-/// Prior to making the request it will evaluate whether or not it may make the attempt.
-/// \param asyncBool A boolean indicating if the work should be asynchronously dispatched.
-///
-/// \param printLogMessageBool A boolean indicating if the function log message should be printed.
-///
-- (void)startWithAsyncBool:(BOOL)asyncBool printLogMessageBool:(BOOL)printLogMessageBool;
+@interface KVANetTransaction : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-- (void)invalidate;
-/// A networking instance.
+/// An instance of networking.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
-/// A dictionary containing KVAAdapter objects, keyed by their nameString.
-/// This is called “local” because it is taken that these were created locally to the creation of the net transaction.
-@property (nonatomic, strong) KVACollection * _Nullable localValueSourceCollection;
-/// The KVANetTransaction which defines a base for this net transaction.
-@property (nonatomic, strong) KVANetTransaction * _Nullable baseNetTransaction;
-/// Return the first base KVANetTransaction matching the given nameString.
-/// This will include the current instance if the name matches.  When using this keep in mind that the name will be inherited from a baseNetTransaction when not specified.
-- (KVANetTransaction * _Nullable)baseNetTransactionWithNameString:(NSString * _Nonnull)nameString SWIFT_WARN_UNUSED_RESULT;
-/// A closure to execute which returns a boolean indicating if the KVANetTransaction is enabled.
-/// Default true.  This closure may return false to disable the KVANetTransaction.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_enabledBool)(KVANetTransaction * _Nonnull);
-/// A closure to execute which returns a boolean indicating if the KVANetTransaction is successful.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_succededBool)(KVANetTransaction * _Nonnull, id _Nullable);
-- (BOOL)isSuccessfulBoolWithResponseObject:(id _Nullable)responseObject SWIFT_WARN_UNUSED_RESULT;
-/// A closure to execute which returns a string which is a transformed URL.
-@property (nonatomic, copy) NSString * _Nullable (^ _Nullable closure_transformedURLString)(KVANetTransaction * _Nonnull, NSString * _Nullable);
-/// A closure which will be called when the net transaction will start a request.
-/// The request body will not have been built yet when this closure is called.  Modifications may be made to the passed netTransaction, such as adding values to valueArrayDictionary.
-@property (nonatomic, copy) void (^ _Nullable closure_willStartRequest)(KVANetTransaction * _Nonnull);
-/// A nameString for the net transaction.
-/// This is a resolved property which factors in the baseNetTransaction.
-@property (nonatomic, readonly, copy) NSString * _Nullable nameString;
-@property (nonatomic, readonly) BOOL persistBool;
-/// The dictionary format for the request body.
-/// This is a resolved property which factors in the baseNetTransaction, as well as an append property.
-@property (nonatomic, readonly, strong) KVADictionaryFormat * _Nullable requestBodyDictionaryFormat;
-/// The urlString used in the request.
-/// This property is configured to a calculated value at a specific moment.  Calculating the value is somewhat involved, and this ensures that the effort isn’t made repeatedly, and is made when it is ready to be made.
-@property (nonatomic, readonly, copy) NSString * _Nullable urlString;
-/// Return the resolved array of url identifier strings.
-- (NSArray<NSString *> * _Nullable)urlIdStringArray SWIFT_WARN_UNUSED_RESULT;
-/// A boolean which indicates if the net transaction is complete.
-/// A KVANetTransaction is complete when its request has been completed and its response has been received.  It does not need to be successful from the standpoint of the server’s determination of success to be complete.  It will also be completed when all available attempts have been made, or when certain conditions have been met which call for no further attempts to be made.  One such example is if too much time has elapsed (days in queue).
-@property (nonatomic, readonly) BOOL completeBool;
-/// A count of the times that the net transaction did error.
-/// This includes error conditions which may be expressed in the response and would prompt a retry.
-@property (nonatomic, readonly) NSInteger didErrorCount;
-/// A boolean which indicates if the network transaction has experienced any kind of delay.
-/// This is used to help determine if the transaction should be queued or if the re-gathering of datapoints is necessary.
-@property (nonatomic, readonly) BOOL didExperienceDelayBool;
-/// A date indicating when the net transaction first did start.
-/// This is important in knowning whether or not a net transaction may be automatically started.  It can not be automatically started if it start was never called to begin with.  This also prevents net transactions from being added to queues, such as the send queue, until such time as they qualify.
-@property (nonatomic, readonly, copy) NSDate * _Nullable didStartFirstDate;
-/// The amount of time that elapsed during the execution of the KVANetTransaction.
-/// This is an indicator of the network speed combined with the server response time.  This variable is not established nor valid until the KVANetTransaction has been both started and completed.
-@property (nonatomic, readonly) NSTimeInterval elapsedTimeInterval;
-/// An NSDecimalNumber wrapping the elapsedTimeInterval suitable for printing.
-- (NSDecimalNumber * _Nonnull)elapsedTimeIntervalDecimalNumber SWIFT_WARN_UNUSED_RESULT;
-/// The error associated with the completion of the transaction.
-/// Intermediate errors are not represented here.  This will be nil if the transaction ultimately succeeds through retries.  This represents the final error.
-@property (nonatomic, readonly) NSError * _Nullable error;
-/// Append a KVALogMessage to the requestRollupLogMessageArray.
-- (void)requestRollupLogMessageArray_append:(KVALogMessage * _Nullable)logMessage;
-/// A task which sends the NetTransaction’s request and concludes with the retrieval of its response.
-@property (nonatomic, readonly, strong) KVATask * _Nonnull sendTask;
-/// A mutable dictionary which contains KVAValue objects.  These objects are keyed using their KVAAdapter nameString.
-/// Private.  A dictionary was used rather than an array for fast indexing by KVAAdapter nameString.
-@property (nonatomic, copy) NSDictionary<NSString *, KVAValue *> * _Nullable valueArrayDictionary;
-/// Configures the valueArrayDictionary.
-/// The completion handler is called when all asynchronous processes have completed.
-/// \param startingBool A boolean indicating if this is happening when the transaction is starting.
-///
-/// \param startingFirstTimeBool A boolean indicating if this is taking place for the first time (as an addendum to startingBool true).
-///
-- (void)valueArrayDictionary_configureWithStartingBool:(BOOL)startingBool startingFirstTimeBool:(BOOL)startingFirstTimeBool completionHandler:(void (^ _Nonnull)(void))completionHandler;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull attemptDidFinishButNotCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)attemptDidFinishButNotCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)didCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A constant to use for the key for the request body when passing an object as a vaue in a value source dictionary.
-/// The corresponding value should be any object which conforms to protocol KVAAsForContextProtocol, and provides suitable support for the specified context as well as persistentStorage.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull requestBodyKey;)
-+ (NSString * _Nonnull)requestBodyKey SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -7351,252 +2984,22 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// A queue of KVANetTransaction(s).
 /// This class is a queue of KVANetTransaction(s) which exists for the purpose of holding transactions.  This queue is emptied as those transactions are completed.
 SWIFT_CLASS_NAMED("KVANetTransactionQueue")
-@interface KVANetTransactionQueue : NSObject <KVAFromProtocol>
+@interface KVANetTransactionQueue : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)start;
-- (void)invalidate;
-/// Return the count in the queue.
-- (NSInteger)count SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A network transaction type.
 /// This generally corresponds to Kochava’s “action” key.
 SWIFT_CLASS_NAMED("KVANetTransactionType")
-@interface KVANetTransactionType : NSObject <KVAFromProtocol, KVAMutableDelegator>
-/// Create a new instance of KVANetTransationType.
-- (nonnull instancetype)initWithIdString:(NSString * _Nonnull)idString delegate:(id <KVAMutable> _Nullable)delegate OBJC_DESIGNATED_INITIALIZER;
+@interface KVANetTransactionType : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the urlString to use for the specified netTransaction.
-/// When nil this instance is offering no urlString to use, and the actualy urlString will fall back to the default.
-- (NSString * _Nullable)netTransaction_urlString:(KVANetTransaction * _Nullable)netTransaction SWIFT_WARN_UNUSED_RESULT;
-/// A string which is the current url for the currentVariation.
-@property (nonatomic, readonly, copy) NSString * _Nullable currentVariationURLString;
-/// A string which is a unique identifier for the type.
-@property (nonatomic, readonly, copy) NSString * _Nullable idString;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
-/// A date which is the startDate of the currentVariation.urlStringArray.
-/// This used used to watch for changes, which bust the currentVariationURLIndexNumber and currentVariationURLIndexRotatedBool.
-@property (nonatomic, readonly, copy) NSDate * _Nullable currentVariationStartDate;
-/// An NSUInteger which is the last successful index into the currentVariation.urlStringArray.
-/// Default 0.
-@property (nonatomic, readonly, strong) NSNumber * _Nullable currentVariationSuccessfulURLIndexNumber;
-/// A string which is the last successful url for the currentVariation.
-@property (nonatomic, readonly, copy) NSString * _Nullable currentVariationSuccessfulURLString;
-/// An NSUInteger which is the current index into the currentVariation.urlStringArray.
-/// Default 0.
-@property (nonatomic, readonly, strong) NSNumber * _Nullable currentVariationURLIndexNumber;
 @end
 
-@class KVATimeIntervalSeries;
 
 /// The class KVANetworking provides basic networking support.
-/// The class KVANetworking is the main interface for module KochavaCore.  A networking instance manages the exchange of data between the client and various server(s), along with the associated tasks, network transactions, adapters, and instructions.  If you have not already integrated the KochavaCore module into your project, refer to our integration support documentation.
-/// You rarely create instances of class KVANetworking.  Instead, you start the provided shared instance using one of the start instance methods.  See static var <code>shared</code>.  Additionally an instance of networking is already provide within other SDK modules, such as module KochavaTracker.  Take note that such instances are not using var <code>shared</code>, which is reserved for the main host’s optional use.  If you are the application developer, this means you!  All other parties, including third-party SDKs, should create their own instance providing a unique product.
-/// Upon start the networking instance will perform its various tasks.  This is typically done during the earliest phases of the host’s lifecycle, so that networking activity can be quickly begin and data may begin to egress.
-/// You may alternately create an instance.  If you do, it is your responsibility to maintain a strong reference.  And if you create multiple instances, it is your responsibility to configure each with a unique storageIdentifierString.
-/// <h2>Examples</h2>
-/// Example - Configuring the shared networking instance
-/// \code
-/// KVANetworking.shared.configure(product: self.myProduct)
-///
-/// \endcodeExample - A sample network transaction which posts a payload to a test url.  The payload contains a “data” object, which contains a key “apple_dot_com” with a value which is the string representation of the current webpage at apple.com.  It collects that string value using the example adapter <em>appleDotComStringAdapter</em> as described in class <code>KVAAdapter</code>.
-/// \code
-/// let sampleNetTransaction = KVANetTransaction(
-///     jsonDictionary: [
-///         "nameString": "SampleNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://httpstat.us/200",
-///             "httpMethodString": "POST",
-///             "bodyDictionaryFormat":
-///             [
-///                 "dictionaryEntryFormatArray":
-///                 [
-///                     [
-///                         "subChunkNameStringArray": ["data"],
-///                         "keyString": "apple_dot_com",
-///                         "valueSourceNameString": "YourClass.appleDotComStringAdapter"
-///                     ]
-///                 ]
-///             ]
-///         ]
-///     ]
-/// )
-///
-/// \endcodeExample - Registering the sample components
-/// \code
-/// let networking = KVANetworking.shared
-/// networking.valueSourceCollection.register(adapter: self.appleDotComStringAdapter)
-/// networking.baseNetTransactionCollection.register(netTransaction: self.sampleNetTransaction)
-///
-/// \endcodeExample - Starting the networking instance
-/// \code
-/// KVANetworking.shared.start()
-///
-/// \endcodeExample - Sending the sample network transaction
-/// \code
-/// KVANetTransaction.start(
-///     baseNetTransactionNameString: "SampleNetTransaction",
-///     networking: KVANetworking.shared
-/// )
-///
-/// \endcodeExample - Starting a basic ad-hoc network transaction which gets a string representation of the current webpage at google.com (with maximum length limited to 2048 for readability).
-/// \code
-/// KVANetTransaction.start(
-///     netTransactionObject:
-///     [
-///         "nameString": "GoogleDotComGetNetTransaction",
-///         "request":
-///         [
-///             "urlString": "https://www.google.com"
-///         ]
-///     ],
-///     networking: KVANetworking.shared
-/// ){
-///     netTransaction, didSucceedBool, responseClassObject, responseObject in
-///
-///     print("... do something with the response. responseObject=\((responseObject as? String)?.kva_withMaximumLength(2048) ?? "(nil)")\n")
-/// }
-///
-/// \endcode<h2>Features - Core</h2>
-/// <ul>
-///   <li>
-///     <em>Instance Identification</em> (var <code>instanceIdString</code>) — To differentiate between different instances of class KVANetworking running concurrently, a unique instance identifier is automatically assigned and then used in a variety of ways.  Log messages will sometimes reflect this identifier, and a portion of it is used in all network transaction identifiers (nt_id).  See also internal var instanceIdStringAdapter, id “Networking.instanceIdStringAdapter”.
-///   </li>
-///   <li>
-///     <em>Consent</em> (var <code>consent</code>) — If tracking consent is required, and tracking is not allowed, then sensitive objects such as instances of classes <code>KVATask</code>, <code>KVAAdapter</code>, and <code>KVANetTransaction</code> will automatically be blocked from execution.  In the case of network transactions, a copy of consent is internally stamped on the transaction at the time it is first started, and then it may be graduated to a newer copy if the global consent changes in certain ways.
-///   </li>
-///   <li>
-///     <em>Conditional Operation</em> (var closure_adapter_mayOperateBoolForContext) — Through a custom closure, adapters may be configured to conditionally collect, keep, persist, or share their value.   See also typealias Closure_Adapter_MayOperateBoolForContext.
-///   </li>
-///   <li>
-///     <em>Sleep</em> (var <code>sleepBool</code>) — Supported objects, such as instances of classes <code>KVATask</code>, <code>KVAAdapter</code>, and <code>KVANetTransaction</code>, will defer execution while a sleep state is in effect.  When the sleep state is lifted, the state change will be observed and execution will resume immediately with the continuation of any code which was previously deferred.  See also var <code>sleepBoolAdapter</code>.  You may toggle sleep on and off frequently with no measurable impact to performance beyond that which the sleep option is intended to produce when turned on.
-///   </li>
-/// </ul>
-/// <h2>Features - Collections</h2>
-/// <ul>
-///   <li>
-///     <em>Value Source Collection</em> (var <code>valueSourceCollection</code>) — A collection of registered objects from which a value may be sourced.  These may be instances of class <code>KVAAdapter</code>, or else anything which conforms to protocol <code>KVAAsForContextProtocol</code>.  Through class extensions this includes primitives such as String and Int.  Register conforming object(s) using any of the methods available in class <code>KVACollection</code>.
-///   </li>
-///   <li>
-///     <em>Base Network Transaction Collection</em> (var <code>baseNetTransactionCollection</code>) — A collection of registered network transactions which may be used as bases from which network transactions may inherit default parameters.  Register instance(s) of class <code>KVANetTransaction</code> using class <code>KVACollection</code> func <code>KVACollection/register(netTransaction:)</code>.
-///   </li>
-///   <li>
-///     <em>Task Collection</em> (var <code>taskCollection</code>) — A collection of registered tasks which may be used as prerequisites for other tasks.  Register instance(s) of class <code>KVATask</code> using class <code>KVACollection</code> func <code>KVACollection/register(task:)</code>.
-///   </li>
-///   <li>
-///     <em>Instruction Collection</em> (var <code>instructionCollection</code>) — A collection of registered instructions which may be executed using their corresponding identifierString along with an optional valueObject which serves as a parameter.  Register instance(s) of class <code>KVAInstruction</code> using class <code>KVACollection</code> func <code>KVACollection/register(instruction:)</code>.  See func <code>executeAdvancedInstruction(identifierString:valueObject:)</code>.
-///   </li>
-/// </ul>
-/// <h2>Features - Network Transactions</h2>
-/// <ul>
-///   <li>
-///     <em>Queueing</em> (var netTransactionQueue) — Network transactions, when started, are appended into the network transaction queue.  The queue may communicate with these instances, such as to notify them if/when networking may be invalidated.  It is also used for persistence, and to restore and restart transactions following a new launch.  See class <code>KVANetTransactionQueue</code>.
-///   </li>
-///   <li>
-///     <em>Queueing Overrides</em> — The parameters of the netTransactionQueue can be overridden.  One example, of note, is the queue maximum count.  Implemented in internal var queueMaximumCount.  Configurable through func <code>configure(with:context:)</code> with key “queue_maximum_count”.
-///   </li>
-///   <li>
-///     <em>Overriding</em> (var overrideNetTransactionArrayDictionary) — The parameter(s) of network transaction(s) can be individually overridden.  Configure instance(s) of class <code>KVANetTransaction</code> containing corresponding names and then put them in the dictionary.  While present, any parameters which are set will be used as overrides.  Configurable through func <code>configure(with:context:)</code> with key “override_nettransactions”, or alternately key “transactions” (the latter of which expects the alternate format supported by transactionsInstruction).  Also settable through func <code>executeAdvancedInstruction(identifierString:valueObject:)</code> with identifier “networking_transactions”, implemented in private var transactionsInstruction.
-///   </li>
-///   <li>
-///     <em>URL Overriding</em> (var urlsDictionary) — With a dictionary containing externally recognizable type identifiers such as “init” or “event”, paired with URL strings, the URLs defined in network transactions can be overridden.  This is In addition to the default overriding capability offerred throughout class <code>KVANetTransaction</code>.  Using conformance to protocol KVANetTransaction/KVANetTransactionSubURLIdStringMethodProvider, a dictionary can also be used in place of a URL string to express sub-type identifiers.  One such example may include the names found within events.  Configurable through func <code>configure(with:context:)</code> with key “urls”.  Also settable through func <code>executeAdvancedInstruction(identifierString:valueObject:)</code> with identifier “urls”, implemented in private var urlsInstruction.
-///   </li>
-///   <li>
-///     <em>Payload Transformation</em> (var closure_payloadTransformedObject) — Using a custom closure, the contents of a payload can be transformed.  See associated typealias <code>KVANetTransaction/Closure_PayloadTransformedObject</code>.
-///   </li>
-///   <li>
-///     <em>Retry Time Interval Series</em> (var retryTimeIntervalSeries) — When an attempt is not successful, rather than retrying a new attempt immediately, a network transaction will wait for a specified time interval within a series.  By default each subsequent time interval backs off in a waterfall pattern, increasing the time between each unsuccessful attempt.  Configurable through func <code>configure(with:context:)</code> with key “retry_waterfall”.  See class <code>KVATimeIntervalSeries</code>.  See also private static var retryDefaultTimeIntervalSeries.
-///   </li>
-///   <li>
-///     <em>Error Retry Group Waiting</em> — When an error occurs, rather than letting other network transactions of the same group (i.e. url) make attempts to the same service, a group of network transactions may wait for a specified time interval within a series.  By default each subsequent time interval backs off in a waterfall pattern, increasing the time between each unsuccessful attempt.  When the error retry group wait task is assigned to a network transaction, this wait occurs concurrently (and in addition to) the <em>Retry Time Interval Series</em>, with the main difference being that it applies across multiple transactions of the same group.  Because this is group-based, network transactions which use a different group (i.e. a different url) are not affected by one another.  Assign this behavior to a network transaction by adding prerequisite task “Networking.errorRetryGroupWaitTask [groupId]”.
-///   </li>
-///   <li>
-///     <em>Rate Limiting</em> (var rateLimitingWindowTimeInterval) — The speed at which network transaction requests are initiated can be limited.   Implemented in internal var rateLimitingWindowRequestCountRegulationTask, id “Networking.rateLimitingWindowRequestCountRegulationTask”.  See also private var rateLimitingWindowRequestMaximumCount.
-///   </li>
-///   <li>
-///     <em>Concurrent Maximum Count</em> (var concurrentMaximumCount) — Network transactions may or may not initiate requests concurrently with other transactions, depending on configuration and communication status.  Configure through func <code>configure(with:context:)</code> with key “concurrent_maximum_count”.  The default is 5.  Limit the concurrency of a network transaction while other network transaction requests are in-flight by adding prerequisite task attemptInProgressConcurrentMaximumRegulationTask, id “Networking.attemptInProgressConcurrentMaximumRegulationTask”.  When present, the initiation of a request will be restricted while var concurrentMaximumCount is met or exceeded.  While errors are occurring for any network transaction, or the broader status of communication is not known, the effective concurrentMaximumCount is automatically reduced to 1 to avoid excess pressure during degraded server conditions.  See also supporting property private var attemptInProgressCount.
-///   </li>
-///   <li>
-///     <em>Tracking Wait</em> (var trackingWaitTimeInterval) — To allow some time for the server to process earlier transaction(s), a tracking wait is initiated upon the initiation of a network transaction which has “tracking” implications.  Configure the time interval to wait through func <code>configure(with:context:)</code> with key “tracking_wait”.  The default is 10.0 (seconds).  Cause a network transaction to wait by adding prerequisite task trackingWaitTask, id “Networking.trackingWaitTask”.  When present, the initiation of a request will be restricted until var trackingWaitTask completes a time-based countdown following the conclusion of the invoking transaction.
-///   </li>
-///   <li>
-///     <em>Local Responses</em> (var <code>responseLocalBool</code>) — For testing, or for when networking is disabled, network transactions can serve their responses locally.  For conditional control, see also var closure_serviceLocallyBool.  See feature <em>Local Responses</em> in class <code>KVANetTransaction</code> for more details.
-///   </li>
-/// </ul>
-/// <h2>Features - Instructions</h2>
-/// <ul>
-///   <li>
-///     <em>Executing Instructions</em> — Registered with var <code>instructionCollection</code>, instruction(s) can be executed using their associated identifierString (or id).  This includes any instructions which may be registered from outside of class KVANetworking and not otherwise listed within the documentation of this class.  See func <code>executeAdvancedInstruction(identifierString:valueObject:)</code>.  An array of instructions can also be decoded from JSON and executed by calling func <code>configure(with:context:)</code> with key “instructions”.  The parameter valueObject can be decoded from JSON as long as the associated class conforms to protocol KVAProtocol and the class is named within the JSON object using key “$class”.  Some instructions will support a default class.
-///   </li>
-///   <li>
-///     <em>Printing Anything Printable</em> (var printInstruction, id <em>“print”</em>) — By conforming to protocol <code>KVAPrintable</code>, anything can be printed.  These objects may also conform to protocol <code>KVANetworkingSetterProvider</code> so that a networking parameter may be set if/when the instruction’s valueObject is decoded from JSON.  Supported objects, of note, include instances of class <code>KVALogMessage</code>.  When decoding from JSON, if key “<em>$class</em>” is not specified, the default is <code>KVALogMessage</code>.
-///   </li>
-///   <li>
-///     <em>Starting Anything Startable</em> (var startInstruction, id <em>“start”</em>) — By conforming to protocol <code>KVAStartable</code>, anything can be started.  These objects may also conform to protocol <code>KVANetworkingSetterProvider</code> so that a networking parameter may be set if/when the instruction’s valueObject is decoded from JSON.  Supported objects, of note, include instances of class <code>KVANetTransaction</code>.  When decoding from JSON, you must include key “<em>$class</em>”, as no default class is supported.
-///   </li>
-///   <li>
-///     <em>Setting State Active</em> (var stateActiveInstruction, id <em>“state_active”</em>) — Within the SDK, the system’s active state is automatically tracked.  There are cases where you may want to set this state.  Most often this is used when testing the SDK.  Alternatively you may use this to indicate the state within environments where the state cannot currently be tracked, such as iMessage apps.  For the valueObject pass a boolean value of true or false.  See also class <code>KVASystem</code> func <code>KVASystem/stateActiveDidBecome()</code> and func <code>KVASystem/stateActiveWillResign()</code>.
-///   </li>
-///   <li>
-///     <em>Setting App Clip</em> (var instantAppInstruction, <em>“instant_app”</em>)  — Within the SDK, the boolean indicating whether the host is an App Clip (referred to generically as an “Instant App”) is determined automatically by looking for suffix “.clip” on the main bundle’s info.plist’s CFBundleIdentifier.  While to set this suffix is the typical pattern, you can also set this boolean manually if it is not by using this instruction.  For the valueObject pass a boolean of true or false.  See also class <code>KVASystem</code> var <code>KVASystem/appClipBool</code>.
-///   </li>
-///   <li>
-///     <em>URL Overrides</em> (var urlsInstruction, id <em>“urls”</em>) — For network transactions which are typed, their associated URLs can be overridden.  For the valueObject pass a dictionary where each key contains a network tranaction type identifier, and the value is the url string, or else a dictionary containing urls by sub-id.  This is typically used for testing.
-///   </li>
-///   <li>
-///     <em>Setting Watched Values</em> (var watchedValuesInstruction, id <em>“watched_values”</em>)  — Within instances of class <code>KVAAdapter</code>, the current value may be watched for the presence of changes relative to the server.  These changes are indicated by a watchValue not being the same as the value.  Use this instruction to set the watchValue(s) for a set of adapters.  For the valueObject pass a dictionary where each key is the <code>KVAAdapter/identifierString</code> or <code>KVAAdapter/key</code> of an instance of class <code>KVAAdapter</code> which have been registered in var <code>valueSourceCollection</code>, and the value is the new watchValueRawObject.
-///   </li>
-///   <li>
-///     <em>Setting Product Wrapper Information</em> (var wrapperInstruction, id <em>“wrapper”</em>)  — The Apple Kochava SDK can be wrapped within the Kochava SDK for another platform.  In such cases a product can be set to provide name and version information for the wrapper.  For the valueObject pass an object decodable to an instance of class <code>KVAProduct</code>.  Please enquire with your Kochava client success manager if you are interested in this feature.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVANetworking")
-@interface KVANetworking : NSObject <KVAConfigureWithProtocol, KVAFromProtocol, KVAFromWithInitializedObjectProtocol, KVAInvalidatable, KVAKeyable, KVAMutableDelegator, KVASharedPropertyProvider, KVAStartable>
-/// A shared instance.
-/// This shared instance is reserved for the exclusive use of the host.  It is separate from the instance(s) used by other modules in the Kochava SDK.  You may register entitles with the valueSourceCollection, baseNetTransactionCollection, taskCollection, and/or the instructionCollection.  In reference to the valueSourceCollection, registered value sources can be referenced in network transactions to decorate payloads with metadata (i.e. data points).  In reference to the baseNetTransactionCollection, registered base network transactions can be referenced in network transactions to supply defaults, offering a range of performance benefits.  In reference to the taskCollection, registered tasks can be referenced in network tranactions to serve as prerequisites.  In reference to the instructionCollection, registered instructions can be executed from variety of places.  Once your instance has been configured, you may start the instance using func start().  It is at this point that any persisted instances of class <code>KVANetTransaction</code> in the queue will begin to be processed again.  It is also at this point that this networking instance will be ready to receive new activity from new instances of class KVANetTransaction, i.e. creating and starting network transactions.
-/// <h2>Example</h2>
-/// \code
-/// let networking = KVANetworking.shared
-/// networking.configure(product: self.myProduct)
-/// ...
-/// networking.valueSourceCollection.register(adapter: self.appleDotComStringAdapter)
-/// networking.baseNetTransactionCollection.register(netTransaction: self.sampleNetTransaction)
-/// ...
-/// networking.start()
-///
-/// \endcode
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVANetworking * _Nonnull shared;)
-+ (KVANetworking * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// Create an instance of class KVANetworking which has been restored from JSON, or else create a new instance.
-/// This method of creating an instance should be regarded as internal at the present time.  See init(product:storageIdString:).
-- (nonnull instancetype)initWithFromObject:(id _Nullable)object product:(KVAProduct * _Nonnull)product storageIdString:(NSString * _Nullable)storageIdString delegate:(id <KVAMutable> _Nullable)delegate closure_adapter_mayOperateBoolForContext:(BOOL (^ _Nullable)(KVAAdapter * _Nonnull, KVAContext * _Nullable))closure_adapter_mayOperateBoolForContext closure_serviceLocallyBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_serviceLocallyBool closure_payloadTransformedObject:(id _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable, BOOL))closure_payloadTransformedObject;
-/// Create a basic instance.
-/// \param storageIdString An optional storage identifier.
-///
-- (nonnull instancetype)initWithStorageIdString:(NSString * _Nullable)storageIdString OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)keyForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Configure the instance for use.
-/// \param product The associated product.
-///
-/// \param closure_serviceLocallyBool A closure which returns a boolean indicating if a network transaction should be serviced locally.
-///
-/// \param closure_payloadTransformedObject A closure which transforms the request body or header of a network request.
-///
-/// \param delegate A delegate conforming to KVAMutable.
-///
-- (void)configureWithProduct:(KVAProduct * _Nonnull)product delegate:(id <KVAMutable> _Nullable)delegate closure_serviceLocallyBool:(BOOL (^ _Nullable)(KVANetTransaction * _Nonnull))closure_serviceLocallyBool closure_payloadTransformedObject:(id _Nullable (^ _Nullable)(KVANetTransaction * _Nonnull, id _Nullable, BOOL))closure_payloadTransformedObject closure_adapter_mayOperateBoolForContext:(BOOL (^ _Nullable)(KVAAdapter * _Nonnull, KVAContext * _Nullable))closure_adapter_mayOperateBoolForContext;
+@interface KVANetworking : NSObject
 /// Configure (update) the instance from another object.
 /// This method is used to configure the instance.  It can be called from the host to override (or else default) various parameters.  The structure of the object you provide has the same capability as that which the server may return.  Additionally you can wrap the parameters you provide in objects $override$, $override.append$, $default$, or $default.append$, to indicate how these options are treated relative to the server’s options.
 /// $override$:  Elements within this object will override any options of the same name specified by the server.
@@ -7608,82 +3011,26 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull 
 /// \param context The context from which the object was provided.  In rare cases this may have some bearing on the proper interpretation of what was provided.
 ///
 - (void)configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
-/// Configure (update) the instance from another object.
-/// See func <code>configure(with:context:)</code>.
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
-/// Start the instance.
-- (void)start;
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Execute an advanced instruction.
 /// \param identifierString An identifier for the advanced instruction.
 ///
 /// \param valueObject A value object for the advanced instruction.
 ///
 - (void)executeAdvancedInstructionWithIdentifierString:(NSString * _Nonnull)identifierString valueObject:(id _Nullable)valueObject;
-/// Invalidate the instance.
-- (void)invalidate;
-/// A collection of base network transactions which have been registered with the networking instance.
-/// Base network transactions are instances of class <code>KVANetTransaction</code>.  Instances are indexed by their nameString and serve as shared resources which may be referenced in network transactions as base network transactions from which to supply default parameters.  Any <code>KVANetTransaction</code> which is registered will be retained, and so only network transactions which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered network transaction.  This means base network transactions within the baseNetTransactionCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull baseNetTransactionCollection;
-/// A collection of instructions which have been registered with the networking instance.
-/// Instructions are instances of class <code>KVAInstruction</code>.  Instances are indexed by their identifierString and serve as instructions which may be executed.  Any instruction which is registered will be retained, and so only instructions which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered instruction.  This means instructions within the instructionCollection can be somewhat transient so long as it is understood that the last one registered under a given identifier will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull instructionCollection;
-/// A collection of tasks which have been registered with the networking instance.
-/// Tasks are instances of class <code>KVATask</code>.  Instances are indexed by their nameString and serve as shared resources which may be referenced in network transactions as prerequisite tasks.  Any task which is registered will be retained, and so only tasks which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered task.  This means tasks within the taskCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.  This approach is applicable to things like the trackingWaitTask, which is periodically re-generated and re-registered.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull taskCollection;
-/// A method which returns a default prerequisiteTaskArray for a given network transaction name string.
-/// \param netTransactionNameString The name of the network transaction.
-///
-- (NSArray<KVATask *> * _Nullable)taskCollection_defaultPrerequisiteTaskArrayForNetTransactionNameString:(NSString * _Nullable)netTransactionNameString SWIFT_WARN_UNUSED_RESULT;
-/// A collection of value sources which have been registered with the networking instance.
-/// Value sources can be instances of class <code>KVAAdapter</code>, <code>KVAValue</code>, or any object from which a instance of class <code>KVAValue</code> can be sourced or else constructed.  This includes JSON value primitive types such as instances of class NSString, NSNumber, NSDictionary, and NSArray.  Instances are indexed by an indentifierString and serve as shared resources which may be referenced in network transactions as the source of values within the request body, header, or url.  Any value souce which is registered will be retained, and so only value sources which are expected to be permanent should be registered in this way.  It is, however, acceptable to overwrite a previously registered value source.  This means value sources within he valueSourceCollection can be somewhat transient so long as it is understood that the last one registered under a given name will remain.
-@property (nonatomic, readonly, strong) KVACollection * _Nonnull valueSourceCollection;
-/// An adapter which the sleepBool.
-/// This is technically the actual storage for the sleepBool.  This adapter can be used to observe changes to the sleepBool.
-@property (nonatomic, readonly, strong) KVABoolAdapter * _Nonnull sleepBoolAdapter;
-/// A closure which is called to determine if the adapter may operate.
-/// This may be used to evaluate allowed and denied conditions, and it applies to all governed major operations- i.e. collect, persist, and keep.
-@property (nonatomic, copy) BOOL (^ _Nullable closure_adapter_mayOperateBoolForContext)(KVAAdapter * _Nonnull, KVAContext * _Nullable);
-/// A consent object.
-@property (nonatomic, strong) KVAConsent * _Nullable consent;
-/// A mutable delegate.
-@property (nonatomic, weak) id <KVAMutable> _Nullable mutableDelegate;
-/// A boolean indicating that requests should be serviced locally- with modern Objective-C syntax.
-@property (nonatomic, strong) NSNumber * _Nullable responseLocalBoolNumber;
-/// A KVATimeIntervalSeries which defines how networking retries should take place.
-/// This returns a copy which is safe for use in exactly one location.
-- (KVATimeIntervalSeries * _Nonnull)retryTimeIntervalSeries_resolvedCopy SWIFT_WARN_UNUSED_RESULT;
-/// A boolean which when true causes the instance to sleep.
-/// The default is false.  When set to true, this causes tasks to effectively be suspended until this condition is lifted.  While this is set to true, tasks are not lost per-say;  however, if a task may have otherwise occurred multiple times, it may be represented only once once the condition is lifted.
-@property (nonatomic) BOOL sleepBool;
-/// A unique id for the instance.
-@property (nonatomic, readonly, copy) NSString * _Nonnull instanceIdString;
-/// A standard Closure_MetaValueArrayDictionary which includes the instanceId.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, KVAValue *> * _Nullable (^ _Nonnull closure_instanceIdValueMetaValueArrayDictionary)(KVAValue * _Nonnull);
-/// A standard Closure_StaleBool which returns that the specified KVAValue is stale when the instanceIdString changes.
-/// The use of this requires that the instanceIdString be stored in the meta value(s) of the KVAValue.  See closure_instanceIdValueMetaValueArrayDictionary.
-@property (nonatomic, readonly, copy) BOOL (^ _Nonnull closure_staleBool_instanceId)(KVAValue * _Nonnull);
-/// <ul>
-///   <li>
-///     Establishes a trackingWaitTask with a given optional prerequisiteTask.
-///   </li>
-/// </ul>
-- (KVATask * _Nonnull)trackingWaitTask_establishWithPrerequisiteTask:(KVATask * _Nullable)prerequisiteTask SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull willDeallocNotificationName;)
-+ (NSNotificationName _Nonnull)willDeallocNotificationName SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
 
+
 /// The class KVAPartner defines a partner in the context of managing user consent in relationship to GDPR.
 /// When prompting for consent, the user should be presented with a list of the partners with which data would be shared.  That list can grow or contract independent of software version because data sharing can take place server-to-server.  With these partners being defined within your Kochava dashboard, changes can be made automatically, promptly, and across a range of software versions.
 SWIFT_CLASS_NAMED("KVAPartner")
-@interface KVAPartner : NSObject <KVAConfigureWithProtocol, KVAFromProtocol>
+@interface KVAPartner : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
 /// Return a boolean indicating if this partner raises a need to prompt for consent.
 /// Compare with shouldBeIncludedInPromptBool.
 - (BOOL)shouldPromptBool SWIFT_WARN_UNUSED_RESULT;
@@ -7717,44 +3064,67 @@ SWIFT_CLASS_NAMED("KVAPartner")
 
 
 
-
 /// A controller for working with products.
 SWIFT_CLASS_NAMED("KVAProductController")
 @interface KVAProductController : NSObject
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProductController * _Nonnull shared;)
 + (KVAProductController * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) id _Nonnull sharedInstance;)
-+ (id _Nonnull)sharedInstance SWIFT_WARN_UNUSED_RESULT;
-/// Register a Product with the ProductController.
-- (void)registerProduct:(KVAProduct * _Nullable)product;
-/// Return a product for a given Class.
-/// If a matching product cannot be located, this returns nil.  However, there is a special rule when the SDK is identified as not having a bundle of its own to map all classes which begin with the product organization to KVACoreProduct.shared.  This makes it possible to yield an acceptable result even when bundleForClass would otherwise return the main bundle.
-- (KVAProduct * _Nullable)productForClass:(Class _Nullable)aClass SWIFT_WARN_UNUSED_RESULT;
-/// Return a product with a matching module name.
-- (KVAProduct * _Nullable)productWithModuleNameString:(NSString * _Nullable)moduleNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return whether or not a condition was successful.
-/// A nil conditionString will always be regarded as successful.
-/// \param conditionString A conditionString to evaluate.
+/// Resets product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
 ///
-- (BOOL)allProducts_evaluationResultBoolForConditionString:(NSString * _Nullable)conditionString SWIFT_WARN_UNUSED_RESULT;
-/// The array of registered products.
-@property (nonatomic, readonly, copy) NSArray<KVAProduct *> * _Nonnull productArray;
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_resetWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Resets product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param includeExternalBool A boolean indicating whether or not external variables should be deleted.  This is intended for testing purposes.  See func <code>reset(deleteLocalDataBool:)</code> which always supplies this parameter as false.
+///
+/// \param includeDeviceAppGroupBool A boolean indicating whether or not the deviceAppGroup user defaults should be deleted.  This is where App Clip data is stored.
+///
+/// \param printLogMessageBool A boolean indicating whether or not a log message should be printed consistent with a public entry point.
+///
+/// \param includeHostBool A boolean indicating if you want to include the host.  The host requires an explicit authorization through this boolean.
+///
+/// \param includeUIBool A boolean indicating if you want to include module KochavaUI.  Module KochavaUI requires an explicit authorization through this boolean.
+///
+/// \param includeCoreBool A boolean indicating if you want to include module KochavaCore.  Module KochavaCore requires an explicit authorization through this boolean.
+///
+/// \param moduleNameStringArray An array of modules to include.  Optional.  If this array is not set then all modules are allowed.  If this is set then only those products whose module names are in this array will be included.  If you set an ‘include’ parameter and also set any value in this array, the name of that ‘include’ parameter must still also be in this array to be included.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_resetWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeExternalBool:(BOOL)includeExternalBool includeDeviceAppGroupBool:(BOOL)includeDeviceAppGroupBool printLogMessageBool:(BOOL)printLogMessageBool includeHostBool:(BOOL)includeHostBool includeUIBool:(BOOL)includeUIBool includeCoreBool:(BOOL)includeCoreBool moduleNameStringArray:(NSArray<NSString *> * _Nullable)moduleNameStringArray closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Shuts down product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
+/// Shuts down product(s).
+/// \param deleteLocalDataBool A boolean indicating whether or not local data should be deleted.
+///
+/// \param includeHostBool A boolean indicating if you want to include the host.  The host requires an explicit authorization through this boolean.
+///
+/// \param includeUIBool A boolean indicating if you want to include module KochavaUI.  Module KochavaUI requires an explicit authorization through this boolean.
+///
+/// \param includeCoreBool A boolean indicating if you want to include module KochavaCore.  Module KochavaCore requires an explicit authorization through this boolean.
+///
+/// \param moduleNameStringArray An array of modules to include.  Optional.  If this array is not set then all modules are allowed.  If this is set then only those products whose module names are in this array will be included.  If you set an ‘include’ parameter and also set any value in this array, the name of that ‘include’ parameter must still also be in this array to be included.
+///
+/// \param closure_didComplete A closure which is called upon completion.
+///
+- (void)products_shutdownWithDeleteLocalDataBool:(BOOL)deleteLocalDataBool includeHostBool:(BOOL)includeHostBool includeUIBool:(BOOL)includeUIBool includeCoreBool:(BOOL)includeCoreBool moduleNameStringArray:(NSArray<NSString *> * _Nullable)moduleNameStringArray closure_didComplete:(void (^ _Nullable)(void))closure_didComplete;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-
-/// A class which wraps a string value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a string value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVAStringAdapter")
 @interface KVAStringAdapter : KVAAdapter
-/// The designated constructor for a StringAdapter— using modern Objective-C syntax.
-+ (KVAStringAdapter * _Nonnull)stringAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSString *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary<NSString *, NSString *> * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber defaultValueString:(NSString * _Nullable)defaultValueString valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueString for the KVAStringAdapter.
-/// This value is full validated and resolved, and may be different than the valueRawObject.  You can assign to this value and it will validate and store whatever is provided in the manner which is fully qualified by the adapter and all of its subclasses.
-@property (nonatomic, copy) NSString * _Nullable valueString;
 @end
 
 
@@ -7768,14 +3138,9 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// See var <code>shared</code>.  This variable will be nil prior to the shared instance being defaulted.  This may be used to optionally invalidate any existing shared instance without causing it to first be defaulted in the process.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * _Nullable shared_optional;)
 + (KVASystem * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
-/// A method which may be called when a primary system starts and executes on the main thread.
-/// This method must be called on the main thread.  This is used to expedite defaulting of the system’s state, which must be obtained on the main thread.  The system object will do this on its own once it has dispatched to the main queue for the first time, but this method can be called to ensure that this is done timely prior to the execution of later code.  Because of the lack of a class initializer in Swift equivalent to Objective-C’s + (void)initialize, this will technically be the moment after which it can be guaranteed that the stateActiveBool will be accurate.  Prior to that it may return its default value of false.  I say “may” because if KVASystem is accessed it will move forward to gather the state on its own, and so that can cause it to be collected earlier.
-- (void)primarySystemStartDidExecuteOnMainThread;
 /// A boolean indicating if the current host is an app clip.
 /// This property will return a default value based on whether or not it can be detected that the host is an app clip.  It uses the bundle identifier and looks for the default suffix of “.Clip” (case insensitive).  If it finds that suffix then this value will default to true, otherwise false.  If this assumption is not accurate for the host, this value can be set explicitly.
 @property (nonatomic) BOOL appClipBool;
-/// A boolean indicating if the current host is an app extension.
-@property (nonatomic, readonly) BOOL appExtensionBool;
 /// A method which can be called to report that the active state should become true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
 - (void)stateActiveDidBecome;
@@ -7792,29 +3157,12 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
 - (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString;
-- (NSString * _Nonnull)nameString SWIFT_WARN_UNUSED_RESULT;
-/// A boolean indicating if the system’s state is active.
-/// This considers the application active state and/or the extension active state (when applicable).  It unifies the notion of an system active state.
-/// A boolean indicating if the state is active.
-@property (nonatomic, readonly) BOOL stateActiveBool;
 /// A constant to use as the source when reporting that a MessagesAppViewController did become active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString;)
 + (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString;)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
-/// A Notification.Name to use for observing when the system’s state active did become true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull stateActiveDidBecomeNotificationName;)
-+ (NSNotificationName _Nonnull)stateActiveDidBecomeNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A string to use as the name for a notification to observe when the system’s state active did become true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull stateActiveDidBecomeNotificationNameString;)
-+ (NSString * _Nonnull)stateActiveDidBecomeNotificationNameString SWIFT_WARN_UNUSED_RESULT;
-/// A Notification.Name to use for observing when the system’s state active will resign true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull stateActiveWillResignNotificationName;)
-+ (NSNotificationName _Nonnull)stateActiveWillResignNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A string to use as the name for a notification to observe when the system’s state active will resign true.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull stateActiveWillResignNotificationNameString;)
-+ (NSString * _Nonnull)stateActiveWillResignNotificationNameString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -7823,362 +3171,58 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// This class is a higher-level wrapper for system (sys/) functions, such as sys/utsname.h
 SWIFT_CLASS_NAMED("KVASystemLow")
 @interface KVASystemLow : NSObject
-/// Return the cpu type and sub-type information (i.e. architecture)
-/// The string returned from here is period separated, and expected to be unique for the platform.  It is not human readable, and a lookup table may employed to convert this information to a human-readable string.
-/// note:
-/// Thread Safety:  Thread safe <em>probably</em> (sysctlbyname).  sysctlbyname thread safety is undocumented by Apple at the time of this writing, but their broader documentation on thread safety says, “Immutable objects are generally thread-safe. Once you create them, you can safely pass these objects to and from threads.”  Because none of the properties which are being accessed are taken to be mutable, generally speaking, what we are doing is taken to be thread safe.
-+ (NSString * _Nullable)architectureString SWIFT_WARN_UNUSED_RESULT;
-/// Return the system’s boot date.
-/// The precision is in microseconds (1 / 1,000,000).
-/// note:
-/// Thread Safety:  Thread safe <em>probably</em> (sysctl).  sysctl thread safety is undocumented by Apple at the time of this writing, but their broader documentation on thread safety says, “Immutable objects are generally thread-safe. Once you create them, you can safely pass these objects to and from threads.”  Because none of the properties which are being accessed are taken to be mutable, generally speaking, what we are doing is taken to be thread safe.
-+ (NSDate * _Nullable)bootDate SWIFT_WARN_UNUSED_RESULT;
-/// Return the hardware machine [id] (model id) string.
-/// The term “machine” is said to be an older term, and it is still reflected in the system-level functions required to retrieve the value.  “Model” is how this value is currently represented to the public by Apple.  A typical return from this method would be something like “iPhone9,1” and “iPhone9,3” (two variants of iPhone 7).  For a list of Apple Touch OS model ids (phones, pads, ipods, apple tv, apple watch) see here: https://www.theiphonewiki.com/wiki/Models  For a list of MacBook Pro model ids see here: https://support.apple.com/en-us/HT201300
-+ (NSString * _Nonnull)hardwareMachineModelIdString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
 /// A class which defines a high-level task.
-/// <h2>Examples</h2>
-/// Example - Creating a basic task with some prerequisite tasks:
-/// \code
-/// lazy var someTask = KVATask(
-///     networking: KVATracker.shared.networking,
-///     nameString: "CurrentClass.someTask",
-///     identifierString: nil,
-///     logMessagesPrintBool: true,
-///     prerequisiteTaskNameStringArray:
-///     [
-///         "TrackerConfig.retrieveTask",
-///         "Install.sendTask"
-///     ],
-///     sleepObservantBool: true,
-///     closure_startAttempt:
-///     {
-///         task in
-///
-///         print("... do something")
-///
-///         task.complete()
-///     }
-/// )
-///
-/// \endcode<h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Name</em> (var <code>nameString</code>) — A task is named using a unique standardized name, enabling its activity to be looked up in the log and to be correlated back to its root class.
-///   </li>
-///   <li>
-///     <em>Prerequisite Tasks</em> (var prerequisiteTaskArray) — Before a task may execute, it will wait until any number of prerequisite tasks have completed.  Once a task has been started, and when all prerequisite tasks have completed, the task will automatically start an attempt with no additional input.  Any tasks which are dependent upon that task will themselves make an attempt when they see that task has completed, along with all other tasks which it may have as prerequisites.
-///   </li>
-///   <li>
-///     <em>Timeout</em> (var attemptTimeoutTimeInterval) — A task’s attempt can be recognized as timing out, ensuring that subsequent retry attempts can move forward.
-///   </li>
-///   <li>
-///     <em>Retrying</em> (var <code>retryTimeIntervalSeries</code>) — If a task’s attempt does not accomplish the work it set out to do, it can be retried automatically.  The time to wait between each retry, as well as how many retries may be attempted, can be defined with a series of time intervals.  See class <code>KVATimeIntervalSeries</code>.
-///   </li>
-///   <li>
-///     <em>Consent</em> (var consent) — If a task requires tracking consent, and tracking is not allowed, then that task will automatically be blocked from execution.  See class <code>KVAConsent</code>.
-///   </li>
-///   <li>
-///     <em>Sleeping</em> (var sleepObservantBool) — A task’s execution may be deferred, causing it to wait and not proceed while the associated networking instance is asleep.  See class <code>KVANetworking</code> var <code>KVANetworking/sleepBool</code>.
-///   </li>
-///   <li>
-///     <em>Reset</em> (func <code>reset()</code>) — Following completion, a task may be reset so that it can be executed again.  A task may also reset other tasks when it resets, enabling dependent tasks to be automatically reexecuted (or at minimum reconsidered for execution).
-///   </li>
-///   <li>
-///     <em>Passive Reset</em> (var <code>resetPassiveTimeInterval</code>) — Following completion, a task may be passively reset so it can be executed again.  When the task is evaluated to determine if it should be regarded as completed, it may further evaluate that it should move back from a state of completed to not-completed, so that it may proceed to execute again.  This provides for the task to be executed again when certain conditions exist, but not when there is no on-going activity which would be prompting the need for the task to execute.  An example is resetting a config task to re-collect a fresh configuration after a certain amount of time has elapsed, but only when new activity occurs which would require the use of that configuration.
-///   </li>
-///   <li>
-///     <em>Logging</em> (var <code>logMessagesPrintBool</code>) — The activity and lifecycle of a task may be printed to the log through the task itself, providing log messages which are consistent and referenceable.
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVATask")
-@interface KVATask : NSObject <KVAInvalidatable, KVAStartable>
-/// The main constructor for a task.
-/// \param networking An instance of networking.  From this can be derived prerequisite tasks from their associated names, sleep support, consent, etc.
-///
-/// \param nameString The name of the task.  This is a human readable name which is displayed in places such as the log.
-///
-/// \param identifierString An identifier for the task.  This is used to further qualify the name of the task when the same task name may be used multiple times.
-///
-/// \param logMessagesPrintBool A boolean indicating if log messages should be printed.
-///
-/// \param prerequisiteTaskArray An array of Task objects which are regarded to be prerequisites which must be fulfilled before this task may start.
-///
-/// \param attemptTimeoutTimeInterval The time interval after which an attempt is automatically regarded to have timed out (a failure).
-///
-/// \param retryTimeIntervalSeries A TimeIntervalSeries which describes the default pattern whereby retries should subsequently take place following a failure.  This value is a default and it may be overridden later in context depending upon the specifics of a failure.
-///
-/// \param consentRequiredBool A boolean indicating that consent is required.
-///
-/// \param consent A consent instance.
-///
-/// \param closure_shouldAttemptBool A closure which returns whether or not an attempt should be made for this task.  This closure provides input from the caller which can vary based on conditions within the caller.
-///
-/// \param closure_didExperienceDelay A closure which is executed if the task experiences a delay.
-///
-/// \param closure_startAttempt A closure which starts an attempt.  This closure performs the core logic for the task.
-///
-/// \param closure_didComplete A closure that is called when the task becomes completed.  This closure can be used to clean up properties used during the execution of the task.
-///
-/// \param closure_didReset A closure that is called when the task becomes reset.
-///
-/// \param sleepObservantBool A boolean indicating that sleep should be observed.
-///
-/// \param resetFollowedTaskArray An array of tasks which when reset should trigger this task to follow with its own reset.
-///
-/// \param resetPassiveTimeInterval A time interval after which the task should passively reset the next time its completion status is checked.
-///
-- (nonnull instancetype)initWithNetworking:(KVANetworking * _Nullable)networking nameString:(NSString * _Nullable)nameString identifierString:(NSString * _Nullable)identifierString logMessagesPrintBool:(BOOL)logMessagesPrintBool prerequisiteTaskNameStringArray:(NSArray<NSString *> * _Nullable)prerequisiteTaskNameStringArray prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray attemptTimeoutTimeInterval:(NSTimeInterval)attemptTimeoutTimeInterval retryTimeIntervalSeries:(KVATimeIntervalSeries * _Nullable)retryTimeIntervalSeries consentRequiredBool:(BOOL)consentRequiredBool consent:(KVAConsent * _Nullable)consent sleepObservantBool:(BOOL)sleepObservantBool resetFollowedTaskNameStringArray:(NSArray<NSString *> * _Nullable)resetFollowedTaskNameStringArray resetFollowedTaskArray:(NSArray<KVATask *> * _Nullable)resetFollowedTaskArray resetPassiveTimeInterval:(NSTimeInterval)resetPassiveTimeInterval closure_shouldAttemptBool:(BOOL (^ _Nullable)(KVATask * _Nonnull))closure_shouldAttemptBool closure_didExperienceDelay:(void (^ _Nullable)(KVATask * _Nonnull))closure_didExperienceDelay closure_didInvalidate:(void (^ _Nullable)(KVATask * _Nonnull))closure_didInvalidate closure_didComplete:(void (^ _Nullable)(KVATask * _Nonnull))closure_didComplete closure_didReset:(void (^ _Nullable)(KVATask * _Nonnull))closure_didReset closure_startAttempt:(void (^ _Nullable)(KVATask * _Nonnull))closure_startAttempt OBJC_DESIGNATED_INITIALIZER;
-- (void)start;
-/// Evaluate the task.
-/// If the task should start an attempt then an attempt will be started.  If nothing should be done then nothing will be done.
-- (void)evaluate;
-/// End an attempt.
-/// This method may be called when no attempt is in progress.  That gesture serves to shut down the task from further activity.  The evaluate method, for example, does this automatically if it is called and the task is not in progress but also should not be attempted.
-/// \param accomplishedBool A boolean which indicates whether or not the attempt reached the point where it was done.  This is equivalent to being accomplished successfully.
-///
-/// \param allowRetryBool A boolean indicating whether retries should be allowed.  If the task is now done (accomplished successfully) this boolean has no effect.  If the task is not done, it will lead to the retry logic being used.
-///
-/// \param retryInsertTimeIntervalNumber An NSTimeInterval wrapped in an NSNumber which can optionally be supplied to be inserted into the retryTimeIntervalSeries for any retry logic flowing out of the ending attempt.
-///
-- (void)endAttemptWithAccomplishedBool:(BOOL)accomplishedBool allowRetryBool:(BOOL)allowRetryBool retryInsertTimeIntervalNumber:(NSNumber * _Nullable)retryInsertTimeIntervalNumber;
-/// Complete the task.
-/// If the task is already in a completed state then nothing will be done.  It is safe to call this method regardless of state.
-- (void)complete;
-/// Complete the task.
-/// If the task is already in a completed state then nothing will be done.  It is safe to call this method regardless of state.
-/// \param logMessagesPrintBool A boolean indicating if log messages should print.  A value of true will still not print log messages if the task itself has been configured to not print log messages.
-///
-- (void)completeWithLogMessagesPrintBool:(BOOL)logMessagesPrintBool;
-/// Reset the task.
-/// Typically a task’s lifecycle runs its course when it reaches its completed state, and it takes no further actions.  In some cases you may wish for a task to execute again without redefining a new task.  Use this method to reset the task back to an original state whereby it may be run through its standard attempt lifecycle again.  If a task has been invalidated, this method will also restore it back to a valid state.
-- (void)reset;
-/// Resets the attempt series.
-/// This resets any retry waterfall and will reevaluate the task.
-- (void)resetAttemptSeries;
-/// Executes any defined custom method with the specified nameString.
-/// \param nameString The name of the custom method.
-///
-/// \param parametersDictionary An optional parameters dictionary.  Any keys and values are custom to the custom method.
-///
-- (void)executeCustomMethodWithNameString:(NSString * _Nonnull)nameString parametersDictionary:(NSDictionary * _Nullable)parametersDictionary;
-- (void)invalidate;
-/// Defines a closure which is intended to hold custom methods which can be used to extend individual instances of an object.
-@property (nonatomic, copy) void (^ _Nullable closure_executeCustomMethod)(NSObject * _Nonnull, NSString * _Nonnull, NSDictionary * _Nullable);
-/// A boolean indicating if log messages should be printed.
-/// This only applies to normal log messages, not exceptions and other errors.  This boolean exists so that task instances can be used for lower-level functionality without creating confusion in the log.  It is exposed publicly so that it may be overridden to false at times when something should terminate silently.
-@property (nonatomic) BOOL logMessagesPrintBool;
-/// The name of the task.
-/// This is a human readable name which is displayed in places such as the log.
-@property (nonatomic, readonly, copy) NSString * _Nullable nameString;
-@property (nonatomic, strong) KVANetworking * _Nullable networking;
-/// A time interval after which the task should passively reset the next time its completion status is checked.
-@property (nonatomic) NSTimeInterval resetPassiveTimeInterval;
-/// A TimeIntervalSeries which describes the default pattern whereby retries should subsequently take place following a failure.
-/// This value is a default and it may be overridden later in context depending upon the specifics of a failure.
-@property (nonatomic, strong) KVATimeIntervalSeries * _Nullable retryTimeIntervalSeries;
-/// A boolean indicating if this task is done.
-/// The state of being done means that the task did execute an attempt and did finish successfully.  This is as opposed to being complete, which is when the task will no longer make subsequent attempts irrespective of considerations such as whether an attempt to execute the task was ever made or whether an attempt finished successfully.
-@property (nonatomic, readonly) BOOL accomplishedBool;
-/// A boolean indicating if this task is in progress.
-/// A task becomes in progress when an attempt is started, and it becomes no longer in progress when it is not going to retry, and completedBool is true.  At this point accomplishedBool may or may not be true.  See also attemptInProgressBool.
-@property (nonatomic, readonly) BOOL attemptSeriesInProgressBool;
-/// The NSTimeInterval that the task was/has been in progress.
-- (NSTimeInterval)attemptSeriesInProgressTimeInterval SWIFT_WARN_UNUSED_RESULT;
-/// A boolean indicating if this task is completed.
-/// The state of being completed means that the task will no longer make subsequent attempts.  This does not indicate whether or not the task was able to attempt to execute or that an attempt did finish successfully (see accomplishedBool).
-@property (nonatomic, readonly) BOOL completedBool;
+@interface KVATask : NSObject <KVANetworkingSetterProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// A boolean indicating if the task experienced any delay from the moment it was started.
-/// Delays would include things like prerequisites not being met, an attempt ending without accomplishing, etc.
-@property (nonatomic, readonly) BOOL didExperienceDelayBool;
-/// A constant to be used as a notification name string for when a task becomes completed.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didCompleteNotificationName;)
-+ (NSNotificationName _Nonnull)didCompleteNotificationName SWIFT_WARN_UNUSED_RESULT;
-/// A constant to be used as a notification name string for when a task becomes reset.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) NSNotificationName _Nonnull didResetNotificationName;)
-+ (NSNotificationName _Nonnull)didResetNotificationName SWIFT_WARN_UNUSED_RESULT;
+/// An instance of networking.
+@property (nonatomic, strong) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-/// A class which wraps a time interval value and provides a range of features including, but not limited to, adaptation.
+/// A class which collects and/or adapts a time interval value to a variety of contexts.
 /// A primary use case of an adapter is to order the automatic collection of a value.  That value can then be adapted as needed for various contexts (see class <code>KVAContext</code>).
 /// See base class <code>KVAAdapter</code> for more details.
 SWIFT_CLASS_NAMED("KVATimeIntervalAdapter")
 @interface KVATimeIntervalAdapter : KVANumberAdapter
-/// The designated constructor for a KVATimeIntervalAdapter— using modern Objective-C syntax.
-+ (KVATimeIntervalAdapter * _Nonnull)timeIntervalAdapterWithNetworking:(KVANetworking * _Nullable)networking identifierString:(NSString * _Nonnull)identifierString key:(NSObject * _Nullable)key denyDatapointCheckBool:(BOOL)denyDatapointCheckBool persistBool:(BOOL)persistBool watchBool:(BOOL)watchBool consentRequiredBool:(BOOL)consentRequiredBool allowValueArray:(NSArray<NSNumber *> * _Nullable)allowValueArray interfaceInDictionary:(NSDictionary * _Nullable)interfaceInDictionary maximumStalenessTimeIntervalNumber:(NSNumber * _Nullable)maximumStalenessTimeIntervalNumber minimumTimeIntervalNumber:(NSNumber * _Nullable)minimumTimeIntervalNumber maximumTimeIntervalNumber:(NSNumber * _Nullable)maximumTimeIntervalNumber defaultValueTimeIntervalNumber:(NSNumber * _Nullable)defaultValueTimeIntervalNumber valueObject:(id _Nullable)valueObject closure_serverObject:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject closure_collectSynchronously:(NSObject * _Nullable (^ _Nullable)(KVAAdapter * _Nonnull))closure_collectSynchronously closure_collectAsynchronously:(void (^ _Nullable)(KVAAdapter * _Nonnull, void (^ _Nonnull)(KVAAdapter * _Nonnull, id _Nullable)))closure_collectAsynchronously SWIFT_WARN_UNUSED_RESULT;
-/// The valueTimeInterval for the KVATimeIntervalAdapter.
-@property (nonatomic) NSTimeInterval valueTimeInterval;
-/// A constant closure which formats an NSNumber value as a time interval number for the server.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSObject * _Nullable (^ _Nonnull closure_serverObject_timeInterval)(KVAAdapter * _Nonnull, NSObject * _Nullable);)
-+ (NSObject * _Nullable (^ _Nonnull)(KVAAdapter * _Nonnull, NSObject * _Nullable))closure_serverObject_timeInterval SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 /// A class which defines a series of time intervals, which express a waterfall pattern.
-/// This class defines a series of time intervals (often resembling a resonation from smaller to larger intervals of time) along with methods to walk through the series and describe its current state.
 SWIFT_CLASS_NAMED("KVATimeIntervalSeries")
-@interface KVATimeIntervalSeries : NSObject <KVAConfigureWithProtocol, KVAFromProtocol>
-/// The main constructor for a TimeIntervalSeries— using modern Objective-C syntax.
-/// \param timeIntervalArray An array of TimeInterval wrapped in NSNumber.  This array is sequenced in the order that these time intervals should be used.
-///
-/// \param repeatFinalTimeIntervalBool A boolean which indicates whether the last time interval in the timeIntervalArray should repeat indefinitely.  If this value is false then there are no subsequent time intervals returned following the last time interval, effectively bringing a TimeIntervalSeries to a close.
-///
-+ (KVATimeIntervalSeries * _Nonnull)timeIntervalSeriesWithTimeIntervalArray:(NSArray<NSNumber *> * _Nullable)timeIntervalArray repeatFinalTimeIntervalBool:(BOOL)repeatFinalTimeIntervalBool SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVATimeIntervalSeries : NSObject <NSCopying>
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
-- (void)kva_configureWith:(id _Nullable)object context:(KVAContext * _Nullable)context;
 - (BOOL)isEqual:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Advance to the next time interval.
-- (void)advance;
-/// Return a description for the current state.
-- (NSString * _Nonnull)previousIterationString SWIFT_WARN_UNUSED_RESULT;
-/// Reset the TimeIntervalSeries so that the next time interval will be the first in the array.
-- (void)reset;
-/// A time interval wrapped in an NSNumber which is to be used in place of the next time interval.
-/// When this property is set it will effectively block the next advance of the currentIndex, and it will be consumed such that during the next period the currentTimeInterval will return this value instead of the one normally specified.
-@property (nonatomic, strong) NSNumber * _Nullable insertTimeIntervalNumber;
-/// An array of NSTimeInterval wrapped in NSNumber.  This array is sequenced in the order that these time intervals should be used.
-@property (nonatomic, readonly, copy) NSArray<NSNumber *> * _Nullable timeIntervalArray;
-/// An integer which represents the current attempt, starting at zero.
-/// This integer represents the human-readable attempt that we are currently at, intended to be called following a call to currentTimeIntervalWithAdvanceBool.  It is similar to currentIndex in that it generally starts off as currentIndex, but it is different from currentIndex in that it increments indefinitely even when currentIndex may have reached the end and be continuing using repeatFinalTimeIntervalBool.
-@property (nonatomic, readonly) NSInteger currentIteration;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
 /// A class which wraps a timer with an advanced and high-level interface.
-/// Traditional timers, once fired or invalidated, cannot be restarted.  This requires them to be reconstructed from scratch each time they are to be started again.  They also have naunced thread-safety requirements which requires careful consideration.  This class provides a wrapping mechanism which allows you to use a single instance which can be started, stopped, or reset.  Thread considerations are abstracted internally.  Additionally the timer can be configured to decide for itself if it should be started based on a supplied custom closure, enabling a single call to manage changes to the timer.
 SWIFT_CLASS_NAMED("KVATimer")
-@interface KVATimer : NSObject <KVAInvalidatable, KVAStartable>
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-- (void)start;
-- (void)stop;
-- (void)reset;
-- (void)invalidate;
-/// A boolean indicating if the timer is started.
-@property (nonatomic, readonly) BOOL startedBool;
-/// A boolean indicating if the timer is considered active.
-/// The timer may not actually exist at this point, as a dispatch may be in progress, but for all intents and purposes we can consider it as effectively existing.
-@property (nonatomic, readonly) BOOL timerActiveBool;
+@interface KVATimer : NSObject
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
 /// A high-level wrapper for a value, along with its associated meta value(s).
-/// <h2>Features</h2>
-/// <ul>
-///   <li>
-///     <em>Decoding</em> — New instances can be decoded from JSON.
-///   </li>
-///   <li>
-///     <em>Encoding</em> — Existing instances can be encoded as a dictionary which can be serialized into JSON.
-///   </li>
-///   <li>
-///     <em>Identification</em> — The property idString provides a universally unique identifier for the value.
-///   </li>
-///   <li>
-///     <em>Adapter Subordination</em> — The property adapter, along with its related property valueSourceNameString, associate the value with an instance of class <code>KVAAdapter</code>. This extends it to recognize, and in some cases abide by, the features provided by the adapter.
-///   </li>
-///   <li>
-///     <em>Adaptation</em> — A variety of methods are provided to gracefully adapt the value object to a variety of other types.
-///   </li>
-///   <li>
-///     <em>Start Date</em> (var <code>startDate</code>) — The property startDate defines when the value effectively started.  It can then be used to recognize freshness (or staleness).
-///   </li>
-///   <li>
-///     <em>Staleness</em> (func <code>staleBool()</code>) — The value can determine and report if it is stale.
-///   </li>
-///   <li>
-///     <em>Meta Values</em> —  The property metaValueArrayDictionary provides for the storage of custom meta value(s).
-///   </li>
-/// </ul>
 SWIFT_CLASS_NAMED("KVAValue")
-@interface KVAValue : NSObject <KVAFromProtocol>
-/// Create an instance from parameters— using modern Objective-C syntax.
-+ (KVAValue * _Nonnull)valueWithIdString:(NSString * _Nullable)idString rawObject:(id _Nullable)rawObject object:(id _Nullable)object serverObject:(id _Nullable)serverObject valueSourceNameString:(NSString * _Nullable)valueSourceNameString adapter:(KVAAdapter * _Nullable)adapter metaValueArrayDictionary:(NSDictionary<NSString *, KVAValue *> * _Nullable)metaValueArrayDictionary startDate:(NSDate * _Nullable)startDate placeholderForAsynchronousCollectionBool:(BOOL)placeholderForAsynchronousCollectionBool SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
+@interface KVAValue : NSObject
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
-/// Return an NSArray cast of object if it is an NSArray.  Returns nil if not.  A convenience method.
-- (NSArray * _Nullable)array SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean representation of object if it is an NSNumber.  Returns false if not.  A convenience method.
-- (BOOL)boolean SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSData cast of object if it is an NSData.  Returns nil if not.  A convenience method.
-/// Important Note:  If this is not data, such as a string that is not a base64 encoded version of a string, this will return nil.  This does not convert a simple string to become base64 encoded data.
-- (NSData * _Nullable)data SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDate cast of object if it is an Date.  Returns nil if not.  A convenience method.
-- (NSDate * _Nullable)date SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDictionary cast of object if it is an NSDictionary.  Returns nil if not.  A convenience method.
-- (NSDictionary * _Nullable)dictionary SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSInteger cast of object if it is an NSInteger.  Returns zero if not.  A convenience method.
-- (NSInteger)integer SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSNumber cast of object if it is an NSNumber.  Returns nil if not.  A convenience method.
-- (NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSString cast of object if it is an NSString.  Returns nil if not.  A convenience method.
-- (NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSTimeInterval cast of object if it is an NSNumber.  Returns nil if not.  A convenience method.
-- (NSTimeInterval)timeInterval SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if the object should be considered stale.
-- (BOOL)staleBool SWIFT_WARN_UNUSED_RESULT;
-/// Return a value for the specified object and for the specified context.
-/// This method is a little odd here in class KVAValue because values are themselves values, but this method signature is used by other classes as well.
-- (KVAValue * _Nullable)valueForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create a dictionary containing an array of KVAValue(s), keyed by their adapter name strings, from an array of objects.
-/// \param objectArray An array of objects from which to create the dictionary.
-///
-/// \param globalValueSourceCollection A global array of KVAAdapter(s) wrapped in an NSDictionary.
-///
-+ (NSDictionary<NSString *, KVAValue *> * _Nullable)valueArrayDictionaryFromObjectArray:(NSArray * _Nullable)objectArray globalValueSourceCollection:(KVACollection * _Nullable)globalValueSourceCollection SWIFT_WARN_UNUSED_RESULT;
-/// Return a boolean indicating if this KVAValue may mutate.
-/// This is referring specfically to the conditions where didMutate may be called, producing the associated observable notification.
-- (BOOL)mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-/// The associated adapter.
-/// The reason why this is weak is because if it is not it sets up a reference cycle with the adapter when the adapter has it set as its cachedValue.  We’ve designed this class to function gracefully without this property set, there being other fields which stand in when the adapter is missing.  That was done for other reasons, but it also assists with the weak quality of this property.
-@property (nonatomic, weak) KVAAdapter * _Nullable adapter;
-/// A dictionary containing a global array of adapters keyed by their names.
-@property (nonatomic, weak) KVACollection * _Nullable globalValueSourceCollection;
-/// A universally unique identifier (UUID).
-@property (nonatomic, readonly, copy) NSString * _Nullable idString;
-/// An optional dictionary containing custom meta value(s) in the form of an array of KVAValue(s) indexed by the adapter’s name string.
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, KVAValue *> * _Nullable metaValueArrayDictionary;
-/// The value object.
-/// This value has been validated.
-@property (nonatomic, readonly, strong) id _Nullable object;
-/// A boolean indicating that this value is a placeholder for an asynchronous collection.
-/// When getting the KVAValue for a KVAAdapter, it is necessary at times to create a new KVAValue if none is present.  This is to ensure that a value exists to express concepts such as defaults and staleness.  But in the case of asynchronous collections, if another caller requests a value while a collection is ongoing, it would be unacceptable to return this value in place of adding the caller’s completion handler to the array to be processed later.  This boolean serves to note that this condition exists.  When set, this boolean has the effect of conferring automatic staleness.
-@property (nonatomic, readonly) BOOL placeholderForAsynchronousCollectionBool;
-/// The raw value object.
-/// This value has not been validated or reformatted for the server.  It is used as the base for producing some form of output.
-@property (nonatomic, readonly, strong) id _Nullable rawObject;
-/// Return a resolved serverObject.
-/// This factors in the current adapter, if one is known, and ensures at this level that the value provided back should be JSON serializable.  The phrase “should be” is used because this is using the NSJSONSerialization isValidJSONObject method to verify that NSDictionary(s) and NSArray(s) are serializable, and at the time of this writing there are some known limitations.  It is expected to still potentially miss NaN and numeric overflow conditions.
-- (id _Nullable)serverObject SWIFT_WARN_UNUSED_RESULT;
-/// Return a server formated value object which has been resolved and returned as a string.
-/// If the underlying value is not a string, it will attempt to automatically convert it.
-- (NSString * _Nullable)serverObject_string SWIFT_WARN_UNUSED_RESULT;
-/// The date that the value started its freshness cycle.
-@property (nonatomic, readonly, copy) NSDate * _Nonnull startDate;
-/// Return a resolved valueSourceNameString.
-/// This factors in the current adapter, if one is known.
-@property (nonatomic, readonly, copy) NSString * _Nullable valueSourceNameString;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
-@interface NSArray<ObjectType> (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+@interface NSArray<ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 /// Create an instance from another object, allowing for the elementClass to be explictly specified.
 /// \param object An object from which to create the instance.  This is expected to be an NSArray.  The elements inside may be native class objects or may be other representations which can be resolved to native class objects.
@@ -8186,261 +3230,45 @@ SWIFT_CLASS_NAMED("KVAValue")
 /// \param elementClass The class of the element(s).
 ///
 + (nullable instancetype)kva_from:(id _Nullable)object elementClass:(Class _Nullable)elementClass initializedObject:(id _Nullable)initializedObject SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSData (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-/// Create an instance from a hex string
-/// If the provided hexString is not valid it will attempt to return nil;  however, that outcome cannot be guaranteed.
-- (nullable instancetype)kva_initWithHexString:(NSString * _Nullable)hexString SWIFT_METHOD_FAMILY(init);
+@interface NSData (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the data expressed as a hex string.
-- (NSString * _Nullable)kva_hexString SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
 @interface NSDate (SWIFT_EXTENSION(KochavaCore))
-/// Return a sendDateString
-/// \param requestBodyDictionary A network request body dictionary.
-///
-- (NSString * _Nonnull)kva_sendDateStringFromRequestBodyDictionary:(NSDictionary * _Nullable)requestBodyDictionary SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSDate (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-/// Create an NSDate from an String.
-/// The following formats are currently supported, in this order:  1) UTC ISO 8601.  In the future this list could be expanded.
-+ (nullable instancetype)kva_dateFromString:(NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime.
-/// This is effectively the date as a timeIntervalSince1970, converted from a double to a long long (the integer portion only).
-/// One could argue that this would be better returned as a double rather than a long long, but unix time is traditionally an integer.
-- (uint64_t)kva_unixTime SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime wrapped in an NSDecimalNumber.
-/// At the present time the unixTime is a long long, identical to what is returned by kva_unixTime.
-- (NSDecimalNumber * _Nonnull)kva_unixTimeDecimalNumber SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTime in milliseconds.
-- (uint64_t)kva_unixTimeMilliseconds SWIFT_WARN_UNUSED_RESULT;
-/// Return the date as a unixTimeString.
-/// This is effectively the date as a timeIntervalSince1970, converted from a double to a long long (the integer portion only), and then stored in a string.
-- (NSString * _Nonnull)kva_unixTimeString SWIFT_WARN_UNUSED_RESULT;
-/// Return the date in the form of an ISO 8601 date string.  Example:  “2017-09-28T19:10:32.138+00:00”.
-- (NSString * _Nonnull)kva_iso8601DateString SWIFT_WARN_UNUSED_RESULT;
-/// Return the date in the form of an ISO 8601 short date string.  Example:  “2017-09-28T19:10:32.138Z”.
-- (NSString * _Nonnull)kva_iso8601ShortDateString SWIFT_WARN_UNUSED_RESULT;
-/// <ul>
-///   <li>
-///     A convenience method to convert the date into a particular string format.
-///   </li>
-/// </ul>
-- (NSString * _Nullable)kva_stringWithDateStyle:(NSDateFormatterStyle)dateDateFormatterStyle timeStyle:(NSDateFormatterStyle)timeDateFormatterStyle SWIFT_WARN_UNUSED_RESULT;
-/// Get the current time interval “ago” for the given date.
-/// Given the assumption that the date is in the past (and not nil) this method returns an NSTimeInterval for the number of seconds since that date and up until the current date.  If the date is in the future this time interval will be negative.
-- (NSTimeInterval)kva_agoTimeInterval SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class NSDecimalNumberHandler;
 
-@interface NSDecimalNumber (SWIFT_EXTENSION(KochavaCore))
-/// Create an NSDecimalNumber from a double with a banker’s scale four rounding mode.
-+ (NSDecimalNumber * _Nonnull)kva_bankersScaleFourRoundingModeDecimalNumberFromDouble:(double)aDouble SWIFT_WARN_UNUSED_RESULT;
-/// Create an NSDecimalNumber from an NSNumber with a banker’s scale four rounding mode.
-+ (NSDecimalNumber * _Nullable)kva_bankersScaleFourRoundingModeDecimalNumberFromNumber:(NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Create an NSDecimalNumber from a any object with a banker’s scale four rounding mode.
-/// Return nil if a conversion pathway for the object is not known.
-+ (NSDecimalNumber * _Nullable)kva_bankersScaleFourRoundingModeDecimalNumberFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-+ (NSDecimalNumber * _Nullable)kva_timeIntervalRoundingModeDecimalNumberFromNumber:(NSNumber * _Nullable)number SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-/// Return nil if a conversion pathway for the object is not known.
-+ (NSDecimalNumber * _Nullable)kva_timeIntervalRoundingModeDecimalNumberFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return an NSDecimalNumber rounded to a standard number of decimal places for a TimeInterval when sending it to a remote server.  The point of rounding in this context is primarily cosmetic, somewhat for performance, but otherwise unnecessary.
-+ (NSDecimalNumber * _Nonnull)kva_timeIntervalRoundingModeDecimalNumberFromTimeInterval:(NSTimeInterval)timeInterval SWIFT_WARN_UNUSED_RESULT;
-/// An NSDecimalNumberHandler which provides standard formatting for an NSDecimalNumber that has four decimal digits.
-/// The number of decimal digits (scale) rounds to 2.  Rounding is .bankers.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSDecimalNumberHandler * _Nonnull kva_bankersScaleFourRoundingModeDecimalNumberHandler;)
-+ (NSDecimalNumberHandler * _Nonnull)kva_bankersScaleFourRoundingModeDecimalNumberHandler SWIFT_WARN_UNUSED_RESULT;
-@end
 
-@class NSMutableDictionary;
-
-@interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+@interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create an array containing asForContextObject(s) for the given dictionary containing an array of KVAAsForContextProtocol objects.
-/// The keys of the dictionary are assumed to be some relevant value for indexing, but are otherwise irrelevant to this method.  They are not represented in the returned array;  however, they are likely to be a property contained within the returned objects.
-/// \param context A context.
-///
-- (NSArray<NSObject *> * _Nullable)kva_asForContextArrayWithContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Lowercase any keys which are strings at the top level of the dictionary.
-- (NSMutableDictionary * _Nonnull)kva_stringKeysLowercasedDictionary SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSError (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
+
+
+@interface NSNumber (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
-@interface NSException (SWIFT_EXTENSION(KochavaCore))
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSMutableArray<ObjectType> (SWIFT_EXTENSION(KochavaCore))
-/// Add an object which may safely be nil.
-- (void)kva_addNullableObject:(NSObject * _Nullable)object;
-/// Add objects from an array which may safely be nil.
-- (void)kva_addObjectsFromNullableArray:(NSArray * _Nullable)otherArray;
-@end
-
-
-@interface NSMutableDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
-/// Add entries from a dictionary which may safely be nil.
-- (void)kva_addEntriesFromNullableDictionary:(NSDictionary * _Nullable)dictionary;
-@end
-
-
-@interface NSNumber (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-+ (nullable instancetype)kva_numberFromString:(NSString * _Nullable)string SWIFT_WARN_UNUSED_RESULT;
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Compare two numbers for equality, providing for the possibility that either string may be nil.
-/// Although you can test two numbers for equality by using the isEqualToNumber: method directly, that comparison will fail if both numbers are nil.  In contrast, this method will safely return true if both numbers are nil.  It will also recognize when one number is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_number:(NSNumber * _Nullable)number isEqualToNumber:(NSNumber * _Nullable)anotherNumber SWIFT_WARN_UNUSED_RESULT;
-/// Returns a boolean indicating if this NSNumber is recognized as being a boolean.
-/// This method should probably not be regarded as a perfect indictor, as the means by which it makes its determination is by checking for a specific backing CFTypeID, and theoretically the OS could change this in the future.  Nevertheless, at present it can be observed to work in the context(s) we’re using it, and so it is taken to be safe to use as a hint to help improve the visual formatting of booleans.
-- (BOOL)kva_isBoolBool SWIFT_WARN_UNUSED_RESULT;
-@end
-
-@class NSNotification;
-@protocol NSObject;
-
-@interface NSObject (SWIFT_EXTENSION(KochavaCore)) <KVAAsForContextProtocol, KVAMutable>
-/// Return a native object for a class from another object.
-/// If an object cannot be converted then kva_from will be returned as-is, making this method safe to be used on any object to see if it can be brought into a native class object.
-/// \param object An object which may or may not be a native class object, with the hope that it may not be but may be convertable to one.  Non-native objects are typically instances of NSDictionary or NSArray which were created from a call to a kva_as(forContext:) method.  They may also have originated from external sources, such as servers, and often are valid JSON.
-///
-/// \param aClass The target class.  This parameter is optional.  When omitted the class to use will be inferred from kva_from, if possible.  This typically becomes possible when kva_from is a dictionary which contains a key “$class” which specifies the class, or else when kva_from is an array of objects which can be similarly resolved.  When this parameter is passed, it takes precedence over these specifications, and will enforce the class by attempting to create an object from the specified class.  If kva_from is not truly an object which can be converted to the class, the results may be less than desireable, as you should generally expect to end up with an object of the specified class which is relatively unconfigured (or nil altogether).
-///
-/// \param elementClass A target class for any elements.  This parameter is optional.  This parameter generally applies to cases of class where the class would have elements, such as arrays and sets.  The rules for how this is used is identical to class, except applied to any elements within the class.
-///
-+ (id _Nullable)kva_from:(id _Nullable)object class:(Class _Nullable)aClass elementClass:(Class _Nullable)elementClass initializedObject:(id _Nullable)initializedObject networking:(KVANetworking * _Nullable)networking SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Compare two objects for equality, providing for the possibility that either object may be nil.
-/// Although you can test two objects for equality by using the isEqual: method directly, that comparison will fail if both strings are nil.  In contrast, this method will safely return true if both objects are nil.  It will also recognize when one object is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_object:(NSObject * _Nullable)object isEqualToObject:(NSObject * _Nullable)anotherObject SWIFT_WARN_UNUSED_RESULT;
-/// Append a second object to a first.
-/// Supports the appending of two objects with deep support for specific types such as NSDictionary and NSArray.  This supports working with JSON objects.
-+ (id _Nullable)kva_objectAppendingObject1:(id _Nullable)object1 object2:(id _Nullable)object2 SWIFT_WARN_UNUSED_RESULT;
-/// Return a redacted copy.
-/// This method only redacts.  As such, any containers within the returned object will be the same as those provided.  That is to say that if those containers were mutable they will remain mutable.  Also this does not effect a deep copy, optimizing for performance.
-/// \param keyStringRedactedBoolDictionary A dictionary containing redactedBoolNumber(s) keyed by keyString(s).
-///
-/// \param redactedKeyArray An array of keys which were redacted, which is modified.
-///
-- (id _Nullable)kva_redactedCopyFromKeyStringRedactedBoolDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)keyStringRedactedBoolDictionary key:(NSObject * _Nullable)key redactionKeySuffixString:(NSString * _Nullable)redactionKeySuffixString redactedKeyArray:(NSMutableArray * _Nullable)redactedKeyArray SWIFT_WARN_UNUSED_RESULT;
-- (id _Nullable)kva_redactedCopyFromKeyStringRedactedBoolDictionary:(NSDictionary<NSString *, NSNumber *> * _Nullable)keyStringRedactedBoolDictionary key:(NSObject * _Nullable)key parentKey:(id _Nullable)parentKey level:(NSInteger)level redactionKeySuffixString:(NSString * _Nullable)redactionKeySuffixString redactedKeyArray:(NSMutableArray * _Nullable)redactedKeyArray SWIFT_WARN_UNUSED_RESULT;
-/// @method + kva_nonnullObjectFromObject:
-///
-/// returns:
-/// A santized object purposed for use as a dictionary value.  The returned value is guaranteed to not be nil so that it can be safely sent straight into a dictionary constructor that would crash with if passed a nil value.
-+ (id _Nonnull)kva_nonnullObjectFromObject:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-/// Return a sanitized name for a class.
-/// Occasionally when we receive an object back from the operating system, it has an unexpected class.  It’s usually some low-level or undocumented class that is supposed to behave equivalently to the class we expect, but the problem is that these names are not safe to be persisted.  A future operating system could come along with a new underlying class name and have no support for the previous one.  This method santizes for the things we know about.
-+ (NSString * _Nullable)kva_sanitizedNameStringForClass:(Class _Nullable)aClass SWIFT_WARN_UNUSED_RESULT;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate;
-/// A method to call when the object did mutate— synchronization free.
-/// This will broadcast a standardized notification.
-- (void)kva_didMutate_sf;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will dispatch to the globalSerial dispatch queue before posting the notification.
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_sf_withInfoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method to call when the object did mutate.
-/// This will broadcast a standardized notification.  It will do this on the caller’s thread.
-/// \param childObject The child object which originated the mutation (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-/// \param performSideEffectsIntendedBeforeDispatchBool A boolean indicating of this method perform the side effects intended for before dispatch.  Generally speaking you wouldn’t expect that this should be the case, but you do want to perform those side effects which were intended to be done before the dispatch if you’re already inside of the dispatch, otherwise they’d never be performed.  You should regard the default you should pass for this to be true, and only set it to false if you performed this call for the current scope yourself.
-///
-- (void)kva_didMutate_sf_df_withChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary performSideEffectsIntendedBeforeDispatchBool:(BOOL)performSideEffectsIntendedBeforeDispatchBool;
-/// A method which is called when an object has mutated to perform side effects.
-/// Generally speaking this method will only be called from the globalSerial queue and it will not have any synchronization taken on the current object.  The exception would be if func kva_didMutate_sf_df(…) were to be manually called directly while not on the globalSerial queue or with synchronization taken.  This is something that should not generally be done, but if it is, any code which overrides this method should understand that and be prepared to dispatch to globalSerial if necessary and to keep in mind there may be existing synchronization.  One such place that does this today is the KochavaHost’s log.  All other implementations can assume that this method will be called on the globalSerial queue.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsWithChildObject:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// A method which is called when an object has mutated to perform side effects— a variant called before the coalescing dispatch.
-/// This method will be called without dispatch and will be its caller’s thread.  This means it does not benefit from any dispatch coalescence which func kva_didMutate_performSideEffects(…) has, and the queue cannot be assumed to be the globalSerial queue in the same way;  however, it benefits from being more timely and retaining any existing synchronization which it should always have already, as long as the APIs are used correctly.  If the side effects you need to perform cannot occur after a dispatch, overriding this methid is the way to do it.  You just need to be more careful about how additionally often it may be called relative to the normal version which has dispatch coalescence, and importantly, which queue it may be called on.  You can however assume that there should already be synchronization taken on the current object.
-/// \param childObject The child object from which this mutation originated (when applicable).
-///
-/// \param infoDictionary A dictionary containing information about the mutation.
-///
-- (void)kva_didMutate_performSideEffectsBeforeDispatchWithChildObject_sf:(id _Nullable)childObject infoDictionary:(NSDictionary * _Nullable)infoDictionary;
-/// Add and return an observer to observe when the value of this object is taken to have mutated.
-/// This mechanism may not ensure that the value returned is definitely different as there are factors such as range checking which may influence the value and may cause it to be the same even when the underlying raw value may have changed.
-///
-/// returns:
-/// An observer.
-- (id <NSObject> _Nullable)kva_didMutate_addObserverUsingClosure:(void (^ _Nullable)(NSNotification * _Nullable))closure SWIFT_WARN_UNUSED_RESULT;
-/// Return whether the object is capable of mutating.
-/// Return true for any class except for those known to be immutable, such as NSString, NSDate, etc.  Excluded are classes such as NSArray and NSDictionary which may contain elements which may themselves mutate.  This method can theoretically be overridden to designate the objects of class as immutable.
-- (BOOL)kva_mayMutateBool SWIFT_WARN_UNUSED_RESULT;
-@property (nonatomic) BOOL kva_didMutateDispatchCondensingAfterBool;
-/// A constant which is used as a key to indicate priority.
-/// This is supported when calling any of the kva_didMutate functions passing an infoDictionary.  Set this key with a value of true to express that a mutation should be processed with priority.  When processed with priority mutations will move forward to be persisted without delay;  however, with priority is not the same as aggressive.  Without being aggressive there is still a dispatch to the globalSerial queue prior to write.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull kva_priorityBoolKey;)
-+ (NSString * _Nonnull)kva_priorityBoolKey SWIFT_WARN_UNUSED_RESULT;
-@end
-
-
-@interface NSString (SWIFT_EXTENSION(KochavaCore)) <KVAFromProtocol>
-+ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
-- (NSObject * _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
-/// Create a string from a boolean.
-/// Return the boolean as “true” or “false”.  This is not localized, nor will ever be, and therefore is suitable to be used in JSON and other programmatic interfaces.
-+ (nonnull instancetype)kva_fromBool:(BOOL)aBool SWIFT_WARN_UNUSED_RESULT;
-/// Return a json string serialized from a json object— using modern Objective-C syntax.
+@interface NSString (SWIFT_EXTENSION(KochavaCore))
+/// Return a json string serialized from a json object.
 /// \param prettyPrintBool A boolean indicating whether you want the json to be pretty printed.  Pretty printing involves adding carriage returns, indentation, etc.  It generally makes it more human readable but increases the total bytes.
 ///
 ///
 /// returns:
 /// A formatted string.
 + (NSString * _Nullable)kva_stringFromJSONObject:(id _Nullable)jsonObject prettyPrintBool:(BOOL)prettyPrintBool SWIFT_WARN_UNUSED_RESULT;
-/// Compare two strings for equality, providing for the possibility that either string may be nil.
-/// Although you can test two strings for equality by using the isEqualToString: method directly, that comparison will fail if both strings are nil.  In contrast, this method will safely return true if both strings are nil.  It will also recognize when one string is nil and the other is not nil that they are not equal.
-+ (BOOL)kva_string:(NSString * _Nullable)string isEqualToString:(NSString * _Nullable)anotherString SWIFT_WARN_UNUSED_RESULT;
-/// Return a string which is limited to a maximum length.
-/// If the receiver is within the maximum length then self will be returned without copy.
-/// \param maximumLength The maximum length allowed.
-///
-- (NSString * _Nonnull)kva_withMaximumLength:(NSInteger)maximumLength SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 /// Return a JSON object, assuming that the string represents JSON.
 - (id _Nullable)kva_serializedJSONObjectWithPrintErrorsBool:(BOOL)printErrorsBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
-
-@interface NSProcessInfo (SWIFT_EXTENSION(KochavaCore))
-/// Return the operating system name.
-/// Example:  “macOS”.  This is determined through the use of system compiler flags.
-- (NSString * _Nonnull)kva_operatingSystemNameString SWIFT_WARN_UNUSED_RESULT;
-/// Return a standard version information string for the operating system.
-/// Example:  “macOS 1.0”.  The patch segment of the version will be omitted if it is zero.
-- (NSString * _Nonnull)kva_operatingSystemStandardVersionInfoString SWIFT_WARN_UNUSED_RESULT;
-/// Return the operating system version string.
-/// Example:  “1.0”.  The patch segment of the version will be omitted if it is zero.
-- (NSString * _Nonnull)kva_operatingSystemVersionString SWIFT_WARN_UNUSED_RESULT;
-@end
 
 
 @interface UIApplication (SWIFT_EXTENSION(KochavaCore))
