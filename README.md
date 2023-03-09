@@ -8,17 +8,17 @@
 
 The KochavaCore framework provides core networking support for all modules within the Kochava SDK.  For the Apple platform this includes iOS, macCatalyst, macOS, tvOS, and watchOS.
 
-The Kochava SDK is a lightweight and easy to integrate SDK written in Objective-C and Swift, providing first-class integration with Kochava’s industry leading mobile attribution and measurement platform.  
+The Kochava SDK is a lightweight and easy to integrate SDK written in Swift, providing first-class integration with Kochava’s industry leading mobile attribution and measurement platform.  
 
 ## Built on
 
-* Xcode 13.3.1
+* Xcode 14.1
 
 ## Platforms
 
-* iOS 10.3
+* iOS 12.4
 * macOS 10.14
-* tvOS 10.3
+* tvOS 12.4
 * watchOS 5.2
 
 ## Dependencies
@@ -31,7 +31,7 @@ KochavaCore is a Swift package.  To install it, simply add this package as a dep
 
 In Xcode, see File > Swift Packages > Add Package Dependency ... > and enter the URL for this package repository.
 
-[Kochava Apple SDK Integration](https://support.kochava.com/sdk-integration/sdk-kochavatracker-ios)
+[Kochava Apple SDK Integration](https://support.kochava.com/sdk-integration/ios-sdk-integration/)
 
 ## Author
 

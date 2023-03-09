@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>6.1.1</string>
+	<string>7.0.0</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>AppleTVOS</string>
@@ -27,23 +27,23 @@
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
-	<string>19L439</string>
+	<string>20K67</string>
 	<key>DTPlatformName</key>
 	<string>appletvos</string>
 	<key>DTPlatformVersion</key>
-	<string>15.4</string>
+	<string>16.1</string>
 	<key>DTSDKBuild</key>
-	<string>19L439</string>
+	<string>20K67</string>
 	<key>DTSDKName</key>
-	<string>appletvos15.4</string>
+	<string>appletvos16.1</string>
 	<key>DTXcode</key>
-	<string>1331</string>
+	<string>1410</string>
 	<key>DTXcodeBuild</key>
-	<string>13E500a</string>
+	<string>14B47b</string>
 	<key>KVABuildDateString</key>
-	<string>2022-10-31T11:33:52-0700</string>
+	<string>2023-03-08T21:02:39-0800</string>
 	<key>MinimumOSVersion</key>
-	<string>10.2</string>
+	<string>12.4</string>
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>3</integer>

@@ -3,7 +3,7 @@
 //  KochavaCore
 //
 //  Created by John Bushnell on 6/12/20.
-//  Copyright © 2013 - 2022 Kochava, Inc.  All rights reserved.
+//  Copyright © 2013 - 2023 Kochava, Inc.  All rights reserved.
 //
 
 
@@ -27,9 +27,6 @@
 
 #pragma mark System
 #import <Foundation/Foundation.h>
-
-#pragma mark KochavaCore
-#import <KochavaCore/KVAConsent.h>
 
 
 

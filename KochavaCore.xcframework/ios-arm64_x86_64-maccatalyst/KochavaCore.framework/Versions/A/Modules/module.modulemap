@@ -6,6 +6,6 @@ framework module KochavaCore {
 }
 
 module KochavaCore.Swift {
-    header "KochavaCore-Swift.h"
-    requires objc
+  header "KochavaCore-Swift.h"
+  requires objc
 }
