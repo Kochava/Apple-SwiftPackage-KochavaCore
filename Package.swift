@@ -6,10 +6,10 @@ import PackageDescription
 let package = Package(
     name: "KochavaCore",
     platforms: [
-        .iOS("10.3"),
+        .iOS("12.4"),
         .macOS("10.14"),
-        .tvOS("10.2"),
-        .watchOS("3.2")
+        .tvOS("12.4"),
+        .watchOS("5.2")
     ],
     products:
     [
