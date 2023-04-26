@@ -6,7 +6,7 @@
 
 ## KochavaCore
 
-The KochavaCore framework provides core networking support for all modules within the Kochava SDK.  For the Apple platform this includes iOS, macCatalyst, macOS, tvOS, and watchOS.
+The KochavaCore swift package is a module within the Kochava SDK providing core networking support for all modules within the Kochava SDK.  For the Apple platform this includes iOS, macCatalyst, macOS, tvOS, and watchOS.
 
 The Kochava SDK is a lightweight and easy to integrate SDK written in Swift, providing first-class integration with Kochava’s industry leading mobile attribution and measurement platform.  
 
