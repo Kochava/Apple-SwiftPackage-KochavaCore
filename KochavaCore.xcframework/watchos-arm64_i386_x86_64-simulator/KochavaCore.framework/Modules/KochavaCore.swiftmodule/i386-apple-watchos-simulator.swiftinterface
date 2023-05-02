@@ -1008,13 +1008,18 @@ public protocol KVAStartableWithOptions : AnyObject {
     get
   }
   @objc final public func stateActiveDidBecome()
+  @objc(stateActiveDidBecomeWithSourceIdentifier:) final public func stateActiveDidBecome(sourceIdentifier: KochavaCore.KVASystem.SourceIdentifier)
+  @available(*, deprecated, renamed: "stateActiveDidBecome(sourceIdentifier:)", message: "Modern Objective-C-style method deprecated.  Use Swift func stateActiveDidBecome(sourceIdentifier:) instead.  In Objective-C use method stateActiveDidBecomeWithSourceIdentifier:")
   @objc(stateActiveDidBecomeWithSourceString:) final public func stateActiveDidBecome(sourceString: Swift.String)
-  @available(*, deprecated, renamed: "stateActiveDidBecome(sourceString:)", message: "Modern Objective-C-style method deprecated.  Use Swift func stateActiveDidBecome(sourceString:) instead.")
+  @available(*, deprecated, renamed: "stateActiveDidBecome(sourceIdentifier:)", message: "Modern Objective-C-style method deprecated.  Use Swift func stateActiveDidBecome(sourceIdentifier:) instead.  In Objective-C use method stateActiveDidBecomeWithSourceIdentifier:")
   final public func stateActiveDidBecome(withSourceString sourceString: Swift.String)
   @objc final public func stateActiveWillResign()
+  @objc(stateActiveWillResignWithSourceIdentifier:) final public func stateActiveWillResign(sourceIdentifier: KochavaCore.KVASystem.SourceIdentifier)
+  @available(*, deprecated, renamed: "stateActiveWillResign(sourceIdentifier:)", message: "Modern Objective-C-style method deprecated.  Use Swift func stateActiveWillResign(sourceIdentifier:) instead.  In Objective-C use method stateActiveWillResignWithSourceIdentifier:")
   @objc(stateActiveWillResignWithSourceString:) final public func stateActiveWillResign(sourceString: Swift.String)
-  @available(*, deprecated, renamed: "stateActiveWillResign(sourceString:)", message: "Modern Objective-C-style method deprecated.  Use Swift func stateActiveWillResign(sourceString:) instead.")
+  @available(*, deprecated, renamed: "stateActiveWillResign(sourceIdentifier:)", message: "Modern Objective-C-style method deprecated.  Use Swift func stateActiveWillResign(sourceIdentifier:) instead.  In Objective-C use method stateActiveWillResignWithSourceIdentifier:")
   final public func stateActiveWillResign(withSourceString sourceString: Swift.String)
+  public typealias SourceIdentifier = Swift.String
   final public func nameString() -> Swift.String
   final public var mutator: KochavaCore.KVAMutator {
     get
@@ -1022,8 +1027,12 @@ public protocol KVAStartableWithOptions : AnyObject {
   final public var stateActiveBool: Swift.Bool {
     get
   }
-  @objc public static let messagesAppViewControllerDidBecomeActiveSourceString: Swift.String
-  @objc public static let messagesAppViewControllerDidResignActiveSourceString: Swift.String
+  @objc public static let messagesAppViewControllerDidBecomeActiveSourceIdentifier: KochavaCore.KVASystem.SourceIdentifier
+  @available(*, deprecated, renamed: "messagesAppViewControllerDidBecomeActiveSourceIdentifier")
+  @objc public static let messagesAppViewControllerDidBecomeActiveSourceString: KochavaCore.KVASystem.SourceIdentifier
+  @objc public static let messagesAppViewControllerDidResignActiveSourceIdentifier: KochavaCore.KVASystem.SourceIdentifier
+  @available(*, deprecated, renamed: "messagesAppViewControllerDidResignActiveSourceIdentifier")
+  @objc public static let messagesAppViewControllerDidResignActiveSourceString: KochavaCore.KVASystem.SourceIdentifier
   public static let stateActiveDidBecomeNotificationName: Foundation.Notification.Name
   public static let stateActiveWillResignNotificationName: Foundation.Notification.Name
   @objc override dynamic public init()
@@ -1253,7 +1262,7 @@ public protocol KVAExecutableWithOptions : AnyObject {
 final public class KVAMutator {
   required public init(forObject: Swift.AnyObject, closure_didMutate_performSideEffects_beforeDispatch_sf: KochavaCore.KVAMutator.Closure_DidMutate_PerformSideEffects? = nil, closure_didMutate_performSideEffects: KochavaCore.KVAMutator.Closure_DidMutate_PerformSideEffects? = nil)
   final public func lock()
-  final public func lock_includingParentFirst()
+  final public func lock_includingParentFirst() -> Swift.Bool
   final public func unlock()
   final public func unlock_includingParentLast()
   final public func didMutate()

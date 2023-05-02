@@ -959,22 +959,38 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 - (void)stateActiveDidBecome;
 /// A method which can be called to report that the active state should become true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
+/// \param sourceIdentifier An identifier which describes the source that is originating the state change.
+///
+- (void)stateActiveDidBecomeWithSourceIdentifier:(NSString * _Nonnull)sourceIdentifier;
+/// A method which can be called to report that the active state should become true.
+/// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
-- (void)stateActiveDidBecomeWithSourceString:(NSString * _Nonnull)sourceString;
+- (void)stateActiveDidBecomeWithSourceString:(NSString * _Nonnull)sourceString SWIFT_DEPRECATED_MSG("Modern Objective-C-style method deprecated.  Use Swift func stateActiveDidBecome(sourceIdentifier:) instead.  In Objective-C use method stateActiveDidBecomeWithSourceIdentifier:", "stateActiveDidBecomeWithSourceIdentifier:");
 /// A method which can be called to report that the active state should resign true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have resigned active.
 - (void)stateActiveWillResign;
 /// A method which can be called to report that the active state should resign true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have resigned active.
+/// \param sourceIdentifier An identifier which describes the source that is originating the state change.
+///
+- (void)stateActiveWillResignWithSourceIdentifier:(NSString * _Nonnull)sourceIdentifier;
+/// A method which can be called to report that the active state should resign true.
+/// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have resigned active.
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
-- (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString;
+- (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString SWIFT_DEPRECATED_MSG("Modern Objective-C-style method deprecated.  Use Swift func stateActiveWillResign(sourceIdentifier:) instead.  In Objective-C use method stateActiveWillResignWithSourceIdentifier:", "stateActiveWillResignWithSourceIdentifier:");
 /// A constant to use as the source when reporting that a MessagesAppViewController did become active.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString;)
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceIdentifier;)
++ (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceIdentifier SWIFT_WARN_UNUSED_RESULT;
+/// A constant to use as the source when reporting that a MessagesAppViewController did become active.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString SWIFT_DEPRECATED_MSG("", "messagesAppViewControllerDidBecomeActiveSourceIdentifier");)
 + (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString;)
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceIdentifier;)
++ (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceIdentifier SWIFT_WARN_UNUSED_RESULT;
+/// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString SWIFT_DEPRECATED_MSG("", "messagesAppViewControllerDidResignActiveSourceIdentifier");)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
@@ -2076,22 +2092,38 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 - (void)stateActiveDidBecome;
 /// A method which can be called to report that the active state should become true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
+/// \param sourceIdentifier An identifier which describes the source that is originating the state change.
+///
+- (void)stateActiveDidBecomeWithSourceIdentifier:(NSString * _Nonnull)sourceIdentifier;
+/// A method which can be called to report that the active state should become true.
+/// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have become active.
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
-- (void)stateActiveDidBecomeWithSourceString:(NSString * _Nonnull)sourceString;
+- (void)stateActiveDidBecomeWithSourceString:(NSString * _Nonnull)sourceString SWIFT_DEPRECATED_MSG("Modern Objective-C-style method deprecated.  Use Swift func stateActiveDidBecome(sourceIdentifier:) instead.  In Objective-C use method stateActiveDidBecomeWithSourceIdentifier:", "stateActiveDidBecomeWithSourceIdentifier:");
 /// A method which can be called to report that the active state should resign true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have resigned active.
 - (void)stateActiveWillResign;
 /// A method which can be called to report that the active state should resign true.
 /// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have resigned active.
+/// \param sourceIdentifier An identifier which describes the source that is originating the state change.
+///
+- (void)stateActiveWillResignWithSourceIdentifier:(NSString * _Nonnull)sourceIdentifier;
+/// A method which can be called to report that the active state should resign true.
+/// Calling this method is generally redundant when the host is an application, as this change is observed automatically.  But this method can and should be called in app extensions, such as iMessage apps, to notify when the state is reported to have resigned active.
 /// \param sourceString A string which describes the source that is originating the state change.
 ///
-- (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString;
+- (void)stateActiveWillResignWithSourceString:(NSString * _Nonnull)sourceString SWIFT_DEPRECATED_MSG("Modern Objective-C-style method deprecated.  Use Swift func stateActiveWillResign(sourceIdentifier:) instead.  In Objective-C use method stateActiveWillResignWithSourceIdentifier:", "stateActiveWillResignWithSourceIdentifier:");
 /// A constant to use as the source when reporting that a MessagesAppViewController did become active.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString;)
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceIdentifier;)
++ (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceIdentifier SWIFT_WARN_UNUSED_RESULT;
+/// A constant to use as the source when reporting that a MessagesAppViewController did become active.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidBecomeActiveSourceString SWIFT_DEPRECATED_MSG("", "messagesAppViewControllerDidBecomeActiveSourceIdentifier");)
 + (NSString * _Nonnull)messagesAppViewControllerDidBecomeActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString;)
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceIdentifier;)
++ (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceIdentifier SWIFT_WARN_UNUSED_RESULT;
+/// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString SWIFT_DEPRECATED_MSG("", "messagesAppViewControllerDidResignActiveSourceIdentifier");)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
