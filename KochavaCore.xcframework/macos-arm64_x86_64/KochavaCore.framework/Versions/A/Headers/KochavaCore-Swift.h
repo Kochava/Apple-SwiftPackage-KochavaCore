@@ -256,8 +256,8 @@ using UInt = size_t;
 
 @class KVANetworking;
 
-SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
-@protocol KVANetworkingSetterProvider
+SWIFT_PROTOCOL("_TtP11KochavaCore21KVANetworkingProvider_")
+@protocol KVANetworkingProvider
 @property (nonatomic, strong) KVANetworking * _Nullable networking;
 @end
 
@@ -265,14 +265,20 @@ SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
 
 /// A class which collects and/or adapts a value to a variety of contexts.
 SWIFT_CLASS_NAMED("KVAAdapter")
-@interface KVAAdapter : NSObject <KVANetworkingSetterProvider>
+@interface KVAAdapter : NSObject <KVANetworkingProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// An instance of networking.
-/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingSetterProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
+/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVAAny")
+@interface KVAAny : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -312,7 +318,11 @@ SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 ///   </li>
 /// </ul>
 SWIFT_CLASS_NAMED("KVACollection")
-@interface KVACollection : NSObject
+@interface KVACollection : NSObject <NSCopying, KVANetworkingProvider>
+- (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
+/// An instance of networking.
+/// This optionally exists here to enable this to be injected into any objects which are decoded and then registered out of this class.
+@property (nonatomic, weak) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -324,7 +334,7 @@ SWIFT_CLASS_NAMED("KVACollection")
 /// A feature which serves as an authority related to consent for the sharing of personal data.
 /// Data sharing privacy laws such as GDPR require consent to be obtained before certain kinds of personal data may be shared with partners.
 SWIFT_CLASS_NAMED("KVAConsent")
-@interface KVAConsent : NSObject <NSCopying>
+@interface KVAConsent : NSObject <NSCopying, KVANetworkingProvider>
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
 - (id _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
@@ -340,6 +350,7 @@ SWIFT_CLASS_NAMED("KVAConsent")
 /// Return a boolean indicating if the app may keep (or retain in memory) data which may be subject to consent.
 /// Return true if consent is not required or else the user did not otherwise previously deny consent.  This will return true while consent is not known, as long as the previous response did not deny consent.  This includes when the definition for consent has changed and the user previously granted consent.  Compare with mayCollectBool, mayPersistBool, and mayShareBool.
 - (BOOL)mayKeepBool SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic, weak) KVANetworking * _Nullable networking;
 /// A boolean indicating if GDPR applies to this user.
 @property (nonatomic, readonly) BOOL gdprAppliesBool;
 /// A boolean indicating if GDPR is enabled.
@@ -717,11 +728,11 @@ SWIFT_CLASS_NAMED("KVALogMessage")
 
 /// A class which defines a network transaction.
 SWIFT_CLASS_NAMED("KVANetTransaction")
-@interface KVANetTransaction : NSObject <KVANetworkingSetterProvider>
+@interface KVANetTransaction : NSObject <KVANetworkingProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// An instance of networking.
-/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingSetterProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
+/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -743,11 +754,19 @@ SWIFT_CLASS_NAMED("KVANetTransactionType")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@protocol KVAPrivacyProfileRegistrar;
+
+SWIFT_PROTOCOL("_TtP11KochavaCore34KVAPrivacyProfileRegistrarProvider_")
+@protocol KVAPrivacyProfileRegistrarProvider
+/// A property which conforms to protocol KVAPrivacyProfileRegistrar.
+@property (nonatomic, readonly, strong) id <KVAPrivacyProfileRegistrar> _Nonnull privacyProfileRegistrar;
+@end
+
 @class KVAPrivacy;
 
 /// The class KVANetworking provides basic networking support.
 SWIFT_CLASS_NAMED("KVANetworking")
-@interface KVANetworking : NSObject
+@interface KVANetworking : NSObject <KVAPrivacyProfileRegistrarProvider>
 /// Configure (update) the instance from another object.
 /// This method is used to configure the instance.  It can be called from the host to override (or else default) various parameters.  The structure of the object you provide has the same capability as that which the server may return.  Additionally you can wrap the parameters you provide in objects $override$, $override.append$, $default$, or $default.append$, to indicate how these options are treated relative to the server’s options.
 /// $override$:  Elements within this object will override any options of the same name specified by the server.
@@ -772,6 +791,7 @@ SWIFT_CLASS_NAMED("KVANetworking")
 /// A feature which is responsible for privacy, including intelligent consent.
 /// Privacy profiles are automatically registered from the server.  Alternatively create and register a privacy profile locally by calling class <code>KVAPrivacyProfile</code> func <code>KVAPrivacyProfile/register(name:payloadKeyStringArray:)</code>.  Enable (or explicitly disable) a profile by calling class <code>KVAPrivacy</code> func <code>KVAPrivacy/setEnabledBool(forProfileName:enabledBool:)</code>.
 @property (nonatomic, readonly, strong) KVAPrivacy * _Nonnull privacy;
+@property (nonatomic, readonly, strong) id <KVAPrivacyProfileRegistrar> _Nonnull privacyProfileRegistrar;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -787,7 +807,7 @@ SWIFT_PROTOCOL("_TtP11KochavaCore26KVAPrivacyProfileRegistrar_")
 
 /// A feature which is responsible for privacy, including intelligent consent.
 SWIFT_CLASS_NAMED("KVAPrivacy")
-@interface KVAPrivacy : NSObject <KVANetworkingSetterProvider, KVAPrivacyProfileRegistrar>
+@interface KVAPrivacy : NSObject <KVANetworkingProvider, KVAPrivacyProfileRegistrar>
 /// Register a profile.
 /// \param profile The profile to register.
 ///
@@ -816,11 +836,10 @@ SWIFT_CLASS_NAMED("KVAPrivacy")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@protocol KVAPrivacyProfileRegistrarProvider;
 
 /// A privacy profile.
 SWIFT_CLASS_NAMED("KVAPrivacyProfile")
-@interface KVAPrivacyProfile : NSObject <KVANetworkingSetterProvider>
+@interface KVAPrivacyProfile : NSObject <KVANetworkingProvider>
 /// Create a privacy profile and then register it.
 /// \param name The name of the privacy profile.
 ///
@@ -863,7 +882,7 @@ SWIFT_CLASS_NAMED("KVAPrivacyProfile")
 /// A unique name for the profile.
 @property (nonatomic, readonly, copy) NSString * _Nonnull name;
 /// An instance of networking.
-/// This exists here related to the conformance to KVAExecutable and then KVANetworkingSetterProvider.  When this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly default where it should be sent to be executed.  This can be derived from the networking.mutator.mutableDelegate when cast to whatever it may be expected to be.  Because it’s weak it may disappear at some point, but if it’s there it’s a better default than a shared instance.
+/// This exists here related to the conformance to KVAExecutable and then KVANetworkingProvider.  When this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly default where it should be sent to be executed.  This can be derived from the networking.mutator.mutableDelegate when cast to whatever it may be expected to be.  Because it’s weak it may disappear at some point, but if it’s there it’s a better default than a shared instance.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
 /// An array of payload keys (datapoint identifiers).
 @property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable payloadKeyStringArray;
@@ -876,12 +895,6 @@ SWIFT_CLASS_NAMED("KVAPrivacyProfile")
 @end
 
 
-
-SWIFT_PROTOCOL("_TtP11KochavaCore34KVAPrivacyProfileRegistrarProvider_")
-@protocol KVAPrivacyProfileRegistrarProvider
-/// A property which conforms to protocol KVAPrivacyProfileRegistrar.
-@property (nonatomic, readonly, strong) id <KVAPrivacyProfileRegistrar> _Nonnull privacyProfileRegistrar;
-@end
 
 
 
@@ -951,6 +964,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// See var <code>shared</code>.  This variable will be nil prior to the shared instance being defaulted.  This may be used to optionally invalidate any existing shared instance without causing it to first be defaulted in the process.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * _Nullable shared_optional;)
 + (KVASystem * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 /// A boolean indicating if the current host is an app clip.
 /// This property will return a default value based on whether or not it can be detected that the host is an app clip.  It uses the bundle identifier and looks for the default suffix of “.Clip” (case insensitive).  If it finds that suffix then this value will default to true, otherwise false.  If this assumption is not accurate for the host, this value can be set explicitly.
 @property (nonatomic) BOOL appClipBool;
@@ -992,7 +1006,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString SWIFT_DEPRECATED_MSG("", "messagesAppViewControllerDidResignActiveSourceIdentifier");)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -1015,11 +1028,11 @@ SWIFT_CLASS_NAMED("KVATag")
 
 /// A class which defines a high-level task.
 SWIFT_CLASS_NAMED("KVATask")
-@interface KVATask : NSObject <KVANetworkingSetterProvider>
+@interface KVATask : NSObject <KVANetworkingProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// An instance of networking.
-/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingSetterProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
+/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
 @property (nonatomic, strong) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -1086,6 +1099,8 @@ SWIFT_CLASS_NAMED("KVAValue")
 
 @interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool guardNotEmptyBool:(BOOL)guardNotEmptyBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
@@ -1093,6 +1108,10 @@ SWIFT_CLASS_NAMED("KVAValue")
 
 @interface NSNumber (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_bool_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_timeInterval_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
@@ -1105,8 +1124,16 @@ SWIFT_CLASS_NAMED("KVAValue")
 /// A formatted string.
 + (NSString * _Nullable)kva_stringFromJSONObject:(id _Nullable)jsonObject prettyPrintBool:(BOOL)prettyPrintBool SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool guardNotEmptyBool:(BOOL)guardNotEmptyBool SWIFT_WARN_UNUSED_RESULT;
 /// Return a JSON object, assuming that the string represents JSON.
 - (id _Nullable)kva_serializedJSONObjectWithPrintErrorsBool:(BOOL)printErrorsBool SWIFT_WARN_UNUSED_RESULT;
+@end
+
+
+@interface NSURL (SWIFT_EXTENSION(KochavaCore))
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool guardNotEmptyBool:(BOOL)guardNotEmptyBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
@@ -1389,8 +1416,8 @@ using UInt = size_t;
 
 @class KVANetworking;
 
-SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
-@protocol KVANetworkingSetterProvider
+SWIFT_PROTOCOL("_TtP11KochavaCore21KVANetworkingProvider_")
+@protocol KVANetworkingProvider
 @property (nonatomic, strong) KVANetworking * _Nullable networking;
 @end
 
@@ -1398,14 +1425,20 @@ SWIFT_PROTOCOL("_TtP11KochavaCore27KVANetworkingSetterProvider_")
 
 /// A class which collects and/or adapts a value to a variety of contexts.
 SWIFT_CLASS_NAMED("KVAAdapter")
-@interface KVAAdapter : NSObject <KVANetworkingSetterProvider>
+@interface KVAAdapter : NSObject <KVANetworkingProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// An instance of networking.
-/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingSetterProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
+/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVAAny")
+@interface KVAAny : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -1445,7 +1478,11 @@ SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 ///   </li>
 /// </ul>
 SWIFT_CLASS_NAMED("KVACollection")
-@interface KVACollection : NSObject
+@interface KVACollection : NSObject <NSCopying, KVANetworkingProvider>
+- (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
+/// An instance of networking.
+/// This optionally exists here to enable this to be injected into any objects which are decoded and then registered out of this class.
+@property (nonatomic, weak) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -1457,7 +1494,7 @@ SWIFT_CLASS_NAMED("KVACollection")
 /// A feature which serves as an authority related to consent for the sharing of personal data.
 /// Data sharing privacy laws such as GDPR require consent to be obtained before certain kinds of personal data may be shared with partners.
 SWIFT_CLASS_NAMED("KVAConsent")
-@interface KVAConsent : NSObject <NSCopying>
+@interface KVAConsent : NSObject <NSCopying, KVANetworkingProvider>
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (id _Nonnull)copyWithZone:(struct _NSZone * _Nullable)zone SWIFT_WARN_UNUSED_RESULT;
 - (id _Nullable)kva_asForContext:(KVAContext * _Nullable)context SWIFT_WARN_UNUSED_RESULT;
@@ -1473,6 +1510,7 @@ SWIFT_CLASS_NAMED("KVAConsent")
 /// Return a boolean indicating if the app may keep (or retain in memory) data which may be subject to consent.
 /// Return true if consent is not required or else the user did not otherwise previously deny consent.  This will return true while consent is not known, as long as the previous response did not deny consent.  This includes when the definition for consent has changed and the user previously granted consent.  Compare with mayCollectBool, mayPersistBool, and mayShareBool.
 - (BOOL)mayKeepBool SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic, weak) KVANetworking * _Nullable networking;
 /// A boolean indicating if GDPR applies to this user.
 @property (nonatomic, readonly) BOOL gdprAppliesBool;
 /// A boolean indicating if GDPR is enabled.
@@ -1850,11 +1888,11 @@ SWIFT_CLASS_NAMED("KVALogMessage")
 
 /// A class which defines a network transaction.
 SWIFT_CLASS_NAMED("KVANetTransaction")
-@interface KVANetTransaction : NSObject <KVANetworkingSetterProvider>
+@interface KVANetTransaction : NSObject <KVANetworkingProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// An instance of networking.
-/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingSetterProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
+/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -1876,11 +1914,19 @@ SWIFT_CLASS_NAMED("KVANetTransactionType")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@protocol KVAPrivacyProfileRegistrar;
+
+SWIFT_PROTOCOL("_TtP11KochavaCore34KVAPrivacyProfileRegistrarProvider_")
+@protocol KVAPrivacyProfileRegistrarProvider
+/// A property which conforms to protocol KVAPrivacyProfileRegistrar.
+@property (nonatomic, readonly, strong) id <KVAPrivacyProfileRegistrar> _Nonnull privacyProfileRegistrar;
+@end
+
 @class KVAPrivacy;
 
 /// The class KVANetworking provides basic networking support.
 SWIFT_CLASS_NAMED("KVANetworking")
-@interface KVANetworking : NSObject
+@interface KVANetworking : NSObject <KVAPrivacyProfileRegistrarProvider>
 /// Configure (update) the instance from another object.
 /// This method is used to configure the instance.  It can be called from the host to override (or else default) various parameters.  The structure of the object you provide has the same capability as that which the server may return.  Additionally you can wrap the parameters you provide in objects $override$, $override.append$, $default$, or $default.append$, to indicate how these options are treated relative to the server’s options.
 /// $override$:  Elements within this object will override any options of the same name specified by the server.
@@ -1905,6 +1951,7 @@ SWIFT_CLASS_NAMED("KVANetworking")
 /// A feature which is responsible for privacy, including intelligent consent.
 /// Privacy profiles are automatically registered from the server.  Alternatively create and register a privacy profile locally by calling class <code>KVAPrivacyProfile</code> func <code>KVAPrivacyProfile/register(name:payloadKeyStringArray:)</code>.  Enable (or explicitly disable) a profile by calling class <code>KVAPrivacy</code> func <code>KVAPrivacy/setEnabledBool(forProfileName:enabledBool:)</code>.
 @property (nonatomic, readonly, strong) KVAPrivacy * _Nonnull privacy;
+@property (nonatomic, readonly, strong) id <KVAPrivacyProfileRegistrar> _Nonnull privacyProfileRegistrar;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -1920,7 +1967,7 @@ SWIFT_PROTOCOL("_TtP11KochavaCore26KVAPrivacyProfileRegistrar_")
 
 /// A feature which is responsible for privacy, including intelligent consent.
 SWIFT_CLASS_NAMED("KVAPrivacy")
-@interface KVAPrivacy : NSObject <KVANetworkingSetterProvider, KVAPrivacyProfileRegistrar>
+@interface KVAPrivacy : NSObject <KVANetworkingProvider, KVAPrivacyProfileRegistrar>
 /// Register a profile.
 /// \param profile The profile to register.
 ///
@@ -1949,11 +1996,10 @@ SWIFT_CLASS_NAMED("KVAPrivacy")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
-@protocol KVAPrivacyProfileRegistrarProvider;
 
 /// A privacy profile.
 SWIFT_CLASS_NAMED("KVAPrivacyProfile")
-@interface KVAPrivacyProfile : NSObject <KVANetworkingSetterProvider>
+@interface KVAPrivacyProfile : NSObject <KVANetworkingProvider>
 /// Create a privacy profile and then register it.
 /// \param name The name of the privacy profile.
 ///
@@ -1996,7 +2042,7 @@ SWIFT_CLASS_NAMED("KVAPrivacyProfile")
 /// A unique name for the profile.
 @property (nonatomic, readonly, copy) NSString * _Nonnull name;
 /// An instance of networking.
-/// This exists here related to the conformance to KVAExecutable and then KVANetworkingSetterProvider.  When this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly default where it should be sent to be executed.  This can be derived from the networking.mutator.mutableDelegate when cast to whatever it may be expected to be.  Because it’s weak it may disappear at some point, but if it’s there it’s a better default than a shared instance.
+/// This exists here related to the conformance to KVAExecutable and then KVANetworkingProvider.  When this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly default where it should be sent to be executed.  This can be derived from the networking.mutator.mutableDelegate when cast to whatever it may be expected to be.  Because it’s weak it may disappear at some point, but if it’s there it’s a better default than a shared instance.
 @property (nonatomic, weak) KVANetworking * _Nullable networking;
 /// An array of payload keys (datapoint identifiers).
 @property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable payloadKeyStringArray;
@@ -2009,12 +2055,6 @@ SWIFT_CLASS_NAMED("KVAPrivacyProfile")
 @end
 
 
-
-SWIFT_PROTOCOL("_TtP11KochavaCore34KVAPrivacyProfileRegistrarProvider_")
-@protocol KVAPrivacyProfileRegistrarProvider
-/// A property which conforms to protocol KVAPrivacyProfileRegistrar.
-@property (nonatomic, readonly, strong) id <KVAPrivacyProfileRegistrar> _Nonnull privacyProfileRegistrar;
-@end
 
 
 
@@ -2084,6 +2124,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * 
 /// See var <code>shared</code>.  This variable will be nil prior to the shared instance being defaulted.  This may be used to optionally invalidate any existing shared instance without causing it to first be defaulted in the process.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVASystem * _Nullable shared_optional;)
 + (KVASystem * _Nullable)shared_optional SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 /// A boolean indicating if the current host is an app clip.
 /// This property will return a default value based on whether or not it can be detected that the host is an app clip.  It uses the bundle identifier and looks for the default suffix of “.Clip” (case insensitive).  If it finds that suffix then this value will default to true, otherwise false.  If this assumption is not accurate for the host, this value can be set explicitly.
 @property (nonatomic) BOOL appClipBool;
@@ -2125,7 +2166,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 /// A constant to use as the source when reporting that a MessagesAppViewController did resign active.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull messagesAppViewControllerDidResignActiveSourceString SWIFT_DEPRECATED_MSG("", "messagesAppViewControllerDidResignActiveSourceIdentifier");)
 + (NSString * _Nonnull)messagesAppViewControllerDidResignActiveSourceString SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -2148,11 +2188,11 @@ SWIFT_CLASS_NAMED("KVATag")
 
 /// A class which defines a high-level task.
 SWIFT_CLASS_NAMED("KVATask")
-@interface KVATask : NSObject <KVANetworkingSetterProvider>
+@interface KVATask : NSObject <KVANetworkingProvider>
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// An instance of networking.
-/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingSetterProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
+/// This exists here is related to the both conformances to KVAExecutable and KVANetworkingProvider.  When this instance is constructed it generally receives a value here.  However, when this instance is constructed and then executed as an executable from within the the networking class, the networking class will also when possible stamp itself here as an indication of where it originated, so that this instance can properly utilizely networking resources.
 @property (nonatomic, strong) KVANetworking * _Nullable networking;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -2219,6 +2259,8 @@ SWIFT_CLASS_NAMED("KVAValue")
 
 @interface NSDictionary<KeyType, ObjectType> (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool guardNotEmptyBool:(BOOL)guardNotEmptyBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
@@ -2226,6 +2268,10 @@ SWIFT_CLASS_NAMED("KVAValue")
 
 @interface NSNumber (SWIFT_EXTENSION(KochavaCore))
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_bool_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_timeInterval_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
@@ -2238,8 +2284,16 @@ SWIFT_CLASS_NAMED("KVAValue")
 /// A formatted string.
 + (NSString * _Nullable)kva_stringFromJSONObject:(id _Nullable)jsonObject prettyPrintBool:(BOOL)prettyPrintBool SWIFT_WARN_UNUSED_RESULT;
 + (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool guardNotEmptyBool:(BOOL)guardNotEmptyBool SWIFT_WARN_UNUSED_RESULT;
 /// Return a JSON object, assuming that the string represents JSON.
 - (id _Nullable)kva_serializedJSONObjectWithPrintErrorsBool:(BOOL)printErrorsBool SWIFT_WARN_UNUSED_RESULT;
+@end
+
+
+@interface NSURL (SWIFT_EXTENSION(KochavaCore))
+/// This is a wrapper function which exists for the Objective-C-based wrappers.  See function from(…) in Swit Dictionary class extension for more details.
++ (nullable instancetype)kva_from:(id _Nullable)object identifier:(NSString * _Nullable)identifier method:(NSString * _Nullable)method guardNotOmittedBool:(BOOL)guardNotOmittedBool guardNotEmptyBool:(BOOL)guardNotEmptyBool SWIFT_WARN_UNUSED_RESULT;
 @end
 
 
