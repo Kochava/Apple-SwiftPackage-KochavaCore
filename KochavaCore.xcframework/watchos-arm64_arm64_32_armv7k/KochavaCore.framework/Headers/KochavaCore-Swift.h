@@ -306,6 +306,15 @@ SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 @end
 
 
+SWIFT_CLASS_NAMED("KVACapabilities")
+@interface KVACapabilities : NSObject
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
 /// A class which defines an keyed collection of objects.
 /// <h2>Features</h2>
 /// <ul>
@@ -412,6 +421,7 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///     buildDateString: nil,
 ///     bundleIdentifier: Bundle(for: Self.self).bundleIdentifier,
 ///     bundleType: "xcframework",
+///     capabilities: KVACapabilities(array: [1,2,3]),
 ///     compilerFlagNameArray: nil,
 ///     moduleName: "MyModule",
 ///     name: "MyOrganization MyModule",
@@ -429,6 +439,8 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///
 /// \param bundleType The bundle type.  Examples:  “app”, “xcframework”, “static library”.
 ///
+/// \param capabilities The capabilities of the product, specified as integer codes which can be expressed as bitwise integers.
+///
 /// \param compilerFlagNameArray An array containing strings which are the names of compiler flags.
 ///
 /// \param moduleName The name of the module.  Example:  “KochavaCore”.
@@ -443,7 +455,7 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///
 /// \param versionString A version string.
 ///
-- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType capabilities:(KVACapabilities * _Nullable)capabilities compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Resets the product.
@@ -495,7 +507,7 @@ SWIFT_CLASS_NAMED("KVACoreProduct")
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProduct * _Nonnull shared;)
 + (KVAProduct * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType capabilities:(KVACapabilities * _Nullable)capabilities compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -1054,6 +1066,12 @@ SWIFT_CLASS_NAMED("KVATimer")
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVATiming")
+@interface KVATiming : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -1458,6 +1476,15 @@ SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 @end
 
 
+SWIFT_CLASS_NAMED("KVACapabilities")
+@interface KVACapabilities : NSObject
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
 /// A class which defines an keyed collection of objects.
 /// <h2>Features</h2>
 /// <ul>
@@ -1564,6 +1591,7 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///     buildDateString: nil,
 ///     bundleIdentifier: Bundle(for: Self.self).bundleIdentifier,
 ///     bundleType: "xcframework",
+///     capabilities: KVACapabilities(array: [1,2,3]),
 ///     compilerFlagNameArray: nil,
 ///     moduleName: "MyModule",
 ///     name: "MyOrganization MyModule",
@@ -1581,6 +1609,8 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///
 /// \param bundleType The bundle type.  Examples:  “app”, “xcframework”, “static library”.
 ///
+/// \param capabilities The capabilities of the product, specified as integer codes which can be expressed as bitwise integers.
+///
 /// \param compilerFlagNameArray An array containing strings which are the names of compiler flags.
 ///
 /// \param moduleName The name of the module.  Example:  “KochavaCore”.
@@ -1595,7 +1625,7 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///
 /// \param versionString A version string.
 ///
-- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType capabilities:(KVACapabilities * _Nullable)capabilities compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Resets the product.
@@ -1647,7 +1677,7 @@ SWIFT_CLASS_NAMED("KVACoreProduct")
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProduct * _Nonnull shared;)
 + (KVAProduct * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType capabilities:(KVACapabilities * _Nullable)capabilities compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -2206,6 +2236,12 @@ SWIFT_CLASS_NAMED("KVATimer")
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVATiming")
+@interface KVATiming : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -2610,6 +2646,15 @@ SWIFT_CLASS_NAMED("KVABackgroundTaskController")
 @end
 
 
+SWIFT_CLASS_NAMED("KVACapabilities")
+@interface KVACapabilities : NSObject
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
 /// A class which defines an keyed collection of objects.
 /// <h2>Features</h2>
 /// <ul>
@@ -2716,6 +2761,7 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///     buildDateString: nil,
 ///     bundleIdentifier: Bundle(for: Self.self).bundleIdentifier,
 ///     bundleType: "xcframework",
+///     capabilities: KVACapabilities(array: [1,2,3]),
 ///     compilerFlagNameArray: nil,
 ///     moduleName: "MyModule",
 ///     name: "MyOrganization MyModule",
@@ -2733,6 +2779,8 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///
 /// \param bundleType The bundle type.  Examples:  “app”, “xcframework”, “static library”.
 ///
+/// \param capabilities The capabilities of the product, specified as integer codes which can be expressed as bitwise integers.
+///
 /// \param compilerFlagNameArray An array containing strings which are the names of compiler flags.
 ///
 /// \param moduleName The name of the module.  Example:  “KochavaCore”.
@@ -2747,7 +2795,7 @@ SWIFT_CLASS_NAMED("KVAProduct")
 ///
 /// \param versionString A version string.
 ///
-- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType capabilities:(KVACapabilities * _Nullable)capabilities compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 /// Return a description of the instance.
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 /// Resets the product.
@@ -2799,7 +2847,7 @@ SWIFT_CLASS_NAMED("KVACoreProduct")
 /// The singleton shared instance.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVAProduct * _Nonnull shared;)
 + (KVAProduct * _Nonnull)shared SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithAPIVersionString:(NSString * _Nullable)apiVersionString buildDateString:(NSString * _Nullable)buildDateString bundleIdentifier:(NSString * _Nullable)bundleIdentifier bundleType:(NSString * _Nonnull)bundleType capabilities:(KVACapabilities * _Nullable)capabilities compilerFlagNameArray:(NSArray<NSString *> * _Nullable)compilerFlagNameArray moduleName:(NSString * _Nonnull)moduleName name:(NSString * _Nonnull)name organizationName:(NSString * _Nonnull)organizationName reverseDomainName:(NSString * _Nullable)reverseDomainName valueSourceCollection:(KVACollection * _Nullable)valueSourceCollection versionString:(NSString * _Nullable)versionString dependentProductClassNameStringArray:(NSArray<NSString *> * _Nullable)dependentProductClassNameStringArray closure_resetClasses:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetClasses closure_resetVariables:(NSDictionary * _Nullable (^ _Nullable)(BOOL, BOOL))closure_resetVariables closure_didRegister:(void (^ _Nullable)(KVAProduct * _Nonnull))closure_didRegister OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
@@ -3358,6 +3406,12 @@ SWIFT_CLASS_NAMED("KVATimer")
 @property (nonatomic, readonly, copy) NSString * _Nonnull description;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+SWIFT_CLASS_NAMED("KVATiming")
+@interface KVATiming : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 

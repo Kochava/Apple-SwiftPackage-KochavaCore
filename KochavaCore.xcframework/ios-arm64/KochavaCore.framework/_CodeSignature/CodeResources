@@ -6,7 +6,7 @@
 	<dict>
 		<key>Headers/KochavaCore-Swift.h</key>
 		<data>
-		GJaO9tEtE3y4iaruNGc+2p61bhw=
+		WcI4xJrC15Nfy5cgyQYuyYH8ZuU=
 		</data>
 		<key>Headers/KochavaCore.h</key>
 		<data>
@@ -14,27 +14,27 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		7t8/MDeOzv1Zu4bXgbxtGTedKms=
+		CPj1DnwMTKFHoxcb2ZcK9KOD6fQ=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.abi.json</key>
 		<data>
-		lNGw1t5dm6vYnwm+xnuDgamkGo4=
+		kS/OR9v4CVzstBkpzWsg4cdrPKI=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.private.swiftinterface</key>
 		<data>
-		cuMzwb3rTXV61XH6+oYqrhCFTw4=
+		X/oFmUm4NetlNEXSiOdW/LrIX1s=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.swiftdoc</key>
 		<data>
-		QIM8M8IUm+6n3VYnZRX5Q+i6+Wo=
+		kp+lv1s5QLOa/NYiaMpCmPPef2c=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.swiftinterface</key>
 		<data>
-		cuMzwb3rTXV61XH6+oYqrhCFTw4=
+		X/oFmUm4NetlNEXSiOdW/LrIX1s=
 		</data>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.swiftmodule</key>
 		<data>
-		2soRwfyQjgUp2dB+lgO78de/R7k=
+		aMptVLIMnYt/ujLaooZFPO9BjLI=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -47,7 +47,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			vu+iGBIyxNjkKUrEwUwA/5KTeFN6lW1R/zYFfX1TCis=
+			9GQDYhfN4wA9CwAvO4k8tdKkb81n7a26kCUZun9UhKE=
 			</data>
 		</dict>
 		<key>Headers/KochavaCore.h</key>
@@ -61,35 +61,35 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			B5vmp8fWnNiCtPEBcvHgc33IKND8fccZ72sr8Q+tGo8=
+			chtY+/pRtY+p3vCrouPKdIXfGUGJHGnacuMYGcFaTxk=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			c/qhLvA2bl9YFjSY3a3vWa+EJqJ8T6HumTU599kL3iU=
+			ZPIc+r56r0q/Bc+kDJulHN9onfsd2wgEuWhguNZUoRQ=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			A9YufDUOWkZdoi9ZD4AQJRujA/ugpHz/OU6qkkjSXbQ=
+			xkEXahYIPKYudwQNB7iiI5m1Anai9My5XhX+Qd22ioE=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			c/qhLvA2bl9YFjSY3a3vWa+EJqJ8T6HumTU599kL3iU=
+			ZPIc+r56r0q/Bc+kDJulHN9onfsd2wgEuWhguNZUoRQ=
 			</data>
 		</dict>
 		<key>Modules/KochavaCore.swiftmodule/arm64-apple-ios.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			GCidf4A3NEvvgbLgGgkB6nWu5MwIAxhHNpF2oqhZmOc=
+			YYN9NT0lIU7HmIpXjQokPCahBj0WkGh6EGpoAYRIF8A=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
