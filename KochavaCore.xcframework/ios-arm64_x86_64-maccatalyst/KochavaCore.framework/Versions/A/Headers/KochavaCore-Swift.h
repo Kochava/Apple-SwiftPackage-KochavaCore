@@ -609,8 +609,13 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 - (void)asyncAfterWithNetworking:(KVANetworking * _Nullable)networking sourceIdentifier:(NSString * _Nullable)sourceIdentifier prerequisiteTaskIdentifierArray:(NSArray<NSString *> * _Nullable)prerequisiteTaskIdentifierArray prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray timeInterval:(NSTimeInterval)timeInterval timeIntervalStartsAfterPrerequisiteTasksBool:(BOOL)timeIntervalStartsAfterPrerequisiteTasksBool closure:(void (^ _Nullable)(void))closure;
 /// Asynchronously dispatch after a stepped-settling dispatch.
 /// The purpose of this dispatch recognizes that when we receive some form of wrapping trigger that really what we’re looking for is the moment in which that trigger’s entire body of work has completed.  Our goal is to move forward after the work associated with punctuated moments has settled.  The use of a stepped-settling dispatch provides a general form of assurance which minimizes the need for other forms of waits downstream.
-/// When used to confirm that the shutdown of the sdk had completed for testing, in-between tests, using 5 steps it seemed to be sufficient.  It was taken up to 12 steps to help to ensure that it is also future proof for that use case.  If ever the number of steps were insufficient it could lead to the need to compensate in other ways later downstream.  The number of steps could be increased if ever it was found to be insufficient, but it’s unlikely that should ever occur.  If you find yourself here wondering if more steps are needed, there’s probably something else going on that you’re looking to compensate for.  You may either need comprehensive async and await, or else a concrete time-based delay.
-- (void)asyncAfterSteppedSettlingDispatchWithSourceIdentifier:(NSString * _Nullable)sourceIdentifier closure:(void (^ _Nullable)(void))closure;
+/// \param sourceIdentifier A unique identifier for the location in code from which this originated.  It may be a universally unique identifier (UUID) or a friendly name such as “func someFunc()”.  It is generally preferrable to use a friendly name for public methods, whereas a UUID may be more appropriate for internal methods.
+///
+/// \param count A count for the number of dispatch steps.  Default 24.
+///
+/// \param closure The closure to execute (conditionally).
+///
++ (void)asyncAfterSteppedSettlingDispatchWithSourceIdentifier:(NSString * _Nullable)sourceIdentifier count:(NSInteger)count closure:(void (^ _Nullable)(void))closure;
 /// Asynchronously dispatch and execute the provided closure providing standardized handling for the requirements of a public entry point.
 /// This always uses the default dispatch queue (globalSerial dispatch queue).
 /// \param sourceIdentifier A unique identifier for the location in code from which this originated.  It may be a universally unique identifier (UUID) or a friendly name such as “func someFunc()”.  It is generally preferrable to use a friendly name for public methods, whereas a UUID may be more appropriate for internal methods.
@@ -664,8 +669,11 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALog * _No
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 /// The visible maximum log level for log messages.
 @property (nonatomic, strong) KVALogLevel * _Nullable level;
+/// A boolean indicating if log messages may be printed using Logger(s).
+/// Default true.  When disabled, log messages will fall back to raw os_log or NSLog.  Raw os_log and NSLog lack certain features which Logger has, but they may print in environments where Logger is not supported.
+@property (nonatomic) BOOL loggerEnabledBool;
 /// A boolean indicating if log messages may be printed using os_log.
-/// Default true.  When disabled, log messages will fall back to NSLog or Swift’s print.  NSLog and Swift’s print lack certain features which os_log has, but they may print in environments where os_log is not supported.
+/// Default true.  When disabled, log messages will fall back to NSLog.  NSLog lacks certain features which os_log has, but they may print in environments where os_log is not supported.
 @property (nonatomic) BOOL osLogEnabledBool;
 /// A boolean indicating if log messages should be pretty printed.
 /// Default true.
@@ -704,7 +712,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 /// A log level for a piece of debug information.
 /// Debug information is something helpful to illuminate what is happening, without going into the minutia.
 /// note:
-/// We previously used osLogType .debug here, but the result was that for some time log levels higher than info weren’t showing in Xamarin apps- even in the simulator.  We were able to see log messages in the “Console” app, but only for info or below.  From my research there seem to be known Apple bug(s) associated with this.  So, for now we’ve switched the osLogType here to .info.
+/// We previously used osLogLevel .debug here, but the result was that for some time log levels higher than info weren’t showing in Xamarin apps- even in the simulator.  We were able to see log messages in the “Console” app, but only for info or below.  From my research there seem to be known Apple bug(s) associated with this.  So, for now we’ve switched the osLogLevel here to .info.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull debug;)
 + (KVALogLevel * _Nonnull)debug SWIFT_WARN_UNUSED_RESULT;
 /// A log level for a piece of trace information.
@@ -724,6 +732,51 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 @property (nonatomic, readonly, copy) NSString * _Nonnull identifier;
 /// The universal identifier.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
+@property (nonatomic, readonly, copy) NSString * _Nonnull universalIdentifier;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+@interface KVALogLevel (SWIFT_EXTENSION(KochavaCore))
+@end
+
+
+/// A class which defines an os log level, with enumerated values.
+SWIFT_CLASS_NAMED("OSLogLevel")
+@interface OSLogLevel : NSObject
+/// An os log level which is used to write messages to the log about a critical event in your app’s execution.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull critical;)
++ (OSLogLevel * _Nonnull)critical SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write messages to the log about a bug that occurs when your app executes.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull fault;)
++ (OSLogLevel * _Nonnull)fault SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write information about errors to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull error;)
++ (OSLogLevel * _Nonnull)error SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write information about warnings to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull warn;)
++ (OSLogLevel * _Nonnull)warn SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write informative messages to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull info;)
++ (OSLogLevel * _Nonnull)info SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write debug messages to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull debug;)
++ (OSLogLevel * _Nonnull)debug SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write trace messages to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull trace;)
++ (OSLogLevel * _Nonnull)trace SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is the default level.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull notice;)
++ (OSLogLevel * _Nonnull)notice SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
+/// The identifier for the instance.
+/// Examples:  “OSLogLevel.critical”, “OSLogLevel.fault”, “OSLogLevel.error”, “OSLogLevel.warn”, “OSLogLevel.info”, “OSLogLevel.debug”, “OSLogLevel.trace”, “OSLogLevel.notice”.
+@property (nonatomic, readonly, copy) NSString * _Nonnull identifier;
+/// The universal identifier.
+/// Examples:  “critical”, “fault”, “error”, “warn”, “info”, “debug”, “trace”, “notice”.
 @property (nonatomic, readonly, copy) NSString * _Nonnull universalIdentifier;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -902,6 +955,9 @@ SWIFT_CLASS_NAMED("KVAPrivacyProfile")
 @property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable payloadIdStringArray;
 /// A boolean indicating if the sdk should sleep if this profile is active.
 @property (nonatomic, readonly) BOOL sleepBool;
+/// A dictionary containing url overrides.
+/// The keys of the dictionary corresponds to elements within KVANetTransaction.universalIdentifierArray.  The values may either be of type String or Dictionary.  When they are type String they are URL strings.  When they are type Dictionary they contain an array of key/value pairs where the corresponds to KVANetTransaction.subIdentifier and the values are URL strings.
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> * _Nullable urlsDictionary;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -1163,7 +1219,7 @@ SWIFT_CLASS_NAMED("KVAValue")
 ///
 /// \param identifierString An identifier string.  Example: “ClassName.fieldName”.
 ///
-/// \param storageIdentifier An optional storage identifier string.  Example: “Two”, or nil.
+/// \param storageIdentifier An optional storage identifier.  Example: “Two”, or nil.
 ///
 + (NSString * _Nonnull)kva_keyNameStringWithPrefixString:(NSString * _Nullable)prefixString identifierString:(NSString * _Nullable)identifierString storageIdentifier:(NSString * _Nullable)storageIdentifier SWIFT_WARN_UNUSED_RESULT;
 @end
@@ -1787,8 +1843,13 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVADispatchQ
 - (void)asyncAfterWithNetworking:(KVANetworking * _Nullable)networking sourceIdentifier:(NSString * _Nullable)sourceIdentifier prerequisiteTaskIdentifierArray:(NSArray<NSString *> * _Nullable)prerequisiteTaskIdentifierArray prerequisiteTaskArray:(NSArray<KVATask *> * _Nullable)prerequisiteTaskArray timeInterval:(NSTimeInterval)timeInterval timeIntervalStartsAfterPrerequisiteTasksBool:(BOOL)timeIntervalStartsAfterPrerequisiteTasksBool closure:(void (^ _Nullable)(void))closure;
 /// Asynchronously dispatch after a stepped-settling dispatch.
 /// The purpose of this dispatch recognizes that when we receive some form of wrapping trigger that really what we’re looking for is the moment in which that trigger’s entire body of work has completed.  Our goal is to move forward after the work associated with punctuated moments has settled.  The use of a stepped-settling dispatch provides a general form of assurance which minimizes the need for other forms of waits downstream.
-/// When used to confirm that the shutdown of the sdk had completed for testing, in-between tests, using 5 steps it seemed to be sufficient.  It was taken up to 12 steps to help to ensure that it is also future proof for that use case.  If ever the number of steps were insufficient it could lead to the need to compensate in other ways later downstream.  The number of steps could be increased if ever it was found to be insufficient, but it’s unlikely that should ever occur.  If you find yourself here wondering if more steps are needed, there’s probably something else going on that you’re looking to compensate for.  You may either need comprehensive async and await, or else a concrete time-based delay.
-- (void)asyncAfterSteppedSettlingDispatchWithSourceIdentifier:(NSString * _Nullable)sourceIdentifier closure:(void (^ _Nullable)(void))closure;
+/// \param sourceIdentifier A unique identifier for the location in code from which this originated.  It may be a universally unique identifier (UUID) or a friendly name such as “func someFunc()”.  It is generally preferrable to use a friendly name for public methods, whereas a UUID may be more appropriate for internal methods.
+///
+/// \param count A count for the number of dispatch steps.  Default 24.
+///
+/// \param closure The closure to execute (conditionally).
+///
++ (void)asyncAfterSteppedSettlingDispatchWithSourceIdentifier:(NSString * _Nullable)sourceIdentifier count:(NSInteger)count closure:(void (^ _Nullable)(void))closure;
 /// Asynchronously dispatch and execute the provided closure providing standardized handling for the requirements of a public entry point.
 /// This always uses the default dispatch queue (globalSerial dispatch queue).
 /// \param sourceIdentifier A unique identifier for the location in code from which this originated.  It may be a universally unique identifier (UUID) or a friendly name such as “func someFunc()”.  It is generally preferrable to use a friendly name for public methods, whereas a UUID may be more appropriate for internal methods.
@@ -1842,8 +1903,11 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALog * _No
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 /// The visible maximum log level for log messages.
 @property (nonatomic, strong) KVALogLevel * _Nullable level;
+/// A boolean indicating if log messages may be printed using Logger(s).
+/// Default true.  When disabled, log messages will fall back to raw os_log or NSLog.  Raw os_log and NSLog lack certain features which Logger has, but they may print in environments where Logger is not supported.
+@property (nonatomic) BOOL loggerEnabledBool;
 /// A boolean indicating if log messages may be printed using os_log.
-/// Default true.  When disabled, log messages will fall back to NSLog or Swift’s print.  NSLog and Swift’s print lack certain features which os_log has, but they may print in environments where os_log is not supported.
+/// Default true.  When disabled, log messages will fall back to NSLog.  NSLog lacks certain features which os_log has, but they may print in environments where os_log is not supported.
 @property (nonatomic) BOOL osLogEnabledBool;
 /// A boolean indicating if log messages should be pretty printed.
 /// Default true.
@@ -1882,7 +1946,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 /// A log level for a piece of debug information.
 /// Debug information is something helpful to illuminate what is happening, without going into the minutia.
 /// note:
-/// We previously used osLogType .debug here, but the result was that for some time log levels higher than info weren’t showing in Xamarin apps- even in the simulator.  We were able to see log messages in the “Console” app, but only for info or below.  From my research there seem to be known Apple bug(s) associated with this.  So, for now we’ve switched the osLogType here to .info.
+/// We previously used osLogLevel .debug here, but the result was that for some time log levels higher than info weren’t showing in Xamarin apps- even in the simulator.  We were able to see log messages in the “Console” app, but only for info or below.  From my research there seem to be known Apple bug(s) associated with this.  So, for now we’ve switched the osLogLevel here to .info.
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel * _Nonnull debug;)
 + (KVALogLevel * _Nonnull)debug SWIFT_WARN_UNUSED_RESULT;
 /// A log level for a piece of trace information.
@@ -1902,6 +1966,51 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) KVALogLevel 
 @property (nonatomic, readonly, copy) NSString * _Nonnull identifier;
 /// The universal identifier.
 /// Examples:  “never”, “error”, “warn”, “info”, “debug”, “trace”, “always”.
+@property (nonatomic, readonly, copy) NSString * _Nonnull universalIdentifier;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+
+@interface KVALogLevel (SWIFT_EXTENSION(KochavaCore))
+@end
+
+
+/// A class which defines an os log level, with enumerated values.
+SWIFT_CLASS_NAMED("OSLogLevel")
+@interface OSLogLevel : NSObject
+/// An os log level which is used to write messages to the log about a critical event in your app’s execution.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull critical;)
++ (OSLogLevel * _Nonnull)critical SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write messages to the log about a bug that occurs when your app executes.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull fault;)
++ (OSLogLevel * _Nonnull)fault SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write information about errors to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull error;)
++ (OSLogLevel * _Nonnull)error SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write information about warnings to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull warn;)
++ (OSLogLevel * _Nonnull)warn SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write informative messages to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull info;)
++ (OSLogLevel * _Nonnull)info SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write debug messages to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull debug;)
++ (OSLogLevel * _Nonnull)debug SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is used to write trace messages to the log.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull trace;)
++ (OSLogLevel * _Nonnull)trace SWIFT_WARN_UNUSED_RESULT;
+/// An os log level which is the default level.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) OSLogLevel * _Nonnull notice;)
++ (OSLogLevel * _Nonnull)notice SWIFT_WARN_UNUSED_RESULT;
++ (nullable instancetype)kva_from:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
+/// Return a description of the instance.
+@property (nonatomic, readonly, copy) NSString * _Nonnull description;
+/// The identifier for the instance.
+/// Examples:  “OSLogLevel.critical”, “OSLogLevel.fault”, “OSLogLevel.error”, “OSLogLevel.warn”, “OSLogLevel.info”, “OSLogLevel.debug”, “OSLogLevel.trace”, “OSLogLevel.notice”.
+@property (nonatomic, readonly, copy) NSString * _Nonnull identifier;
+/// The universal identifier.
+/// Examples:  “critical”, “fault”, “error”, “warn”, “info”, “debug”, “trace”, “notice”.
 @property (nonatomic, readonly, copy) NSString * _Nonnull universalIdentifier;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
@@ -2080,6 +2189,9 @@ SWIFT_CLASS_NAMED("KVAPrivacyProfile")
 @property (nonatomic, readonly, copy) NSArray<NSString *> * _Nullable payloadIdStringArray;
 /// A boolean indicating if the sdk should sleep if this profile is active.
 @property (nonatomic, readonly) BOOL sleepBool;
+/// A dictionary containing url overrides.
+/// The keys of the dictionary corresponds to elements within KVANetTransaction.universalIdentifierArray.  The values may either be of type String or Dictionary.  When they are type String they are URL strings.  When they are type Dictionary they contain an array of key/value pairs where the corresponds to KVANetTransaction.subIdentifier and the values are URL strings.
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> * _Nullable urlsDictionary;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -2341,7 +2453,7 @@ SWIFT_CLASS_NAMED("KVAValue")
 ///
 /// \param identifierString An identifier string.  Example: “ClassName.fieldName”.
 ///
-/// \param storageIdentifier An optional storage identifier string.  Example: “Two”, or nil.
+/// \param storageIdentifier An optional storage identifier.  Example: “Two”, or nil.
 ///
 + (NSString * _Nonnull)kva_keyNameStringWithPrefixString:(NSString * _Nullable)prefixString identifierString:(NSString * _Nullable)identifierString storageIdentifier:(NSString * _Nullable)storageIdentifier SWIFT_WARN_UNUSED_RESULT;
 @end
