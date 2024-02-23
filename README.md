@@ -4,6 +4,14 @@
 
 <img src="https://storage.googleapis.com/kochava-web/2016/07/Kochava-horizontal-black-800x154.png" width="260" />
 
+## Deprecation Notice
+
+This repository was deprecated on February 22, 2024.  Please instead use [Apple-SwiftPackage-KochavaNetworking-XCFramework](https://github.com/Kochava/Apple-SwiftPackage-KochavaNetworking-XCFramework).
+
+There is a process to migrate from v7.x to v8.x which for most integrations is expected to take about 15 minutes.
+
+For more information, please see [Migrating to v8](https://support.kochava.com/sdk-integration/ios-sdk-integration/ios-migrating-to-v8/).
+
 ## KochavaCore
 
 The KochavaCore swift package is a module within the Kochava SDK providing core networking support for all modules within the Kochava SDK.  For the Apple platform this includes iOS, macCatalyst, macOS, tvOS, and watchOS.
