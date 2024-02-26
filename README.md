@@ -20,14 +20,15 @@ The Kochava SDK is a lightweight and easy to integrate SDK written in Swift, pro
 
 ## Built on
 
-* Xcode 14.1
+* Xcode 15.2
 
 ## Platforms
 
 * iOS 12.4
+* macCatalyst 12.4
 * macOS 10.14
 * tvOS 12.4
-* watchOS 5.2
+* watchOS 6.0
 
 ## Dependencies
 

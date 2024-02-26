@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>22G91</string>
+	<string>23C71</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>7.4.0</string>
+	<string>7.5.0</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>WatchSimulator</string>
@@ -27,21 +27,21 @@
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
-	<string>20S71</string>
+	<string>21S355</string>
 	<key>DTPlatformName</key>
 	<string>watchsimulator</string>
 	<key>DTPlatformVersion</key>
-	<string>9.1</string>
+	<string>10.2</string>
 	<key>DTSDKBuild</key>
-	<string>20S71</string>
+	<string>21S355</string>
 	<key>DTSDKName</key>
-	<string>watchsimulator9.1</string>
+	<string>watchsimulator10.2</string>
 	<key>DTXcode</key>
-	<string>1410</string>
+	<string>1520</string>
 	<key>DTXcodeBuild</key>
-	<string>14B47b</string>
+	<string>15C500b</string>
 	<key>KVABuildDateString</key>
-	<string>2023-09-19T09:02:00-0700</string>
+	<string>2024-02-22T10:30:06-0800</string>
 	<key>MinimumOSVersion</key>
 	<string>5.2</string>
 	<key>UIDeviceFamily</key>

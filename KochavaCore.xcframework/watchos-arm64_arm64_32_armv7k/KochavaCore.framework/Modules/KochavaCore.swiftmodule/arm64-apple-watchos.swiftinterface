@@ -1,5 +1,5 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.7.1 (swiftlang-5.7.1.135.3 clang-1400.0.29.51)
+// swift-compiler-version: Apple Swift version 5.9.2 (swiftlang-5.9.2.2.56 clang-1500.1.0.2.5)
 // swift-module-flags: -target arm64-apple-watchos5.2 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name KochavaCore
 // swift-module-flags-ignorable: -enable-bare-slash-regex
 import Foundation
@@ -10,6 +10,7 @@ import UIKit
 import WatchKit
 import _Concurrency
 import _StringProcessing
+import _SwiftConcurrencyShims
 import os
 extension Swift.Array : KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAFromProtocol {
   public static func kva_from(_ object: Any?) -> Swift.Array<Element>?
@@ -64,10 +65,10 @@ extension Foundation.Date : KochavaCore.KVAAsForContextProtocol, KochavaCore.KVA
   @objc(registerWithName:payloadKeyStringArray:) public static func register(name: KochavaCore.KVAPrivacyProfile.Name, payloadKeyStringArray: [Swift.String]?)
   @available(*, deprecated, renamed: "register(name:payloadKeyStringArray:)", message: "Modern Objective-C-style method deprecated.  Use Swift func register(name:payloadKeyStringArray:) instead.")
   @objc(registerWithNameString:payloadKeyStringArray:) public static func register(withNameString nameString: Swift.String, payloadKeyStringArray: [Swift.String]?)
-  @objc(registerWithName:payloadKeyStringArray:registrarArray:) public static func register(name: KochavaCore.KVAPrivacyProfile.Name, payloadKeyStringArray: [Swift.String]?, registrarArray: [KochavaCore.KVAPrivacyProfileRegistrarProvider]?)
+  @objc(registerWithName:payloadKeyStringArray:registrarArray:) public static func register(name: KochavaCore.KVAPrivacyProfile.Name, payloadKeyStringArray: [Swift.String]?, registrarArray: [any KochavaCore.KVAPrivacyProfileRegistrarProvider]?)
   @available(*, deprecated, renamed: "register(name:payloadKeyStringArray:registrarArray:)", message: "Modern Objective-C-style method deprecated.  Use Swift func register(name:payloadKeyStringArray:registrarArray:) instead.")
-  @objc(registerWithNameString:payloadKeyStringArray:registrarArray:) public static func register(withNameString nameString: Swift.String, payloadKeyStringArray: [Swift.String]?, registrarArray: [KochavaCore.KVAPrivacyProfileRegistrarProvider]?)
-  @objc(registerWithName:payloadKeyStringArray:payloadIdStringArray:registrarArray:) public static func register(name: Swift.String, payloadKeyStringArray: [Swift.String]?, payloadIdStringArray: [Swift.String]?, registrarArray: [KochavaCore.KVAPrivacyProfileRegistrarProvider]?)
+  @objc(registerWithNameString:payloadKeyStringArray:registrarArray:) public static func register(withNameString nameString: Swift.String, payloadKeyStringArray: [Swift.String]?, registrarArray: [any KochavaCore.KVAPrivacyProfileRegistrarProvider]?)
+  @objc(registerWithName:payloadKeyStringArray:payloadIdStringArray:registrarArray:) public static func register(name: Swift.String, payloadKeyStringArray: [Swift.String]?, payloadIdStringArray: [Swift.String]?, registrarArray: [any KochavaCore.KVAPrivacyProfileRegistrarProvider]?)
   public static func kva_from(_ object: Any?) -> Self?
   final public func kva_as(forContext context: KochavaCore.KVAContext?) -> Swift.AnyObject?
   @objc override final public func isEqual(_ object: Any?) -> Swift.Bool
@@ -92,7 +93,7 @@ extension Foundation.Date : KochavaCore.KVAAsForContextProtocol, KochavaCore.KVA
   @objc(registerProfile:) func register(profile: KochavaCore.KVAPrivacyProfile)
 }
 @objc public protocol KVAPrivacyProfileRegistrarProvider {
-  @objc var privacyProfileRegistrar: KochavaCore.KVAPrivacyProfileRegistrar { get }
+  @objc var privacyProfileRegistrar: any KochavaCore.KVAPrivacyProfileRegistrar { get }
 }
 extension Swift.Int : KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAFromProtocol {
   public static func kva_from(_ object: Any?) -> Swift.Int?
@@ -100,7 +101,7 @@ extension Swift.Int : KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAFromPr
 }
 @objc(KVAAdapter) final public class KVAAdapter : ObjectiveC.NSObject, KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAConfigureWithProtocol, KochavaCore.KVAExecutable, KochavaCore.KVAFromProtocol, KochavaCore.KVAFromWithInitializedObjectProtocol, KochavaCore.KVAKeyable, KochavaCore.KVAInvalidatable, KochavaCore.KVALoggerProvider, KochavaCore.KVAMutable, KochavaCore.KVANetworkingProvider, KochavaCore.KVARegisterable {
   required public init(networking: KochavaCore.KVANetworking? = nil, baseIdentifier: KochavaCore.KVAAdapter.Identifier? = nil, identifier: KochavaCore.KVAAdapter.Identifier, universalIdentifier: KochavaCore.KVAAdapter.UniversalIdentifier? = nil, key: Swift.AnyHashable? = nil, denyDatapointCheckBool: Swift.Bool = false, persistBool: Swift.Bool = false, watchBool: Swift.Bool = false, allowValueArray: [Any]? = nil, interfaceInDictionary: [Swift.AnyHashable : Any]? = nil, maximumStalenessTimeInterval: Foundation.TimeInterval? = nil, valueDefaultObject: Any? = nil, valueObject: Any? = nil, closure_didInvalidate: KochavaCore.KVAAdapter.Closure_DidInvalidate? = nil, closure_didMutate: KochavaCore.KVAAdapter.Closure_DidMutate? = nil, closure_didReadFromPersistentStorage: KochavaCore.KVAAdapter.Closure_DidReadFromPersistentStorage? = nil, closure_didSetCachedValueOnSameThread: KochavaCore.KVAAdapter.Closure_DidSetValue? = nil, closure_didSetValue: KochavaCore.KVAAdapter.Closure_DidSetValue? = nil, closure_valueMetaValueArrayDictionary: KochavaCore.KVAValue.Closure_MetaValueArrayDictionary? = nil, closure_valueStaleBool: KochavaCore.KVAValue.Closure_StaleBool? = nil, closure_value_willSet: KochavaCore.KVAAdapter.Closure_Value_WillSet? = nil, closure_serverObject: KochavaCore.KVAAdapter.Closure_ServerObject? = nil, closure_collectSynchronously: KochavaCore.KVAAdapter.Closure_CollectSynchronously? = nil, closure_collectAsynchronously: KochavaCore.KVAAdapter.Closure_CollectAsynchronously? = nil)
-  required public init(networking: KochavaCore.KVANetworking? = nil, baseIdentifier: KochavaCore.KVAAdapter.Identifier? = nil, identifier: KochavaCore.KVAAdapter.Identifier, universalIdentifier: KochavaCore.KVAAdapter.UniversalIdentifier? = nil, nameString: Swift.String? = nil, descriptionString: Swift.String? = nil, key: Swift.AnyHashable? = nil, product: KochavaCore.KVAProduct? = nil, productRegisterBool: Swift.Bool = false, storageIdentifier: KochavaCore.KVANetworking.StorageIdentifier? = nil, denyDatapointCheckBool: Swift.Bool = false, asynchronousCollectionPrerequisiteTaskIdentifierArray: [Swift.String]? = nil, asynchronousCollectionPrerequisiteTaskArray: [KochavaCore.KVATask]? = nil, asynchronousCollectionPrerequisiteTaskArrayIncludeNetworkingStartedBool: Swift.Bool? = nil, asynchronousCollectionRetryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, persistBool: Swift.Bool = false, persistAggressiveBool: Swift.Bool = false, persistIdentifier: KochavaCore.KVAAdapter.PersistIdentifier? = nil, persistUserDefaultsTypeString: Swift.String? = nil, persistWritesLogMessagesPrintBool: Swift.Bool? = nil, persistWritesWaitTimeInterval: Foundation.TimeInterval? = nil, watchBool: Swift.Bool = false, allowValueArray: [Any]? = nil, interfaceInDictionary: [Swift.AnyHashable : Any]? = nil, maximumStalenessTimeInterval: Foundation.TimeInterval? = nil, mutatorDidMutatePassesToDelegateBool: Swift.Bool? = nil, mutatorMutableDelegate: KochavaCore.KVAMutable? = nil, valueClass: Swift.AnyClass? = nil, valueElementClass: Swift.AnyClass? = nil, valueMinimumObject: Any? = nil, valueMaximumObject: Any? = nil, valueDefaultObject: Any? = nil, valueInitializedObject: Any? = nil, valueObject: Any? = nil, touchlessValue: KochavaCore.KVAValue? = nil, closure_didInvalidate: KochavaCore.KVAAdapter.Closure_DidInvalidate? = nil, closure_didMutate: KochavaCore.KVAAdapter.Closure_DidMutate? = nil, closure_didReadFromPersistentStorage: KochavaCore.KVAAdapter.Closure_DidReadFromPersistentStorage? = nil, closure_didSetCachedValueOnSameThread: KochavaCore.KVAAdapter.Closure_DidSetValue? = nil, closure_didSetValue: KochavaCore.KVAAdapter.Closure_DidSetValue? = nil, closure_validatedObject: KochavaCore.KVAAdapter.Closure_ValidatedObject? = nil, closure_valueMetaValueArrayDictionary: KochavaCore.KVAValue.Closure_MetaValueArrayDictionary? = nil, closure_valueStaleBool: KochavaCore.KVAValue.Closure_StaleBool? = nil, closure_value_willSet: KochavaCore.KVAAdapter.Closure_Value_WillSet? = nil, closure_serverObject: KochavaCore.KVAAdapter.Closure_ServerObject? = nil, closure_collectSynchronously: KochavaCore.KVAAdapter.Closure_CollectSynchronously? = nil, closure_collectAsynchronously: KochavaCore.KVAAdapter.Closure_CollectAsynchronously? = nil)
+  required public init(networking: KochavaCore.KVANetworking? = nil, baseIdentifier: KochavaCore.KVAAdapter.Identifier? = nil, identifier: KochavaCore.KVAAdapter.Identifier, universalIdentifier: KochavaCore.KVAAdapter.UniversalIdentifier? = nil, nameString: Swift.String? = nil, descriptionString: Swift.String? = nil, key: Swift.AnyHashable? = nil, product: KochavaCore.KVAProduct? = nil, productRegisterBool: Swift.Bool = false, storageIdentifier: KochavaCore.KVANetworking.StorageIdentifier? = nil, denyDatapointCheckBool: Swift.Bool = false, asynchronousCollectionPrerequisiteTaskIdentifierArray: [Swift.String]? = nil, asynchronousCollectionPrerequisiteTaskArray: [KochavaCore.KVATask]? = nil, asynchronousCollectionPrerequisiteTaskArrayIncludeNetworkingStartedBool: Swift.Bool? = nil, asynchronousCollectionRetryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, persistBool: Swift.Bool = false, persistAggressiveBool: Swift.Bool = false, persistIdentifier: KochavaCore.KVAAdapter.PersistIdentifier? = nil, persistUserDefaultsTypeString: Swift.String? = nil, persistWritesLogMessagesPrintBool: Swift.Bool? = nil, persistWritesWaitTimeInterval: Foundation.TimeInterval? = nil, watchBool: Swift.Bool = false, allowValueArray: [Any]? = nil, interfaceInDictionary: [Swift.AnyHashable : Any]? = nil, maximumStalenessTimeInterval: Foundation.TimeInterval? = nil, mutatorDidMutatePassesToDelegateBool: Swift.Bool? = nil, mutatorMutableDelegate: (any KochavaCore.KVAMutable)? = nil, valueClass: Swift.AnyClass? = nil, valueElementClass: Swift.AnyClass? = nil, valueMinimumObject: Any? = nil, valueMaximumObject: Any? = nil, valueDefaultObject: Any? = nil, valueInitializedObject: Any? = nil, valueObject: Any? = nil, touchlessValue: KochavaCore.KVAValue? = nil, closure_didInvalidate: KochavaCore.KVAAdapter.Closure_DidInvalidate? = nil, closure_didMutate: KochavaCore.KVAAdapter.Closure_DidMutate? = nil, closure_didReadFromPersistentStorage: KochavaCore.KVAAdapter.Closure_DidReadFromPersistentStorage? = nil, closure_didSetCachedValueOnSameThread: KochavaCore.KVAAdapter.Closure_DidSetValue? = nil, closure_didSetValue: KochavaCore.KVAAdapter.Closure_DidSetValue? = nil, closure_validatedObject: KochavaCore.KVAAdapter.Closure_ValidatedObject? = nil, closure_valueMetaValueArrayDictionary: KochavaCore.KVAValue.Closure_MetaValueArrayDictionary? = nil, closure_valueStaleBool: KochavaCore.KVAValue.Closure_StaleBool? = nil, closure_value_willSet: KochavaCore.KVAAdapter.Closure_Value_WillSet? = nil, closure_serverObject: KochavaCore.KVAAdapter.Closure_ServerObject? = nil, closure_collectSynchronously: KochavaCore.KVAAdapter.Closure_CollectSynchronously? = nil, closure_collectAsynchronously: KochavaCore.KVAAdapter.Closure_CollectAsynchronously? = nil)
   @objc deinit
   public static func kva_from(_ object: Any?) -> Self?
   public static func kva_from(_ object: Any?, initializedObject: Any?) -> Self?
@@ -358,7 +359,7 @@ public protocol KVAAsForContextProtocol {
   @objc weak final public var networking: KochavaCore.KVANetworking?
   public typealias Identifier = Swift.String
   public typealias Closure_WillRegisterObject = (_ collection: KochavaCore.KVACollection, _ object: Any) -> Swift.Void
-  public typealias Element = (object: KochavaCore.KVACollection.ElementObject, identifier: KochavaCore.KVACollection.ElementIdentifier, arrayIndex: Swift.Int)
+  public typealias Element = (object: Any, identifier: KochavaCore.KVACollection.ElementIdentifier, arrayIndex: Swift.Int)
   public typealias ElementObject = Any
   public typealias ElementIdentifier = Swift.String
   public enum MaximumCountStrategy : KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAFromProtocol {
@@ -382,12 +383,12 @@ public protocol KVAConfigureWithProtocol {
   func kva_configure(with object: Any?, context: KochavaCore.KVAContext?)
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objc(KVAConsent) final public class KVAConsent : ObjectiveC.NSObject, Foundation.NSCopying, KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAConfigureWithProtocol, KochavaCore.KVAFromProtocol, KochavaCore.KVAFromWithInitializedObjectProtocol, KochavaCore.KVAInvalidatable, KochavaCore.KVALoggerProvider, KochavaCore.KVAMutable, KochavaCore.KVANetworkingProvider {
-  convenience public init(fromObject object: Any?, networking: KochavaCore.KVANetworking, creationLogMessagesPrintBool: Swift.Bool = true, delegate: KochavaCore.KVAMutable, closure_didMutate: KochavaCore.KVAConsent.Closure_DidMutate?)
+  convenience public init(fromObject object: Any?, networking: KochavaCore.KVANetworking, creationLogMessagesPrintBool: Swift.Bool = true, delegate: any KochavaCore.KVAMutable, closure_didMutate: KochavaCore.KVAConsent.Closure_DidMutate?)
   @objc(copyWithZone:) final public func copy(with zone: ObjectiveC.NSZone? = nil) -> Any
   public static func kva_from(_ object: Any?) -> Self?
   public static func kva_from(_ object: Any?, initializedObject: Any?) -> Self?
   @objc(kva_asForContext:) final public func kva_as(forContext context: KochavaCore.KVAContext?) -> Swift.AnyObject?
-  final public func configure(networking: KochavaCore.KVANetworking, masterBool: Swift.Bool, delegate: KochavaCore.KVAMutable, closure_didMutate: KochavaCore.KVAConsent.Closure_DidMutate?)
+  final public func configure(networking: KochavaCore.KVANetworking, masterBool: Swift.Bool, delegate: any KochavaCore.KVAMutable, closure_didMutate: KochavaCore.KVAConsent.Closure_DidMutate?)
   final public func kva_configure(with object: Any?, context: KochavaCore.KVAContext?)
   final public func invalidate()
   @objc final public func mayCollectBool() -> Swift.Bool
@@ -668,7 +669,7 @@ public protocol KVAKeyable {
   public static func print(logLevel: KochavaCore.KVALogLevel?, sourceClass: Swift.AnyClass?, headlineString: Swift.String?, dictionary: [Swift.AnyHashable : Any]? = nil)
   public static func printError(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier?, sourceClass: Swift.AnyClass?, headlineString: Swift.String?, dictionary: [Swift.AnyHashable : Any]? = nil)
   public static func printInternalInconsistency(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier?, sourceClass: Swift.AnyClass?, dictionary: [Swift.AnyHashable : Any]? = nil)
-  public static func printInternalError(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier, sourceClass: Swift.AnyClass?, dictionary: [Swift.AnyHashable : Any]? = nil, error: Swift.Error)
+  public static func printInternalError(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier, sourceClass: Swift.AnyClass?, dictionary: [Swift.AnyHashable : Any]? = nil, error: any Swift.Error)
   public static func printWarning(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier, sourceClass: Swift.AnyClass?, dictionary: [Swift.AnyHashable : Any]? = nil, exception: Foundation.NSException)
   public static func printWarning(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier? = nil, sourceClass: Swift.AnyClass?, headlineString: Swift.String?, dictionary: [Swift.AnyHashable : Any]? = nil)
   public static func printWarning(sourceIdentifier: KochavaCore.KVALogMessage.SourceIdentifier, sourceClass: Swift.AnyClass?)
@@ -795,7 +796,7 @@ public protocol KVAMutable : AnyObject {
     get
   }
   final public func elapsedTimeIntervalDecimalNumber() -> Foundation.NSDecimalNumber
-  final public var error: Swift.Error? {
+  final public var error: (any Swift.Error)? {
     get
   }
   final public func requestRollupLogMessageArray_append(_ logMessage: KochavaCore.KVALogMessage?)
@@ -816,7 +817,7 @@ public protocol KVANetTransactionServiceLocallyBoolPropertyProvider {
   func netTransaction_serviceLocallyBool() -> Swift.Bool
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objc(KVANetTransactionType) final public class KVANetTransactionType : ObjectiveC.NSObject, KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAFromProtocol, KochavaCore.KVAMutable {
-  required public init(universalIdentifier: KochavaCore.KVANetTransactionType.UniversalIdentifier, delegate: KochavaCore.KVAMutable?)
+  required public init(universalIdentifier: KochavaCore.KVANetTransactionType.UniversalIdentifier, delegate: (any KochavaCore.KVAMutable)?)
   public static func kva_from(_ object: Any?) -> Self?
   final public func kva_as(forContext context: KochavaCore.KVAContext?) -> Swift.AnyObject?
   final public func netTransaction_urlString(_ netTransaction: KochavaCore.KVANetTransaction?) -> Swift.String?
@@ -854,7 +855,7 @@ public protocol KVANetTransactionServiceLocallyBoolPropertyProvider {
   public static var sharedInstance: Swift.AnyObject {
     get
   }
-  convenience public init(fromObject object: Any?, product: KochavaCore.KVAProduct, storageIdentifier: KochavaCore.KVANetworking.StorageIdentifier? = nil, delegate: KochavaCore.KVAMutable? = nil, closure_appLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_AppLimitAdTrackingBool? = nil, closure_appTrackingTransparency_authorizedBool: KochavaCore.KVAPrivacy.Closure_AppTrackingTransparency_AuthorizedBool? = nil, closure_consent_didMutate: KochavaCore.KVAConsent.Closure_DidMutate? = nil, closure_deviceLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_DeviceLimitAdTrackingBool? = nil, closure_netTransaction_payloadTransformedObject: KochavaCore.KVANetTransaction.Closure_PayloadTransformedObject? = nil)
+  convenience public init(fromObject object: Any?, product: KochavaCore.KVAProduct, storageIdentifier: KochavaCore.KVANetworking.StorageIdentifier? = nil, delegate: (any KochavaCore.KVAMutable)? = nil, closure_appLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_AppLimitAdTrackingBool? = nil, closure_appTrackingTransparency_authorizedBool: KochavaCore.KVAPrivacy.Closure_AppTrackingTransparency_AuthorizedBool? = nil, closure_consent_didMutate: KochavaCore.KVAConsent.Closure_DidMutate? = nil, closure_deviceLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_DeviceLimitAdTrackingBool? = nil, closure_netTransaction_payloadTransformedObject: KochavaCore.KVANetTransaction.Closure_PayloadTransformedObject? = nil)
   convenience public init(product: KochavaCore.KVAProduct, storageIdentifier: KochavaCore.KVANetworking.StorageIdentifier?)
   required public init(fromDictionary: [Swift.AnyHashable : Any]? = nil, storageIdentifier: KochavaCore.KVANetworking.StorageIdentifier? = nil)
   @objc deinit
@@ -863,7 +864,7 @@ public protocol KVANetTransactionServiceLocallyBoolPropertyProvider {
   final public func kva_as(forContext context: KochavaCore.KVAContext?) -> Swift.AnyObject?
   final public func key(forContext context: KochavaCore.KVAContext?) -> Swift.AnyHashable?
   public static let key: Swift.String
-  final public func configure(product: KochavaCore.KVAProduct, delegate: KochavaCore.KVAMutable? = nil, closure_appLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_AppLimitAdTrackingBool? = nil, closure_appTrackingTransparency_authorizedBool: KochavaCore.KVAPrivacy.Closure_AppTrackingTransparency_AuthorizedBool? = nil, closure_consent_didMutate: KochavaCore.KVAConsent.Closure_DidMutate? = nil, closure_deviceLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_DeviceLimitAdTrackingBool? = nil, closure_netTransaction_payloadTransformedObject: KochavaCore.KVANetTransaction.Closure_PayloadTransformedObject? = nil)
+  final public func configure(product: KochavaCore.KVAProduct, delegate: (any KochavaCore.KVAMutable)? = nil, closure_appLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_AppLimitAdTrackingBool? = nil, closure_appTrackingTransparency_authorizedBool: KochavaCore.KVAPrivacy.Closure_AppTrackingTransparency_AuthorizedBool? = nil, closure_consent_didMutate: KochavaCore.KVAConsent.Closure_DidMutate? = nil, closure_deviceLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_DeviceLimitAdTrackingBool? = nil, closure_netTransaction_payloadTransformedObject: KochavaCore.KVANetTransaction.Closure_PayloadTransformedObject? = nil)
   final public func configure_parentConfigure_didComplete()
   @objc(configureWith:context:) final public func configure(with object: Any?, context: KochavaCore.KVAContext?)
   final public func kva_configure(with object: Any?, context: KochavaCore.KVAContext?)
@@ -877,7 +878,7 @@ public protocol KVANetTransactionServiceLocallyBoolPropertyProvider {
   @objc override final public var description: Swift.String {
     @objc get
   }
-  @objc(executeAdvancedInstructionWithUniversalIdentifier:parameter:prerequisiteTaskIdentifierArray:) final public func executeAdvancedInstruction(universalIdentifier: KochavaCore.KVATask.UniversalIdentifier, parameter: KochavaCore.KVATask.Parameter? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil)
+  @objc(executeAdvancedInstructionWithUniversalIdentifier:parameter:prerequisiteTaskIdentifierArray:) final public func executeAdvancedInstruction(universalIdentifier: KochavaCore.KVATask.UniversalIdentifier, parameter: Any? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil)
   @objc final public var privacy: KochavaCore.KVAPrivacy {
     @objc get
   }
@@ -929,7 +930,7 @@ public protocol KVANetTransactionServiceLocallyBoolPropertyProvider {
     get
     set
   }
-  @objc final public var privacyProfileRegistrar: KochavaCore.KVAPrivacyProfileRegistrar {
+  @objc final public var privacyProfileRegistrar: any KochavaCore.KVAPrivacyProfileRegistrar {
     @objc get
   }
   final public var mutator: KochavaCore.KVAMutator {
@@ -1048,7 +1049,7 @@ public protocol KVAPrintable {
   @objc deinit
 }
 @_hasMissingDesignatedInitializers @objc(KVAPrivacy) final public class KVAPrivacy : ObjectiveC.NSObject, KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAConfigureWithProtocol, KochavaCore.KVAFromProtocol, KochavaCore.KVAFromWithInitializedObjectProtocol, KochavaCore.KVAInvalidatable, KochavaCore.KVALoggerProvider, KochavaCore.KVAMutable, KochavaCore.KVANetworkingProvider, KochavaCore.KVAPrivacyProfileRegistrar {
-  convenience public init(fromObject object: Any?, networking: KochavaCore.KVANetworking, delegate: KochavaCore.KVAMutable, closure_appLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_AppLimitAdTrackingBool?, closure_appTrackingTransparency_authorizedBool: KochavaCore.KVAPrivacy.Closure_AppTrackingTransparency_AuthorizedBool?, closure_consent_didMutate: KochavaCore.KVAConsent.Closure_DidMutate?, closure_deviceLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_DeviceLimitAdTrackingBool?)
+  convenience public init(fromObject object: Any?, networking: KochavaCore.KVANetworking, delegate: any KochavaCore.KVAMutable, closure_appLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_AppLimitAdTrackingBool?, closure_appTrackingTransparency_authorizedBool: KochavaCore.KVAPrivacy.Closure_AppTrackingTransparency_AuthorizedBool?, closure_consent_didMutate: KochavaCore.KVAConsent.Closure_DidMutate?, closure_deviceLimitAdTrackingBool: KochavaCore.KVAPrivacy.Closure_DeviceLimitAdTrackingBool?)
   public static func kva_from(_ object: Any?) -> Self?
   public static func kva_from(_ object: Any?, initializedObject: Any?) -> Self?
   final public func kva_as(forContext context: KochavaCore.KVAContext?) -> Swift.AnyObject?
@@ -1194,7 +1195,7 @@ public protocol KVAExecutableWithOptions : AnyObject {
   public static func emptyStringBool(_ any: Any?) -> Swift.Bool
   public static func emptyStringBecomesNil(_ any: Any?) -> Any?
   public static func inheritanceResolvedElement(_ inheritanceElementsArray: [(Any?, Swift.String?, Swift.String?, Swift.Bool)]) -> (Any?, Swift.String?)
-  public static func validBool(_ any: Any?, identifier: Swift.String?, method: Swift.String? = nil, guardNotOmittedBool: Swift.Bool = false, guardTypeArray: Swift.Array<Any.Type>? = nil, logMessagePrintNotValidBool: Swift.Bool = false) -> Swift.Bool
+  public static func validBool(_ any: Any?, identifier: Swift.String?, method: Swift.String? = nil, guardNotOmittedBool: Swift.Bool = false, guardTypeArray: Swift.Array<any Any.Type>? = nil, logMessagePrintNotValidBool: Swift.Bool = false) -> Swift.Bool
   public typealias Closure_ExecuteCustomMethod = (_ object: Swift.AnyObject, _ methodNameString: KochavaCore.KVAAny.CustomMethodName, _ parametersDictionary: [Swift.AnyHashable : Any]?) -> Swift.Void
   public typealias CustomMethodName = Swift.String
   @objc override dynamic public init()
@@ -1202,9 +1203,9 @@ public protocol KVAExecutableWithOptions : AnyObject {
 }
 @objc(KVATask) final public class KVATask : ObjectiveC.NSObject, KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAExecutable, KochavaCore.KVAFromProtocol, KochavaCore.KVAFromWithInitializedObjectProtocol, KochavaCore.KVAInvalidatable, KochavaCore.KVALoggerProvider, KochavaCore.KVAMutable, KochavaCore.KVANetworkingProvider, KochavaCore.KVARegisterable, KochavaCore.KVAStartable {
   public static func start(networking: KochavaCore.KVANetworking?, baseIdentifier: KochavaCore.KVATask.Identifier? = nil, identifier: KochavaCore.KVATask.Identifier?, universalIdentifier: KochavaCore.KVATask.UniversalIdentifier? = nil, logMessagesPrintBool: Swift.Bool? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, retryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, resetFollowedTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, closure_shouldAttemptBool: KochavaCore.KVATask.Closure_ShouldAttemptBool? = nil, closure_didComplete: KochavaCore.KVATask.Closure_DidComplete? = nil, closure_startAttempt: KochavaCore.KVATask.Closure_StartAttempt? = nil)
-  public static func start(networking: KochavaCore.KVANetworking?, baseIdentifier: KochavaCore.KVATask.Identifier? = nil, identifier: KochavaCore.KVATask.Identifier?, universalIdentifier: KochavaCore.KVATask.UniversalIdentifier? = nil, extendedIdentifier: KochavaCore.KVATask.ExtendedIdentifier? = nil, parameter: KochavaCore.KVATask.Parameter? = nil, logMessagesPrintBool: Swift.Bool? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, prerequisiteTaskArray: [KochavaCore.KVATask]? = nil, prerequisiteTaskArrayIncludeNetworkingStartedBool: Swift.Bool? = nil, attemptTimeoutTimeInterval: Foundation.TimeInterval? = nil, retryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, resetFollowedTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, resetFollowedTaskArray: [KochavaCore.KVATask]? = nil, resetPassiveTimeInterval: Foundation.TimeInterval? = nil, singleExecutionIdentifier: KochavaCore.KVATask.SingleExecutionIdentifier? = nil, evaluateFirstAsyncBool: Swift.Bool? = nil, completedBool: Swift.Bool = false, completedBoolLogMessagesPrintBool: Swift.Bool = false, startBool: Swift.Bool = false, closure_shouldAttemptBool: KochavaCore.KVATask.Closure_ShouldAttemptBool? = nil, closure_didExperienceDelay: KochavaCore.KVATask.Closure_DidExperienceDelay? = nil, closure_didInvalidate: KochavaCore.KVATask.Closure_DidInvalidate? = nil, closure_didComplete: KochavaCore.KVATask.Closure_DidComplete? = nil, closure_didReset: KochavaCore.KVATask.Closure_DidReset? = nil, closure_executeCustomMethod: KochavaCore.KVAAny.Closure_ExecuteCustomMethod? = nil, closure_startAttempt: KochavaCore.KVATask.Closure_StartAttempt? = nil)
+  public static func start(networking: KochavaCore.KVANetworking?, baseIdentifier: KochavaCore.KVATask.Identifier? = nil, identifier: KochavaCore.KVATask.Identifier?, universalIdentifier: KochavaCore.KVATask.UniversalIdentifier? = nil, extendedIdentifier: KochavaCore.KVATask.ExtendedIdentifier? = nil, parameter: Any? = nil, logMessagesPrintBool: Swift.Bool? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, prerequisiteTaskArray: [KochavaCore.KVATask]? = nil, prerequisiteTaskArrayIncludeNetworkingStartedBool: Swift.Bool? = nil, attemptTimeoutTimeInterval: Foundation.TimeInterval? = nil, retryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, resetFollowedTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, resetFollowedTaskArray: [KochavaCore.KVATask]? = nil, resetPassiveTimeInterval: Foundation.TimeInterval? = nil, singleExecutionIdentifier: KochavaCore.KVATask.SingleExecutionIdentifier? = nil, evaluateFirstAsyncBool: Swift.Bool? = nil, completedBool: Swift.Bool = false, completedBoolLogMessagesPrintBool: Swift.Bool = false, startBool: Swift.Bool = false, closure_shouldAttemptBool: KochavaCore.KVATask.Closure_ShouldAttemptBool? = nil, closure_didExperienceDelay: KochavaCore.KVATask.Closure_DidExperienceDelay? = nil, closure_didInvalidate: KochavaCore.KVATask.Closure_DidInvalidate? = nil, closure_didComplete: KochavaCore.KVATask.Closure_DidComplete? = nil, closure_didReset: KochavaCore.KVATask.Closure_DidReset? = nil, closure_executeCustomMethod: KochavaCore.KVAAny.Closure_ExecuteCustomMethod? = nil, closure_startAttempt: KochavaCore.KVATask.Closure_StartAttempt? = nil)
   public init(networking: KochavaCore.KVANetworking?, baseIdentifier: KochavaCore.KVATask.Identifier? = nil, identifier: KochavaCore.KVATask.Identifier?, universalIdentifier: KochavaCore.KVATask.UniversalIdentifier? = nil, logMessagesPrintBool: Swift.Bool? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, retryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, resetFollowedTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, closure_shouldAttemptBool: KochavaCore.KVATask.Closure_ShouldAttemptBool? = nil, closure_didComplete: KochavaCore.KVATask.Closure_DidComplete? = nil, closure_startAttempt: KochavaCore.KVATask.Closure_StartAttempt? = nil)
-  public init(networking: KochavaCore.KVANetworking?, baseIdentifier: KochavaCore.KVATask.Identifier? = nil, identifier: KochavaCore.KVATask.Identifier?, universalIdentifier: KochavaCore.KVATask.UniversalIdentifier? = nil, extendedIdentifier: KochavaCore.KVATask.ExtendedIdentifier? = nil, parameter: KochavaCore.KVATask.Parameter? = nil, logMessagesPrintBool: Swift.Bool? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, prerequisiteTaskArray: [KochavaCore.KVATask]? = nil, prerequisiteTaskArrayIncludeNetworkingStartedBool: Swift.Bool? = nil, attemptTimeoutTimeInterval: Foundation.TimeInterval? = nil, retryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, resetFollowedTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, resetFollowedTaskArray: [KochavaCore.KVATask]? = nil, resetPassiveTimeInterval: Foundation.TimeInterval? = nil, singleExecutionIdentifier: KochavaCore.KVATask.SingleExecutionIdentifier? = nil, evaluateFirstAsyncBool: Swift.Bool? = nil, completedBool: Swift.Bool = false, completedBoolLogMessagesPrintBool: Swift.Bool = false, startBool: Swift.Bool = false, closure_shouldAttemptBool: KochavaCore.KVATask.Closure_ShouldAttemptBool? = nil, closure_didExperienceDelay: KochavaCore.KVATask.Closure_DidExperienceDelay? = nil, closure_didInvalidate: KochavaCore.KVATask.Closure_DidInvalidate? = nil, closure_didComplete: KochavaCore.KVATask.Closure_DidComplete? = nil, closure_didReset: KochavaCore.KVATask.Closure_DidReset? = nil, closure_executeCustomMethod: KochavaCore.KVAAny.Closure_ExecuteCustomMethod? = nil, closure_startAttempt: KochavaCore.KVATask.Closure_StartAttempt? = nil)
+  public init(networking: KochavaCore.KVANetworking?, baseIdentifier: KochavaCore.KVATask.Identifier? = nil, identifier: KochavaCore.KVATask.Identifier?, universalIdentifier: KochavaCore.KVATask.UniversalIdentifier? = nil, extendedIdentifier: KochavaCore.KVATask.ExtendedIdentifier? = nil, parameter: Any? = nil, logMessagesPrintBool: Swift.Bool? = nil, prerequisiteTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, prerequisiteTaskArray: [KochavaCore.KVATask]? = nil, prerequisiteTaskArrayIncludeNetworkingStartedBool: Swift.Bool? = nil, attemptTimeoutTimeInterval: Foundation.TimeInterval? = nil, retryTimeIntervalSeries: KochavaCore.KVATimeIntervalSeries? = nil, resetFollowedTaskIdentifierArray: [KochavaCore.KVATask.Identifier]? = nil, resetFollowedTaskArray: [KochavaCore.KVATask]? = nil, resetPassiveTimeInterval: Foundation.TimeInterval? = nil, singleExecutionIdentifier: KochavaCore.KVATask.SingleExecutionIdentifier? = nil, evaluateFirstAsyncBool: Swift.Bool? = nil, completedBool: Swift.Bool = false, completedBoolLogMessagesPrintBool: Swift.Bool = false, startBool: Swift.Bool = false, closure_shouldAttemptBool: KochavaCore.KVATask.Closure_ShouldAttemptBool? = nil, closure_didExperienceDelay: KochavaCore.KVATask.Closure_DidExperienceDelay? = nil, closure_didInvalidate: KochavaCore.KVATask.Closure_DidInvalidate? = nil, closure_didComplete: KochavaCore.KVATask.Closure_DidComplete? = nil, closure_didReset: KochavaCore.KVATask.Closure_DidReset? = nil, closure_executeCustomMethod: KochavaCore.KVAAny.Closure_ExecuteCustomMethod? = nil, closure_startAttempt: KochavaCore.KVATask.Closure_StartAttempt? = nil)
   @objc deinit
   public static func kva_from(_ object: Any?) -> Self?
   public static func kva_from(_ object: Any?, initializedObject: Any?) -> Self?
@@ -1219,14 +1220,14 @@ public protocol KVAExecutableWithOptions : AnyObject {
   final public func start(evaluateFirstPublicCompletedCheckBool: Swift.Bool = false)
   final public func reset()
   final public func resetAttemptSeries()
-  final public func didReset_addObserver(closure: ((_ notification: Foundation.Notification) -> Swift.Void)? = nil) -> ObjectiveC.NSObjectProtocol?
+  final public func didReset_addObserver(closure: ((_ notification: Foundation.Notification) -> Swift.Void)? = nil) -> (any ObjectiveC.NSObjectProtocol)?
   public static let didResetNotificationName: Foundation.Notification.Name
   final public func invalidate()
   final public func evaluate(asyncBool: Swift.Bool = true)
   final public func endAttempt(accomplishedBool: Swift.Bool, allowRetryBool: Swift.Bool = true, retryInsertTimeInterval: Foundation.TimeInterval? = nil)
   final public func complete()
   final public func complete(logMessagesPrintBool: Swift.Bool)
-  final public func didComplete_addObserver(closure: ((_ notification: Foundation.Notification) -> Swift.Void)? = nil) -> ObjectiveC.NSObjectProtocol?
+  final public func didComplete_addObserver(closure: ((_ notification: Foundation.Notification) -> Swift.Void)? = nil) -> (any ObjectiveC.NSObjectProtocol)?
   public static let didCompleteNotificationName: Foundation.Notification.Name
   final public func containsMoreRetriesBool() -> Swift.Bool
   final public func executeCustomMethod(name: KochavaCore.KVAAny.CustomMethodName, parametersDictionary: [Swift.AnyHashable : Any]?)
@@ -1260,7 +1261,7 @@ public protocol KVAExecutableWithOptions : AnyObject {
     get
   }
   public typealias Identifier = Swift.String
-  final public var parameter: KochavaCore.KVATask.Parameter? {
+  final public var parameter: Any? {
     get
   }
   public typealias Parameter = Any
@@ -1368,7 +1369,7 @@ public protocol KVAExecutableWithOptions : AnyObject {
   public static let calloutString: Swift.String
 }
 @objc(KVATimer) final public class KVATimer : ObjectiveC.NSObject, KochavaCore.KVAAsForContextProtocol, KochavaCore.KVAFromProtocol, KochavaCore.KVAInvalidatable, KochavaCore.KVALoggerProvider, KochavaCore.KVAStartable, KochavaCore.KVAStoppable {
-  public init(identifier: KochavaCore.KVATimer.Identifier, extendedIdentifier: KochavaCore.KVATimer.ExtendedIdentifier? = nil, timeInterval: Foundation.TimeInterval? = nil, timeIntervalZeroShouldNotRunBool: Swift.Bool = false, logMessagesPrintBool: Swift.Bool? = nil, logMessagesPrintWhenLongTimeInterval: Foundation.TimeInterval? = nil, logMessagesPrintTimeIntervalAdjustedWhileTimerActiveBool: Swift.Bool? = nil, logMessagesPrintDidFireBool: Swift.Bool? = nil, delegate: KochavaCore.KVAMutable? = nil, closure_timeInterval: KochavaCore.KVATimer.Closure_TimeInterval? = nil, closure_shouldBeRunningBool: KochavaCore.KVATimer.Closure_ShouldBeRunningBool? = nil, closure_willStart: KochavaCore.KVATimer.Closure_WillStart? = nil, closure_didFire: KochavaCore.KVATimer.Closure_DidFire? = nil)
+  public init(identifier: KochavaCore.KVATimer.Identifier, extendedIdentifier: KochavaCore.KVATimer.ExtendedIdentifier? = nil, timeInterval: Foundation.TimeInterval? = nil, timeIntervalZeroShouldNotRunBool: Swift.Bool = false, logMessagesPrintBool: Swift.Bool? = nil, logMessagesPrintWhenLongTimeInterval: Foundation.TimeInterval? = nil, logMessagesPrintTimeIntervalAdjustedWhileTimerActiveBool: Swift.Bool? = nil, logMessagesPrintDidFireBool: Swift.Bool? = nil, delegate: (any KochavaCore.KVAMutable)? = nil, closure_timeInterval: KochavaCore.KVATimer.Closure_TimeInterval? = nil, closure_shouldBeRunningBool: KochavaCore.KVATimer.Closure_ShouldBeRunningBool? = nil, closure_willStart: KochavaCore.KVATimer.Closure_WillStart? = nil, closure_didFire: KochavaCore.KVATimer.Closure_DidFire? = nil)
   public static func kva_from(_ object: Any?) -> Self?
   final public func kva_as(forContext context: KochavaCore.KVAContext?) -> Swift.AnyObject?
   @discardableResult
@@ -1419,10 +1420,10 @@ final public class KVAMutator {
   final public func didMutate_sf()
   final public func didMutate_sf(infoDictionary: [Swift.AnyHashable : Any]?)
   final public func didMutate_sf_df(childMutator: KochavaCore.KVAMutator? = nil, infoDictionary: [Swift.AnyHashable : Any]?, performSideEffectsIntendedBeforeDispatchBool: Swift.Bool = true)
-  @objc final public func didMutate_addObserver(closure: ((_ notification: Foundation.Notification) -> Swift.Void)? = nil) -> ObjectiveC.NSObjectProtocol?
+  @objc final public func didMutate_addObserver(closure: ((_ notification: Foundation.Notification) -> Swift.Void)? = nil) -> (any ObjectiveC.NSObjectProtocol)?
   public typealias Closure_DidMutate_PerformSideEffects = (_ mutator: KochavaCore.KVAMutator, _ childMutator: KochavaCore.KVAMutator?, _ infoDictionary: [Swift.AnyHashable : Any]?) -> Swift.Void
   final public var didMutatePassesToDelegateBool: Swift.Bool?
-  weak final public var mutableDelegate: KochavaCore.KVAMutable? {
+  weak final public var mutableDelegate: (any KochavaCore.KVAMutable)? {
     get
     set
   }

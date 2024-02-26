@@ -1,7 +1,7 @@
 framework module KochavaCore {
   umbrella header "KochavaCore.h"
-
   export *
+
   module * { export * }
 }
 
